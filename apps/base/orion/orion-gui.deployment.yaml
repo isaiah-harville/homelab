@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: gui
-          image: ghcr.io/isaiahharvi/orion/orion-gui:latest
+          image: ghcr.io/isaiah-harville/orion/orion-gui:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5173

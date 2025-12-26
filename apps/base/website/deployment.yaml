@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: website
-          image: ghcr.io/isaiahharvi/website/site:latest
+          image: ghcr.io/isaiah-harville/website/site:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 6000
