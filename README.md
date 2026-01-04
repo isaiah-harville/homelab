@@ -1,4 +1,4 @@
-# Homelab (k3s + Flux)
+# Homelab
 
 ## Repo Layout
 
