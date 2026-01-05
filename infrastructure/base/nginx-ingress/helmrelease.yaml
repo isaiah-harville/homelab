@@ -8,17 +8,17 @@ spec:
   chart:
     spec:
       chart: nginx-ingress
+      version: "2.4.1"
       sourceRef:
         kind: HelmRepository
         name: nginx-stable
         namespace: flux-system
-      # version: "X.Y.Z"
   values:
     controller:
       ingressClass:
         create: true
         name: nginx
-        setAsDefaultIngressClass: false
+        setAsDefaultIngressClass: true
       service:
         type: LoadBalancer
 
