@@ -4,9 +4,9 @@ metadata:
   name: website
   namespace: apps
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
   tls:
     - hosts: [isaiah.harville.dev]
       secretName: harville-wildcard-tls
@@ -20,4 +20,3 @@ spec:
               service:
                 name: website
                 port: { number: 80 }
-
