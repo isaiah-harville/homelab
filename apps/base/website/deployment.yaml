@@ -19,4 +19,4 @@ spec:
           image: ghcr.io/isaiah-harville/website/site:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 6000
+            - containerPort: 3000

@@ -10,5 +10,5 @@ spec:
     app: website
   ports:
     - port: 80
-      targetPort: 6000
+      targetPort: 3000
 
