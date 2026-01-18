@@ -1,9 +1,0 @@
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: ghcr-oci
-  namespace: flux-system
-spec:
-  type: "oci"
-  interval: 1h
-  url: oci://ghcr.io/your-org/your-chart-repo  # TODO: adjust to your charts repo if you use OCI
