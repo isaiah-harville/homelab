@@ -13,15 +13,19 @@ spec:
   dependsOn:
     - name: namespaces
   healthChecks:
-    - kind: HelmRelease
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
       name: cert-manager
       namespace: cert-manager
-    - kind: HelmRelease
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
       name: metallb
       namespace: metallb-system
-    - kind: HelmRelease
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
       name: traefik-public
       namespace: traefik-public
-    - kind: HelmRelease
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
       name: traefik-internal
       namespace: traefik-internal
