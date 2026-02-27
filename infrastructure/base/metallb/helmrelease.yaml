@@ -1,20 +1,18 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: orion
-  namespace: apps
+  name: metallb
+  namespace: metallb-system
 spec:
   interval: 30m
   chart:
     spec:
-      chart: orion
+      chart: metallb
       version: "*"
       sourceRef:
         kind: HelmRepository
-        name: TODO
+        name: metallb
         namespace: flux-system
-  valuesFrom:
-    - kind: ConfigMap
-      name: orion-defaults
-      valuesKey: values.yaml
-
+  values:
+    crds:
+      enabled: true

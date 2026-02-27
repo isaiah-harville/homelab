@@ -1,0 +1,8 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: lab-lb-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 10.1.10.251-10.1.10.251

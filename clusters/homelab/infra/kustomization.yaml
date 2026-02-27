@@ -6,7 +6,7 @@ resources:
   # Helm
   - ../../..//infrastructure/base/traefik
   - ../../..//infrastructure/base/cert-manager
-  # - ../../..//infrastructure/base/metallb
+  - ../../..//infrastructure/base/metallb
   # - ../../..//infrastructure/base/longhorn
   - ../../..//infrastructure/base/monitoring
   - ./secrets/cert-manager/cloudflare-api-token.yaml
