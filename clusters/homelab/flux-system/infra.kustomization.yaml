@@ -10,6 +10,8 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+  dependsOn:
+    - name: namespaces
   healthChecks:
     - kind: HelmRelease
       name: cert-manager

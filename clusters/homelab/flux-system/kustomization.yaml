@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - gotk-components.yaml
   - gotk-sync.yaml
+  - namespaces.kustomization.yaml
   - infra.kustomization.yaml
   - apps.kustomization.yaml
   - metallb-config.kustomization.yaml
