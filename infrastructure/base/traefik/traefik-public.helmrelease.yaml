@@ -5,6 +5,10 @@ metadata:
   namespace: traefik-public
 spec:
   interval: 30m
+  install:
+    disableWait: true
+  upgrade:
+    disableWait: true
   chart:
     spec:
       chart: traefik
