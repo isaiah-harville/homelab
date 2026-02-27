@@ -4,9 +4,9 @@ metadata:
   name: website
   namespace: apps
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik-public
   tls:
     - hosts: [isaiah.harville.dev]
       secretName: harville-wildcard-tls

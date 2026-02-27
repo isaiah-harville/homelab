@@ -4,7 +4,7 @@ resources:
   # Namespaces
   - ../../..//infrastructure/base/namespaces
   # Helm
-  - ../../..//infrastructure/base/nginx-ingress
+  - ../../..//infrastructure/base/traefik
   - ../../..//infrastructure/base/cert-manager
   # - ../../..//infrastructure/base/metallb
   # - ../../..//infrastructure/base/longhorn

@@ -4,9 +4,9 @@ metadata:
   name: orion
   namespace: apps
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik-public
   tls:
     - hosts: [orion.harville.dev]
       secretName: harville-wildcard-tls

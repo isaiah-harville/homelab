@@ -1,22 +1,24 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: echo-server
+  name: kubernetes-dashboard
+  namespace: apps
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/service.serversscheme: https
 spec:
+  ingressClassName: traefik-internal
   tls:
-    - hosts: [echo.harville.dev]
+    - hosts: [dashboard.int.harville.dev]
       secretName: harville-wildcard-tls
-  ingressClassName: traefik-public
   rules:
-    - host: echo.harville.dev
+    - host: dashboard.int.harville.dev
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: echo-server
+                name: kubernetes-dashboard
                 port:
-                  number: 80
+                  number: 443

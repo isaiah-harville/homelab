@@ -19,8 +19,7 @@ spec:
       tag: 1.0.0
     ingress:
       enabled: true
-      className: nginx
+      className: traefik-public
       hosts:
         - host: vd.example.home
           paths: [{ path: /, pathType: Prefix }]
-

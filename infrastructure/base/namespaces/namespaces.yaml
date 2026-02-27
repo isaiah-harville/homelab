@@ -6,7 +6,12 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ingress-nginx
+  name: traefik-public
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik-internal
 ---
 apiVersion: v1
 kind: Namespace

@@ -28,13 +28,12 @@ spec:
         type: ClusterIP
       ingress:
         enabled: true
-        ingressClassName: nginx
+        ingressClassName: traefik-internal
         annotations:
-          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
         hosts:
-          - grafana.harville.dev
+          - grafana.int.harville.dev
         tls:
           - hosts:
-              - grafana.harville.dev
+              - grafana.int.harville.dev
             secretName: harville-wildcard-tls
-

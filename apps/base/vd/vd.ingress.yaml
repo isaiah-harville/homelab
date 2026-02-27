@@ -4,9 +4,9 @@ metadata:
   name: vd
   namespace: apps
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik-public
   tls:
     - hosts: [vd.harville.dev]
       secretName: harville-wildcard-tls
@@ -26,4 +26,3 @@ spec:
               service:
                 name: vd-api
                 port: { number: 80 }
-

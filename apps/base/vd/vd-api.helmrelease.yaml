@@ -19,8 +19,7 @@ spec:
       tag: 1.0.0 # flux image automation
     ingress:
       enabled: true
-      className: nginx
+      className: traefik-public
       hosts:
         - host: api.docs
           paths: [{ path: /api, pathType: Prefix }]
-

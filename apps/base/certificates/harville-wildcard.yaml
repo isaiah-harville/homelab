@@ -10,4 +10,4 @@ spec:
     name: letsencrypt-dns
   dnsNames:
     - "*.harville.dev"
-
+    - "*.int.harville.dev"
