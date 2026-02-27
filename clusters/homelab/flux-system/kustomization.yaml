@@ -8,5 +8,6 @@ resources:
   - infra.kustomization.yaml
   - issuers.kustomization.yaml
   - certificates.kustomization.yaml
+  - apps-certificates.kustomization.yaml
   - apps.kustomization.yaml
   - metallb-config.kustomization.yaml
