@@ -22,5 +22,7 @@ spec:
       kubernetesIngress:
         ingressClass: traefik-internal
     service:
+      annotations:
+        metallb.universe.tf/address-pool: lab-lb-pool
       type: LoadBalancer
       loadBalancerIP: 10.1.10.251
