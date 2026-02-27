@@ -5,6 +5,7 @@ resources:
   - gotk-sync.yaml
   - namespaces.kustomization.yaml
   - infra.kustomization.yaml
+  - issuers.kustomization.yaml
   - certificates.kustomization.yaml
   - apps.kustomization.yaml
   - metallb-config.kustomization.yaml
