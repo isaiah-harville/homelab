@@ -5,12 +5,12 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
+  ingressClassName: traefik-internal
   tls:
-    - hosts: [echo.harville.dev]
+    - hosts: [echo.int.harville.dev]
       secretName: harville-wildcard-tls
-  ingressClassName: traefik-public
   rules:
-    - host: echo.harville.dev
+    - host: echo.int.harville.dev
       http:
         paths:
           - path: /
