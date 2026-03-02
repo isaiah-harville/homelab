@@ -22,6 +22,9 @@ spec:
       enabled: true
       isDefaultClass: false
       name: traefik-public
+    additionalArguments:
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     providers:
       kubernetesIngress:
         ingressClass: traefik-public
