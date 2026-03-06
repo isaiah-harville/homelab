@@ -23,7 +23,11 @@ spec:
     grafana:
       adminPassword: "admin"
       persistence:
-        enabled: false
+        enabled: true
+        type: pvc
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
       service:
         type: ClusterIP
       ingress:

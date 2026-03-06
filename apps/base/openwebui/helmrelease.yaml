@@ -16,6 +16,11 @@ spec:
     fullnameOverride: openwebui
     ollama:
       enabled: true
+      persistentVolume:
+        enabled: true
+        size: 50Gi
+        accessModes:
+          - ReadWriteOnce
     pipelines:
       enabled: false
     persistence:

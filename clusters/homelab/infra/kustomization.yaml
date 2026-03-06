@@ -9,4 +9,6 @@ resources:
   - ../../..//infrastructure/base/metallb
   # - ../../..//infrastructure/base/longhorn
   - ../../..//infrastructure/base/monitoring
+  - ../../..//infrastructure/base/flux-dashboard
   - ./secrets/cert-manager/cloudflare-api-token.yaml
+  - ./secrets/monitoring/cluster-user-auth.yaml

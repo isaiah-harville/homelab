@@ -16,3 +16,17 @@ spec:
     fullnameOverride: kubernetes-dashboard
     metricsScraper:
       enabled: true
+    ingress:
+      enabled: true
+      ingressClassName: traefik-internal
+      useDefaultIngressClass: false
+      useDefaultAnnotations: false
+      pathType: Prefix
+      hosts:
+        - dashboard.int.harville.dev
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/service.serversscheme: https
+      tls:
+        enabled: true
+        secretName: harville-wildcard-tls
