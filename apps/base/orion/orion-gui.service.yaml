@@ -1,10 +1,13 @@
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: orion-gui
-  labels: { app: orion-gui }
+  labels:
+    app: orion-gui
 spec:
-  selector: { app: orion-gui }
+  selector:
+    app: orion-gui
   ports:
     - name: http
       port: 80

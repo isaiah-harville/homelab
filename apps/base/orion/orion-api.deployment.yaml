@@ -1,15 +1,19 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: orion-api
-  labels: { app: orion-api }
+  labels:
+    app: orion-api
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: orion-api }
+    matchLabels:
+      app: orion-api
   template:
     metadata:
-      labels: { app: orion-api }
+      labels:
+        app: orion-api
     spec:
       containers:
         - name: api
@@ -19,10 +23,14 @@ spec:
             - containerPort: 5171
           env:
           readinessProbe:
-            httpGet: { path: /health, port: 5171 }
+            httpGet:
+              path: /health
+              port: 5171
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /health, port: 5171 }
+            httpGet:
+              path: /health
+              port: 5171
             initialDelaySeconds: 10
             periodSeconds: 20

@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -19,10 +20,12 @@ spec:
             backend:
               service:
                 name: orion-gui
-                port: { number: 80 }
+                port:
+                  number: 80
           - path: /api
             pathType: Prefix
             backend:
               service:
                 name: orion-api
-                port: { number: 80 }
+                port:
+                  number: 80
