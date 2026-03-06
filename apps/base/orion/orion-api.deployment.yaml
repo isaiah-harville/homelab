@@ -26,4 +26,3 @@ spec:
             httpGet: { path: /health, port: 5171 }
             initialDelaySeconds: 10
             periodSeconds: 20
-

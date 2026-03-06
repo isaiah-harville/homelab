@@ -7,4 +7,3 @@ resources:
   - orion-gui.deployment.yaml
   - orion-gui.service.yaml
   - orion.ingress.yaml
-

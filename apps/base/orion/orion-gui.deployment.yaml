@@ -28,4 +28,3 @@ spec:
             httpGet: { path: /, port: 5173 }
             initialDelaySeconds: 10
             periodSeconds: 20
-
