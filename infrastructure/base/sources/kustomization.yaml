@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - headlamp.helmrepository.yaml
   - kubernetes-dashboard.helmrepository.yaml
+  - open-webui.helmrepository.yaml

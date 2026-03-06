@@ -7,3 +7,4 @@ resources:
   - ../../../apps/base/orion
   - ../../../apps/base/admin
   - ../../../apps/base/website
+  - ../../../apps/base/openwebui
