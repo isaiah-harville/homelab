@@ -1,8 +1,14 @@
+# Secrets
 .env
 .env.*
 .agekey
 *.age
 public-cert.pem
 *-secret.yaml
+
+# Misc.
 NOTES.md
 agents.md
+
+# Pre-commit stuff
+node_modules/

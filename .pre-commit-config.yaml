@@ -8,9 +8,15 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: '\.(ya?ml)$'
+        exclude: '(^clusters/.*/secrets/|^clusters/.*/sops/|^\.sops\.ya?ml$|^clusters/.*/flux-system/gotk-.*\.ya?ml$)'
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0
     hooks:
       - id: yamllint
-        files: '\\.(ya?ml)$'
-        exclude: '(^clusters/.*/secrets/|^clusters/.*/sops/|^\\.sops\\.ya?ml$)'
+        files: '\.(ya?ml)$'
+        exclude: '(^clusters/.*/secrets/|^clusters/.*/sops/|^\.sops\.ya?ml$|^clusters/.*/flux-system/gotk-.*\.ya?ml$)'
