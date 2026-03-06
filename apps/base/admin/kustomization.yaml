@@ -3,5 +3,5 @@ kind: Kustomization
 namespace: apps
 resources:
   - serviceaccount.yaml
-  - token-secret.yaml
+  - token.yaml
   - clusterrolebinding.yaml
