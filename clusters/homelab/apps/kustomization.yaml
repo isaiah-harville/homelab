@@ -5,4 +5,5 @@ resources:
   - ../../../apps/base/kubernetes-dashboard
   - ../../../apps/base/headlamp
   - ../../../apps/base/orion
+  - ../../../apps/base/admin
   - ../../../apps/base/website
