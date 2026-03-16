@@ -51,6 +51,7 @@ spec:
     secret:
       mountPath: /secrets
       additionalSecrets:
+        authelia-extras: {}
         authelia-oidc-rsa: {}
         authelia-secrets: {}
         authelia-users-database: {}
