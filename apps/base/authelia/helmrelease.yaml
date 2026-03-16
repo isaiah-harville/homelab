@@ -7,6 +7,19 @@ metadata:
 spec:
   interval: 30m
   releaseName: authelia
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: StatefulSet
+              name: authelia
+            patch: |
+              - op: add
+                path: /spec/template/metadata/annotations
+                value: {}
+              - op: add
+                path: /spec/template/metadata/annotations/gitops.harville.dev~1config-revision
+                value: "2026-03-16-1640"
   install:
     remediation:
       retries: 3
