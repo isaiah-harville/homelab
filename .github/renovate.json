@@ -5,6 +5,7 @@
   "requireConfig": "optional",
   "dependencyDashboard": true,
   "timezone": "America/Chicago",
+  "branchPrefix": "renovate/",
   "labels": ["dependencies"],
   "enabledManagers": ["flux"],
   "ignorePaths": [
