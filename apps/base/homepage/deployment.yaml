@@ -66,19 +66,40 @@ spec:
               drop: ["ALL"]
             readOnlyRootFilesystem: false
           volumeMounts:
-            - name: homepage-config
+            - name: homepage-config-dir
               mountPath: /app/config
+            - name: homepage-config
+              mountPath: /app/config/bookmarks.yaml
+              subPath: bookmarks.yaml
               readOnly: true
-            - name: homepage-logs
-              mountPath: /app/config/logs
+            - name: homepage-config
+              mountPath: /app/config/docker.yaml
+              subPath: docker.yaml
+              readOnly: true
+            - name: homepage-config
+              mountPath: /app/config/kubernetes.yaml
+              subPath: kubernetes.yaml
+              readOnly: true
+            - name: homepage-config
+              mountPath: /app/config/services.yaml
+              subPath: services.yaml
+              readOnly: true
+            - name: homepage-config
+              mountPath: /app/config/settings.yaml
+              subPath: settings.yaml
+              readOnly: true
+            - name: homepage-config
+              mountPath: /app/config/widgets.yaml
+              subPath: widgets.yaml
+              readOnly: true
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
+        - name: homepage-config-dir
+          emptyDir: {}
         - name: homepage-config
           configMap:
             name: homepage-config
-        - name: homepage-logs
-          emptyDir: {}
