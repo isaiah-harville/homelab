@@ -17,6 +17,25 @@ spec:
               - op: add
                 path: /spec/template/spec/enableServiceLinks
                 value: false
+              - op: add
+                path: /spec/template/spec/containers/0/startupProbe
+                value:
+                  tcpSocket:
+                    port: http
+                  periodSeconds: 5
+                  timeoutSeconds: 1
+                  failureThreshold: 12
+                  successThreshold: 1
+              - op: add
+                path: /spec/template/spec/containers/0/livenessProbe/httpGet/httpHeaders
+                value:
+                  - name: Host
+                    value: paperless.harville.dev
+              - op: add
+                path: /spec/template/spec/containers/0/readinessProbe/httpGet/httpHeaders
+                value:
+                  - name: Host
+                    value: paperless.harville.dev
   install:
     remediation:
       retries: 3
