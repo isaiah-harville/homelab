@@ -18,7 +18,7 @@ spec:
   chart:
     spec:
       chart: paperless-ngx
-      version: "0.24.1"
+      version: "0.3.15"
       sourceRef:
         kind: HelmRepository
         name: paperless-ngx
@@ -29,44 +29,36 @@ spec:
       valuesKey: values.yaml
   values:
     fullnameOverride: paperless
+    config:
+      url: https://paperless.int.harville.dev
     env:
+      PAPERLESS_TIME_ZONE: America/Chicago
       TZ: America/Chicago
       PAPERLESS_OCR_LANGUAGE: eng
     ingress:
-      main:
-        enabled: true
-        ingressClassName: traefik-internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Library
-          gethomepage.dev/name: Paperless
-          gethomepage.dev/description: Document archive and PDF reader
-          gethomepage.dev/pod-selector: app.kubernetes.io/instance=paperless,app.kubernetes.io/name=paperless-ngx
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        hosts:
-          - host: paperless.int.harville.dev
-            paths:
-              - path: /
-                pathType: Prefix
-        tls:
-          - hosts:
-              - paperless.int.harville.dev
-            secretName: harville-wildcard-shared-tls
+      enabled: true
+      className: traefik-internal
+      annotations:
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: Library
+        gethomepage.dev/name: Paperless
+        gethomepage.dev/description: Document archive and PDF reader
+        gethomepage.dev/pod-selector: app.kubernetes.io/instance=paperless,app.kubernetes.io/name=paperless-ngx
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      hosts:
+        - host: paperless.int.harville.dev
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - paperless.int.harville.dev
+          secretName: harville-wildcard-shared-tls
     persistence:
-      data:
-        enabled: true
-        accessMode: ReadWriteOnce
-        size: 4Gi
-        storageClass: local-path
-      media:
-        enabled: true
-        accessMode: ReadWriteOnce
-        size: 50Gi
-        storageClass: local-path
-      consume:
-        enabled: false
-      export:
-        enabled: false
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 50Gi
+      storageClass: local-path
     postgresql:
       enabled: true
       primary:
@@ -74,12 +66,5 @@ spec:
           enabled: true
           size: 8Gi
           storageClass: local-path
-    redis:
-      enabled: true
-      auth:
-        enabled: true
-      master:
-        persistence:
-          enabled: false
-      replica:
-        replicaCount: 0
+    valkey:
+      internal: true
