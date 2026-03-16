@@ -2,27 +2,23 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: openwebui
+  name: homepage
   namespace: apps
   annotations:
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/group: AI
-    gethomepage.dev/name: Open WebUI
-    gethomepage.dev/description: Chat UI backed by Ollama
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-internal
   tls:
-    - hosts: [webui.int.harville.dev]
+    - hosts: [homepage.int.harville.dev]
       secretName: harville-wildcard-tls
   rules:
-    - host: webui.int.harville.dev
+    - host: homepage.int.harville.dev
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: openwebui
+                name: homepage
                 port:
                   number: 80

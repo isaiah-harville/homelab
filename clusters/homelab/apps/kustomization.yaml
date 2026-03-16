@@ -5,6 +5,7 @@ resources:
   - ./secrets/ghcr-pull.yaml
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
+  - ../../../apps/base/homepage
   - ../../../apps/base/orion
   - ../../../apps/base/admin
   - ../../../apps/base/website

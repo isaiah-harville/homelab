@@ -5,6 +5,10 @@ metadata:
   name: orion
   namespace: apps
   annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Orion
+    gethomepage.dev/description: Public Orion app
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
