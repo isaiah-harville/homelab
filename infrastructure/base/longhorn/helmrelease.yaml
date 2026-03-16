@@ -6,6 +6,16 @@ metadata:
   namespace: longhorn-system
 spec:
   interval: 30m
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: StorageClass
+              name: longhorn
+            patch: |
+              - op: add
+                path: /metadata/annotations/storageclass.kubernetes.io~1is-default-class
+                value: "false"
   install:
     remediation:
       retries: 3
