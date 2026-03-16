@@ -4,6 +4,9 @@ kind: Kustomization
 resources:
   - ./secrets/ghcr-pull.yaml
   - ./secrets/authelia-config.yaml
+  - ./secrets/authelia-oidc-rsa.yaml
+  - ./secrets/authelia-secrets.yaml
+  - ./secrets/authelia-users-database.yaml
   - ./secrets/paperless-oidc.yaml
   - ./secrets/openwebui-oidc.yaml
   - ./secrets/paperless-values.yaml
