@@ -7,41 +7,6 @@ metadata:
 spec:
   interval: 30m
   releaseName: paperless
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: Deployment
-              name: paperless
-            patch: |
-              - op: add
-                path: /spec/template/spec/enableServiceLinks
-                value: false
-              - op: add
-                path: /spec/template/spec/containers/0/env
-                value:
-                  - name: PAPERLESS_ALLOWED_HOSTS
-                    value: paperless.harville.dev,paperless.int.harville.dev
-                  - name: PAPERLESS_CSRF_TRUSTED_ORIGINS
-                    value: https://paperless.harville.dev,https://paperless.int.harville.dev
-                  - name: PAPERLESS_SOCIAL_AUTO_SIGNUP
-                    value: "true"
-                  - name: PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS
-                    value: "true"
-                  - name: PAPERLESS_REDIRECT_LOGIN_TO_SSO
-                    value: "true"
-                  - name: PAPERLESS_DISABLE_REGULAR_LOGIN
-                    value: "true"
-                  - name: PAPERLESS_APPS
-                    valueFrom:
-                      secretKeyRef:
-                        name: paperless-oidc
-                        key: PAPERLESS_APPS
-                  - name: PAPERLESS_SOCIALACCOUNT_PROVIDERS
-                    valueFrom:
-                      secretKeyRef:
-                        name: paperless-oidc
-                        key: PAPERLESS_SOCIALACCOUNT_PROVIDERS
   install:
     remediation:
       retries: 3
@@ -66,10 +31,6 @@ spec:
     fullnameOverride: paperless
     config:
       url: https://paperless.harville.dev
-    env:
-      PAPERLESS_TIME_ZONE: America/Chicago
-      TZ: America/Chicago
-      PAPERLESS_OCR_LANGUAGE: eng
     ingress:
       enabled: true
       className: traefik-internal
