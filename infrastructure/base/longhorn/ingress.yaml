@@ -1,0 +1,31 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Cluster
+    gethomepage.dev/name: Longhorn
+    gethomepage.dev/description: Distributed storage dashboard
+    gethomepage.dev/pod-selector: app=longhorn-ui
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik-internal
+  tls:
+    - hosts:
+        - longhorn.int.harville.dev
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: longhorn.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: longhorn-frontend
+                port:
+                  number: 80

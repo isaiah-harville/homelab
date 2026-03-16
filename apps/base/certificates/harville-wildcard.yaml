@@ -9,9 +9,9 @@ spec:
   secretTemplate:
     annotations:
       reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "monitoring"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "monitoring,longhorn-system"
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
-      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "monitoring"
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "monitoring,longhorn-system"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-dns
