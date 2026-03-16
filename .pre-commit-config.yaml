@@ -19,5 +19,6 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
+        args: [-c, .yamllint]
         files: '\.(ya?ml)$'
         exclude: '(^clusters/.*/secrets/|^clusters/.*/sops/|^\.sops\.ya?ml$|^clusters/.*/flux-system/gotk-.*\.ya?ml$)'
