@@ -41,6 +41,7 @@ spec:
         gethomepage.dev/description: Document archive and PDF reader
         gethomepage.dev/pod-selector: app.kubernetes.io/instance=paperless,app.kubernetes.io/name=paperless-ngx
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
       hosts:
         - host: paperless.int.harville.dev
           paths:

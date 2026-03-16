@@ -21,21 +21,6 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value:
-                  name: ENABLE_OAUTH_SIGNUP
-                  value: "true"
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: ENABLE_LOGIN_FORM
-                  value: "false"
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: ENABLE_PASSWORD_AUTH
-                  value: "false"
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
                   name: ENABLE_SIGNUP
                   value: "false"
               - op: add
@@ -46,66 +31,18 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value:
-                  name: ENABLE_OAUTH_PERSISTENT_CONFIG
-                  value: "false"
+                  name: DEFAULT_USER_ROLE
+                  value: user
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value:
-                  name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
-                  value: "true"
+                  name: WEBUI_AUTH_TRUSTED_EMAIL_HEADER
+                  value: Remote-Email
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value:
-                  name: OAUTH_CLIENT_ID
-                  value: open-webui
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: openwebui-oidc
-                      key: OAUTH_CLIENT_SECRET
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OPENID_PROVIDER_URL
-                  value: https://auth.harville.dev/.well-known/openid-configuration
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_PROVIDER_NAME
-                  value: Authelia
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_SCOPES
-                  value: openid email profile groups
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: ENABLE_OAUTH_ROLE_MANAGEMENT
-                  value: "true"
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_ALLOWED_ROLES
-                  value: openwebui,openwebui-admin
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_ADMIN_ROLES
-                  value: openwebui-admin
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_ROLES_CLAIM
-                  value: groups
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: OAUTH_CODE_CHALLENGE_METHOD
-                  value: S256
+                  name: WEBUI_AUTH_SIGNOUT_REDIRECT_URL
+                  value: https://auth.harville.dev/logout
   install:
     remediation:
       retries: 3

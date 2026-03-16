@@ -6,6 +6,7 @@ metadata:
   namespace: apps
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-public
   tls:
