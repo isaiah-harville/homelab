@@ -6,6 +6,14 @@ metadata:
   namespace: metallb-system
 spec:
   interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
   chart:
     spec:
       chart: metallb

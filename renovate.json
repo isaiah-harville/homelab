@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "onboarding": false,
+  "requireConfig": "optional",
+  "dependencyDashboard": true,
+  "timezone": "America/Chicago",
+  "labels": ["dependencies"],
+  "enabledManagers": ["flux"],
+  "ignorePaths": [
+    "**/gotk-components.yaml",
+    "**/gotk-components.yml"
+  ],
+  "flux": {
+    "managerFilePatterns": ["/(?:^|/)(apps|infrastructure)/.+\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["flux"],
+      "matchDatasources": ["helm"],
+      "matchFileNames": ["infrastructure/**"],
+      "addLabels": ["infra"]
+    },
+    {
+      "matchManagers": ["flux"],
+      "matchDatasources": ["helm"],
+      "matchFileNames": ["apps/**"],
+      "addLabels": ["apps"]
+    },
+    {
+      "matchManagers": ["flux"],
+      "matchPackageNames": ["headlamp", "kube-prometheus-stack"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}
