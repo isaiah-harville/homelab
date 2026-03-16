@@ -22,17 +22,38 @@ spec:
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: homepage.int.harville.dev
+            - name: LOG_TARGETS
+              value: stdout
           ports:
             - containerPort: 3000
               name: http
+          startupProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: homepage.int.harville.dev
+            failureThreshold: 12
+            periodSeconds: 5
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: homepage.int.harville.dev
+            initialDelaySeconds: 5
+            periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: homepage.int.harville.dev
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests:
               cpu: 50m
@@ -48,6 +69,8 @@ spec:
             - name: homepage-config
               mountPath: /app/config
               readOnly: true
+            - name: homepage-logs
+              mountPath: /app/config/logs
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -57,3 +80,5 @@ spec:
         - name: homepage-config
           configMap:
             name: homepage-config
+        - name: homepage-logs
+          emptyDir: {}
