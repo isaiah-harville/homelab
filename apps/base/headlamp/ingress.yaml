@@ -14,7 +14,7 @@ spec:
   ingressClassName: traefik-internal
   tls:
     - hosts: [headlamp.int.harville.dev]
-      secretName: harville-wildcard-tls
+      secretName: harville-wildcard-shared-tls
   rules:
     - host: headlamp.int.harville.dev
       http:

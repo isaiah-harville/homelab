@@ -14,7 +14,7 @@ spec:
   ingressClassName: traefik-public
   tls:
     - hosts: [isaiah.harville.dev]
-      secretName: harville-wildcard-tls
+      secretName: harville-wildcard-shared-tls
   rules:
     - host: isaiah.harville.dev
       http:

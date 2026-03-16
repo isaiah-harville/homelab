@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: weave-gitops
-      version: "*"
+      version: "4.0.36"
       sourceRef:
         kind: HelmRepository
         name: weave-gitops
@@ -40,4 +40,4 @@ spec:
       tls:
         - hosts:
             - flux.int.harville.dev
-          secretName: harville-wildcard-tls
+          secretName: harville-wildcard-shared-tls

@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: "*"
+      version: "82.10.1"
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -23,6 +23,10 @@ spec:
         storage: {}
     grafana:
       adminPassword: "admin"
+      deploymentStrategy:
+        type: Recreate
+      initChownData:
+        enabled: false
       persistence:
         enabled: true
         type: pvc
@@ -45,4 +49,4 @@ spec:
         tls:
           - hosts:
               - grafana.int.harville.dev
-            secretName: harville-wildcard-tls
+            secretName: harville-wildcard-shared-tls

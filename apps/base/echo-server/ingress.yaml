@@ -9,7 +9,7 @@ spec:
   ingressClassName: traefik-internal
   tls:
     - hosts: [echo.int.harville.dev]
-      secretName: harville-wildcard-tls
+      secretName: harville-wildcard-shared-tls
   rules:
     - host: echo.int.harville.dev
       http:
