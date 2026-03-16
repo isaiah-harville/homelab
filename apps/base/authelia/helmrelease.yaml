@@ -34,13 +34,21 @@ spec:
       enabled: true
       existingClaim: authelia
     configMap:
+      identity_validation:
+        reset_password:
+          secret:
+            value: b65832c47cfbb4d1b397f13813067d656304fa7cc1579267846f0dd35d72f542
       key: configuration.yaml
       existingConfigMap: authelia-config
       filters:
         disabled: false
+      session:
+        encryption_key:
+          value: 6a03e418e48b798386e23eaefc8d9fecd74cd9cea140a74c13e0a5742de728c6
+      storage:
+        encryption_key:
+          value: f9a039b25f6729155a90d29481a9ad06a80c1cf838b1d9cb9b29546a6367db3c
     secret:
       mountPath: /secrets
       additionalSecrets:
-        authelia-oidc-rsa: {}
-        authelia-secrets: {}
-        authelia-users-database: {}
+        authelia-extras: {}
