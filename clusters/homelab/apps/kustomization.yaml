@@ -3,7 +3,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./secrets/ghcr-pull.yaml
+  - ./secrets/authelia-config.yaml
+  - ./secrets/paperless-oidc.yaml
+  - ./secrets/openwebui-oidc.yaml
   - ./secrets/paperless-values.yaml
+  - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
