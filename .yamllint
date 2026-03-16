@@ -1,4 +1,12 @@
+---
 extends: default
+
+ignore: |
+  clusters/**/secrets/**
+  clusters/**/sops/**
+  clusters/**/flux-system/gotk-*.yaml
+  clusters/**/flux-system/gotk-*.yml
+  scripts/encrypt-secret.yaml
 
 rules:
   line-length:

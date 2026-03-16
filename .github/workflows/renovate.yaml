@@ -1,6 +1,7 @@
+---
 name: Renovate
 
-on:
+"on":
   workflow_dispatch:
   schedule:
     - cron: "17 6 * * *"
