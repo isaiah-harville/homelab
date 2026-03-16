@@ -37,6 +37,6 @@ spec:
         ingressClass: traefik-public
     service:
       annotations:
-        metallb.universe.tf/address-pool: lab-lb-pool
+        metallb.io/address-pool: lab-lb-pool
       type: LoadBalancer
       loadBalancerIP: 10.1.10.252
