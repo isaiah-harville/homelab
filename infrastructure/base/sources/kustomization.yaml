@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - headlamp.helmrepository.yaml
   - open-webui.helmrepository.yaml
+  - paperless-ngx.helmrepository.yaml
