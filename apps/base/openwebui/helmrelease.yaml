@@ -26,6 +26,31 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value:
+                  name: ENABLE_LOGIN_FORM
+                  value: "false"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_PASSWORD_AUTH
+                  value: "false"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_SIGNUP
+                  value: "false"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_PERSISTENT_CONFIG
+                  value: "false"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_OAUTH_PERSISTENT_CONFIG
+                  value: "false"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
                   name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
                   value: "true"
               - op: add
