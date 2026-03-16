@@ -8,6 +8,7 @@ resources:
   - ../../../infrastructure/base/traefik
   - ../../../infrastructure/base/cert-manager
   - ../../../infrastructure/base/metallb
+  - ../../../infrastructure/base/reflector
   # - ../../../infrastructure/base/longhorn
   - ../../../infrastructure/base/monitoring
   - ../../../infrastructure/base/flux-dashboard
