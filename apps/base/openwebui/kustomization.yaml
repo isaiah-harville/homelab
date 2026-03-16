@@ -4,5 +4,7 @@ kind: Kustomization
 namespace: apps
 resources:
   - helmrelease.yaml
+  - pvc-longhorn.yaml
+  - ollama-pvc-longhorn.yaml
   - ingress.yaml
   - public.ingress.yaml

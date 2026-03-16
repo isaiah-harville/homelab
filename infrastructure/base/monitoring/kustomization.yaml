@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - helmrepo.yaml
   - helmrelease.yaml
+  - grafana-longhorn.pvc.yaml
