@@ -16,5 +16,6 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    - name: infra
     - name: apps-certificates
+    - name: infra
+    - name: sources

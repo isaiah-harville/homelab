@@ -8,6 +8,8 @@ spec:
   interval: 10m
   path: ./infrastructure/base/sources
   prune: true
+  wait: true
+  timeout: 2m
   sourceRef:
     kind: GitRepository
     name: flux-system
