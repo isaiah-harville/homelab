@@ -9,6 +9,7 @@ metadata:
     gethomepage.dev/group: AI
     gethomepage.dev/name: Open WebUI
     gethomepage.dev/description: Chat UI backed by Ollama
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=open-webui
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-internal

@@ -9,6 +9,7 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: Website
     gethomepage.dev/description: Personal site
+    gethomepage.dev/pod-selector: app=website
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
