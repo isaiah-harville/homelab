@@ -65,6 +65,7 @@ spec:
       enabled: true
       persistentVolume:
         enabled: true
+        existingClaim: openwebui-ollama-longhorn
         size: 50Gi
         accessModes:
           - ReadWriteOnce
@@ -72,3 +73,4 @@ spec:
       enabled: false
     persistence:
       enabled: true
+      existingClaim: openwebui-longhorn

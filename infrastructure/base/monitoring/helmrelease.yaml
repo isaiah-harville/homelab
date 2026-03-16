@@ -38,6 +38,7 @@ spec:
       persistence:
         enabled: true
         type: pvc
+        existingClaim: kube-prometheus-stack-grafana-longhorn
         size: 10Gi
         accessModes:
           - ReadWriteOnce

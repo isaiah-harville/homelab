@@ -45,7 +45,7 @@ spec:
       enabled: false
     persistence:
       enabled: true
-      existingClaim: authelia
+      existingClaim: authelia-longhorn
     configMap:
       identity_validation:
         reset_password:
