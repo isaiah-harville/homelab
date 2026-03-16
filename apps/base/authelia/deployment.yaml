@@ -15,6 +15,20 @@ spec:
         app: authelia
     spec:
       enableServiceLinks: false
+      initContainers:
+        - name: copy-config
+          image: docker.io/authelia/authelia:4.39.15
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - cp /secrets/configuration.yml /config/configuration.yml && cp /secrets/users_database.yml /config/users_database.yml
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-secret
+              mountPath: /secrets
+              readOnly: true
       containers:
         - name: authelia
           image: docker.io/authelia/authelia:4.39.15
@@ -50,11 +64,12 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-              readOnly: true
             - name: data
               mountPath: /var/lib/authelia
       volumes:
         - name: config
+          emptyDir: {}
+        - name: config-secret
           secret:
             secretName: authelia-config
         - name: data
