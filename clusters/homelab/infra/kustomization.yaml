@@ -9,7 +9,7 @@ resources:
   - ../../../infrastructure/base/cert-manager
   - ../../../infrastructure/base/metallb
   - ../../../infrastructure/base/reflector
-  # - ../../../infrastructure/base/longhorn
+  - ../../../infrastructure/base/longhorn
   - ../../../infrastructure/base/monitoring
   - ../../../infrastructure/base/flux-dashboard
   - ./secrets/cert-manager/cloudflare-api-token.yaml
