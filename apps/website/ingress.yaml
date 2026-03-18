@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: Website
     gethomepage.dev/description: Portfolio sites
-    gethomepage.dev/pod-selector: app=website
+    gethomepage.dev/pod-selector: app.kubernetes.io/part-of=website
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
@@ -24,7 +24,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: website
+                name: website-isaiah
                 port:
                   number: 80
     - host: anna.harville.dev
@@ -34,6 +34,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: website
+                name: website-anna
                 port:
                   number: 80
