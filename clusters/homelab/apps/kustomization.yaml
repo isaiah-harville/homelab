@@ -14,7 +14,7 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/base/paperless-ngx
-  - ../../../apps/base/orion
+  - ../../../apps/orion
   - ../../../apps/base/admin
-  - ../../../apps/base/website
+  - ../../../apps/site
   - ../../../apps/base/openwebui

@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: Orion
     gethomepage.dev/description: Public Orion app
-    gethomepage.dev/pod-selector: app in (orion-api,orion-gui)
+    gethomepage.dev/pod-selector: app=orion
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
@@ -24,13 +24,13 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: orion-gui
+                name: orion
                 port:
-                  number: 80
+                  name: gui
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: orion-api
+                name: orion
                 port:
-                  number: 80
+                  name: api
