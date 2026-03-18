@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: site
+  name: website
   namespace: flux-system
 spec:
   interval: 10m
@@ -12,7 +12,7 @@ spec:
   timeout: 2m
   sourceRef:
     kind: GitRepository
-    name: site
+    name: website
   dependsOn:
     - name: infra
     - name: apps-certificates

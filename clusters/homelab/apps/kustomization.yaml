@@ -16,5 +16,5 @@ resources:
   - ../../../apps/base/paperless-ngx
   - ../../../apps/orion
   - ../../../apps/base/admin
-  - ../../../apps/site
+  - ../../../apps/website
   - ../../../apps/base/openwebui
