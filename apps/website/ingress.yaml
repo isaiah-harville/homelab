@@ -8,16 +8,26 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Public
     gethomepage.dev/name: Website
-    gethomepage.dev/description: Personal site
+    gethomepage.dev/description: Portfolio sites
     gethomepage.dev/pod-selector: app=website
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [isaiah.harville.dev]
+    - hosts: [isaiah.harville.dev, anna.harville.dev]
       secretName: harville-wildcard-shared-tls
   rules:
     - host: isaiah.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: website
+                port:
+                  number: 80
+    - host: anna.harville.dev
       http:
         paths:
           - path: /
