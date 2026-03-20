@@ -10,7 +10,6 @@ metadata:
     gethomepage.dev/name: Orion
     gethomepage.dev/description: Public Orion app
     gethomepage.dev/pod-selector: app=orion
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-public
   tls:

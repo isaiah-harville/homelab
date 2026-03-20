@@ -14,3 +14,11 @@ resources:
   - ../../../infrastructure/base/flux-dashboard
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
+patches:
+  - target:
+      kind: Ingress
+      namespace: longhorn-system
+    patch: |-
+      - op: add
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
+        value: websecure

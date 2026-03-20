@@ -5,7 +5,6 @@ metadata:
   name: homepage
   namespace: apps
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-internal
   tls:
