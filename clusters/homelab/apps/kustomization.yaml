@@ -15,9 +15,9 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/base/paperless-ngx
-  - ../../../apps/orion
+  - ../../../apps/releases/orion
   - ../../../apps/base/admin
-  - ../../../apps/website
+  - ../../../apps/releases/website
   - ../../../apps/base/openwebui
 patches:
   - target:
@@ -27,6 +27,13 @@ patches:
       - op: add
         path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
         value: websecure
+  - target:
+      kind: Ingress
+      namespace: apps
+    patch: |-
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: harville-wildcard-shared-tls
 replacements:
   - source:
       kind: ConfigMap

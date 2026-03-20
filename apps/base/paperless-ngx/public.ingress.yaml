@@ -10,7 +10,6 @@ spec:
   ingressClassName: traefik-public
   tls:
     - hosts: [paperless.harville.dev]
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: paperless.harville.dev
       http:

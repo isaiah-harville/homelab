@@ -15,7 +15,6 @@ spec:
   ingressClassName: traefik-internal
   tls:
     - hosts: [webui.int.harville.dev]
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: webui.int.harville.dev
       http:
