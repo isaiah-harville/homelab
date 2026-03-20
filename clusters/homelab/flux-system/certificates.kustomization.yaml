@@ -2,11 +2,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: apps-certificates
+  name: certificates
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./apps/base/certificates
+  path: ./infrastructure/base/certificates
   prune: true
   wait: true
   timeout: 10m
