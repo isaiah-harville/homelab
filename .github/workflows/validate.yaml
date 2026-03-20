@@ -16,6 +16,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Lint YAML
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_file: .yamllint
+
   render:
     name: Render (${{ matrix.path }})
     runs-on: ubuntu-latest
@@ -66,9 +79,37 @@ jobs:
 
       - name: Helm repositories belong in infrastructure/base/sources
         run: |
-          bad="$(rg -l '^kind: HelmRepository$' infrastructure/base apps | grep -v '^infrastructure/base/sources/' || true)"
+          bad="$(
+            rg -l '^kind: HelmRepository$' infrastructure/base apps |
+            grep -v '^infrastructure/base/sources/' || true
+          )"
           if [ -n "$bad" ]; then
             echo "HelmRepository manifests found outside infrastructure/base/sources:"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Git repositories belong in apps/releases or Flux bootstrap
+        run: |
+          bad="$(
+            rg -l '^kind: GitRepository$' apps infrastructure clusters |
+            grep -v '^apps/releases/' |
+            grep -v '^clusters/.*/flux-system/gotk-sync.yaml$' || true
+          )"
+          if [ -n "$bad" ]; then
+            echo "GitRepository manifests found outside apps/releases or Flux bootstrap:"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Shared wildcard TLS stays centralized for app ingresses
+        run: |
+          bad="$(
+            rg -n 'secretName: harville-wildcard-shared-tls' apps \
+              --glob '*ingress.yaml' || true
+          )"
+          if [ -n "$bad" ]; then
+            echo "App ingress manifests should not hardcode the shared wildcard TLS secret:"
             echo "$bad"
             exit 1
           fi

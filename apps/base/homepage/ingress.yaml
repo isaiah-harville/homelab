@@ -4,7 +4,6 @@ kind: Ingress
 metadata:
   name: homepage
   namespace: apps
-  annotations:
 spec:
   ingressClassName: traefik-internal
   tls:
