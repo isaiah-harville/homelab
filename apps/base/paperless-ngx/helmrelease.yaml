@@ -50,7 +50,7 @@ spec:
   chart:
     spec:
       chart: paperless-ngx
-      version: "0.3.15"
+      version: "0.3.17"
       sourceRef:
         kind: HelmRepository
         name: paperless-ngx
