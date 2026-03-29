@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./secrets/ghcr-pull.yaml
+  - ./secrets/authelia-core.yaml
   - ./secrets/authelia-config.yaml
   - ./secrets/authelia-extras.yaml
   - ./secrets/authelia-oidc-rsa.yaml
@@ -14,7 +15,107 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/base/paperless-ngx
-  - ../../../apps/orion
+  - ../../../apps/releases/orion
   - ../../../apps/base/admin
-  - ../../../apps/website
+  - ../../../apps/releases/website
   - ../../../apps/base/openwebui
+patches:
+  - target:
+      kind: Ingress
+      namespace: apps
+    patch: |-
+      - op: add
+        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
+        value: websecure
+  - target:
+      kind: Ingress
+      namespace: apps
+    patch: |-
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: harville-wildcard-shared-tls
+replacements:
+  - source:
+      kind: ConfigMap
+      name: authelia-config
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-config-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: authelia-core
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-core-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: authelia-extras
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-extras-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: authelia-oidc-rsa
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-oidc-rsa-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: authelia-secrets
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-secrets-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: authelia-users-database
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authelia
+          namespace: apps
+        fieldPaths:
+          - spec.values.pod.annotations.authelia-users-database-mac
+        options:
+          create: true

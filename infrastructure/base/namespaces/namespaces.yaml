@@ -22,6 +22,11 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: certificates
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: metallb-system
 ---
 apiVersion: v1

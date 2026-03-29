@@ -5,13 +5,11 @@ metadata:
   name: paperless-public
   namespace: apps
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-public
   tls:
     - hosts: [paperless.harville.dev]
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: paperless.harville.dev
       http:

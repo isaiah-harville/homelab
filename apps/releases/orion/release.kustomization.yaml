@@ -15,4 +15,4 @@ spec:
     name: orion
   dependsOn:
     - name: infra
-    - name: apps-certificates
+    - name: certificates

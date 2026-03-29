@@ -3,13 +3,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: echo-server
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik-internal
   tls:
     - hosts: [echo.int.harville.dev]
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: echo.int.harville.dev
       http:

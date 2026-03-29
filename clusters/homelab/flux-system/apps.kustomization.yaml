@@ -8,6 +8,8 @@ spec:
   interval: 10m
   path: ./clusters/homelab/apps
   prune: true
+  wait: true
+  timeout: 10m
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -16,6 +18,6 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    - name: apps-certificates
+    - name: certificates
     - name: infra
     - name: sources

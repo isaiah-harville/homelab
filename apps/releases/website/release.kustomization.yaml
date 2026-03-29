@@ -15,4 +15,4 @@ spec:
     name: website
   dependsOn:
     - name: infra
-    - name: apps-certificates
+    - name: certificates

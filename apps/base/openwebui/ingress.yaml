@@ -10,13 +10,11 @@ metadata:
     gethomepage.dev/name: Open WebUI
     gethomepage.dev/description: Chat UI backed by Ollama
     gethomepage.dev/pod-selector: app.kubernetes.io/name=open-webui
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-internal
   tls:
     - hosts: [webui.int.harville.dev]
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: webui.int.harville.dev
       http:
