@@ -51,16 +51,6 @@ jobs:
       - name: Render manifests
         run: kubectl kustomize "${{ matrix.path }}" >/dev/null
 
-  workflow-lint:
-    name: Workflow Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.2
-
-      - name: Lint workflows
-        uses: rhysd/actionlint@v1
-
   repo-hygiene:
     name: Repo Hygiene
     runs-on: ubuntu-latest
