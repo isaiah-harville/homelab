@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: swing-thoughts
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Swing Thoughts Support
+    gethomepage.dev/description: Support page and under-construction notice
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [swing-thoughts.harville.dev]
+  rules:
+    - host: swing-thoughts.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80

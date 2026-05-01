@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swing-thoughts-html
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Swing Thoughts support page." />
+        <title>Swing Thoughts Support</title>
+        <style>
+          :root {
+            color-scheme: dark;
+          }
+
+          html,
+          body {
+            height: 100%;
+            margin: 0;
+          }
+
+          body {
+            display: grid;
+            place-items: center;
+            background: #000;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+          }
+
+          main {
+            max-width: 42rem;
+            padding: 2rem;
+            text-align: center;
+          }
+
+          h1 {
+            margin: 0 0 1rem;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+          }
+
+          p {
+            margin: 0;
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            line-height: 1.6;
+          }
+
+          .note {
+            margin-top: 1.25rem;
+            font-size: 1rem;
+            opacity: 0.72;
+          }
+
+          a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+          }
+        </style>
+      </head>
+      <body>
+        <main>
+          <h1>for support email isaiah@harville.dev</h1>
+          <p class="note">Site under construction.</p>
+        </main>
+      </body>
+    </html>
