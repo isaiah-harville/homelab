@@ -10,6 +10,7 @@ resources:
   - ./secrets/authelia-secrets.yaml
   - ./secrets/authelia-users-database.yaml
   - ./secrets/paperless-values.yaml
+  - ./secrets/swing-thoughts-auth.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
