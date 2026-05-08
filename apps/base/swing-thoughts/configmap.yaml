@@ -9,7 +9,6 @@ data:
       listen 8080;
       server_name _;
       root /usr/share/nginx/html;
-      index index.html;
 
       location = /.well-known/apple-app-site-association {
           default_type application/json;
@@ -29,7 +28,7 @@ data:
       }
 
       location / {
-        return 301 https://swingthoughtspro.com/support;
+          try_files /home.html =404;
       }
     }
   apple-app-site-association: |
@@ -45,70 +44,348 @@ data:
         ]
       }
     }
+  home.html: |
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Swing Thoughts Pro — Your Golf Brain, Organized. Track swing thoughts, sessions, and progress in one beautiful place." />
+        <title>Swing Thoughts Pro</title>
+        <style>
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+          :root {
+            --bg:        #091E10;
+            --bg2:       #143320;
+            --gold:      #C9A84C;
+            --gold-lt:   #E8D07A;
+            --cream:     #F8F4EC;
+            --muted:     rgba(255,255,255,0.55);
+          }
+
+          html, body { min-height: 100%; }
+
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: #fff;
+          }
+
+          .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem 4.5rem;
+            text-align: center;
+            background:
+              radial-gradient(ellipse at 68% 22%, rgba(201,168,76,0.09) 0%, transparent 52%),
+              linear-gradient(165deg, #091E10 0%, #143320 55%, #091E10 100%);
+          }
+
+          .app-icon {
+            width: 128px;
+            height: 128px;
+            border-radius: 26px;
+            display: block;
+            box-shadow:
+              0 20px 56px rgba(0,0,0,0.58),
+              0 0 0 1px rgba(201,168,76,0.22);
+            margin-bottom: 2rem;
+          }
+
+          h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: bold;
+            color: var(--cream);
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+            margin-bottom: 0.65rem;
+          }
+
+          .tagline {
+            font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+            color: var(--gold);
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+          }
+
+          .desc {
+            color: var(--muted);
+            font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+            max-width: 400px;
+            line-height: 1.8;
+            margin: 0 auto 2.5rem;
+          }
+
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            background: var(--gold);
+            color: #091E10;
+            text-decoration: none;
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.01em;
+            box-shadow: 0 6px 22px rgba(201,168,76,0.38);
+            transition: background 0.18s, transform 0.14s, box-shadow 0.18s;
+          }
+
+          .btn:hover {
+            background: var(--gold-lt);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(201,168,76,0.5);
+          }
+
+          .btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+          .sep {
+            width: 36px;
+            height: 1px;
+            background: rgba(201,168,76,0.28);
+            margin: 3rem auto 1.5rem;
+          }
+
+          .links {
+            display: flex;
+            gap: 2.5rem;
+          }
+
+          .links a {
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            transition: color 0.18s;
+          }
+
+          .links a:hover { color: var(--gold); }
+        </style>
+      </head>
+      <body>
+        <div class="hero">
+
+          <svg class="app-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Swing Thoughts Pro icon">
+            <defs>
+              <radialGradient id="ball" cx="40%" cy="36%" r="56%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="100%" stop-color="#E2E2E2"/>
+              </radialGradient>
+            </defs>
+            <rect width="200" height="200" rx="44" fill="#0D3B1E"/>
+            <circle cx="100" cy="104" r="76" fill="url(#ball)"/>
+            <circle cx="100" cy="40"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="82"  cy="46"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="118" cy="46"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="66"  cy="58"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="134" cy="58"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="54"  cy="74"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="146" cy="74"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="47"  cy="92"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="153" cy="92"  r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="47"  cy="114" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="153" cy="114" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="54"  cy="132" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="146" cy="132" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="66"  cy="148" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="134" cy="148" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="82"  cy="162" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="118" cy="162" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <circle cx="100" cy="168" r="3.2" fill="rgba(0,0,0,0.08)"/>
+            <text
+              x="100" y="122"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-family="Georgia, 'Times New Roman', serif"
+              font-style="italic"
+              font-weight="bold"
+              font-size="80"
+              fill="#0D3B1E"
+            >ST</text>
+          </svg>
+
+          <h1>Swing Thoughts Pro</h1>
+          <p class="tagline">Your Golf Brain, Organized</p>
+          <p class="desc">Track swing thoughts, sessions, and progress in one beautiful place. Built for golfers who want to remember what works.</p>
+
+          <a class="btn" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+            Download on the App Store
+          </a>
+
+          <div class="sep"></div>
+          <div class="links">
+            <a href="/support">Support</a>
+            <a href="/privacy-policy">Privacy Policy</a>
+          </div>
+
+        </div>
+      </body>
+    </html>
   index.html: |
     <!doctype html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Swing Thoughts support page." />
-        <title>Swing Thoughts Support</title>
+        <meta name="description" content="Support for Swing Thoughts Pro." />
+        <title>Support — Swing Thoughts Pro</title>
         <style>
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
           :root {
-            color-scheme: dark;
+            --bg:      #091E10;
+            --gold:    #C9A84C;
+            --gold-lt: #E8D07A;
+            --cream:   #F8F4EC;
+            --muted:   rgba(255,255,255,0.55);
+            --border:  rgba(201,168,76,0.14);
           }
 
-          html,
-          body {
-            height: 100%;
-            margin: 0;
-          }
+          html, body { min-height: 100%; }
 
           body {
-            display: grid;
-            place-items: center;
-            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
             color: #fff;
-            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+          }
+
+          header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border);
+          }
+
+          .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            text-decoration: none;
+            color: inherit;
+          }
+
+          .brand svg {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            flex-shrink: 0;
+          }
+
+          .brand-name {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--cream);
           }
 
           main {
-            max-width: 42rem;
-            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
+            padding: 4rem 2rem;
           }
 
           h1 {
-            margin: 0 0 1rem;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            line-height: 1.05;
-            letter-spacing: -0.04em;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: var(--cream);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
           }
 
-          p {
-            margin: 0;
-            font-size: clamp(1.1rem, 2vw, 1.4rem);
-            line-height: 1.6;
+          .contact {
+            color: var(--muted);
+            font-size: 1.05rem;
+            margin-bottom: 0.75rem;
+          }
+
+          a.email {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(201,168,76,0.38);
+            padding-bottom: 1px;
+            transition: color 0.18s, border-color 0.18s;
+          }
+
+          a.email:hover {
+            color: var(--gold-lt);
+            border-color: var(--gold-lt);
           }
 
           .note {
-            margin-top: 1.25rem;
-            font-size: 1rem;
-            opacity: 0.72;
+            color: var(--muted);
+            font-size: 0.9rem;
+            max-width: 360px;
+            line-height: 1.7;
+            margin-top: 0.5rem;
           }
 
-          a {
-            color: inherit;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+          footer {
+            padding: 1.5rem 2rem;
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
           }
+
+          footer a {
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.18s;
+          }
+
+          footer a:hover { color: var(--gold); }
         </style>
       </head>
       <body>
+        <header>
+          <a href="/" class="brand">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <radialGradient id="b" cx="40%" cy="36%" r="56%">
+                  <stop offset="0%" stop-color="#FFFFFF"/>
+                  <stop offset="100%" stop-color="#E2E2E2"/>
+                </radialGradient>
+              </defs>
+              <rect width="200" height="200" rx="44" fill="#0D3B1E"/>
+              <circle cx="100" cy="104" r="76" fill="url(#b)"/>
+              <text x="100" y="122" text-anchor="middle" dominant-baseline="middle"
+                font-family="Georgia, 'Times New Roman', serif"
+                font-style="italic" font-weight="bold" font-size="80" fill="#0D3B1E">ST</text>
+            </svg>
+            <span class="brand-name">Swing Thoughts Pro</span>
+          </a>
+        </header>
+
         <main>
-          <h1>For support, email isaiah@harville.dev</h1>
-          <p class="note">Site under construction.</p>
+          <h1>Support</h1>
+          <p class="contact">Questions or feedback? Email us at</p>
+          <a class="email" href="mailto:isaiah@harville.dev">isaiah@harville.dev</a>
+          <p class="note">We'll get back to you as soon as possible.</p>
         </main>
+
+        <footer>
+          <a href="/">Home</a>
+          <a href="/privacy-policy">Privacy Policy</a>
+        </footer>
       </body>
     </html>
   privacy-policy.html: |
@@ -118,72 +395,150 @@ data:
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Privacy Policy for Swing Thoughts Pro." />
-        <title>Privacy Policy for Swing Thoughts Pro</title>
+        <title>Privacy Policy — Swing Thoughts Pro</title>
         <style>
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
           :root {
-            color-scheme: dark;
+            --bg:      #091E10;
+            --gold:    #C9A84C;
+            --gold-lt: #E8D07A;
+            --cream:   #F8F4EC;
+            --text:    rgba(255,255,255,0.84);
+            --muted:   rgba(255,255,255,0.52);
+            --border:  rgba(201,168,76,0.14);
           }
 
-          html,
-          body {
-            min-height: 100%;
-            margin: 0;
-          }
+          html, body { min-height: 100%; }
 
           body {
-            background: #000;
-            color: #fff;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+          }
+
+          header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border);
+          }
+
+          .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            text-decoration: none;
+            color: inherit;
+          }
+
+          .brand svg {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            flex-shrink: 0;
+          }
+
+          .brand-name {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--cream);
           }
 
           main {
-            box-sizing: border-box;
             max-width: 48rem;
             margin: 0 auto;
-            padding: 3rem 1.5rem 4rem;
+            padding: 3rem 1.5rem 5rem;
           }
 
           h1 {
-            margin: 0 0 0.5rem;
+            font-family: Georgia, 'Times New Roman', serif;
             font-size: 2.25rem;
+            color: var(--cream);
             line-height: 1.15;
+            margin-bottom: 0.5rem;
           }
 
           .effective-date {
-            margin: 0 0 2rem;
-            opacity: 0.72;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 2.5rem;
           }
 
           h2 {
-            margin: 2rem 0 0.75rem;
-            font-size: 1.1rem;
+            color: var(--gold);
+            font-size: 0.8rem;
             font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin: 2.25rem 0 0.75rem;
           }
 
           p {
-            margin: 0 0 1rem;
             font-size: 1rem;
-            line-height: 1.65;
+            line-height: 1.72;
+            color: var(--text);
+            margin-bottom: 1rem;
           }
 
           ul {
-            margin: 0.25rem 0 1rem;
-            padding-left: 1.25rem;
+            margin: 0.25rem 0 1rem 1.25rem;
           }
 
           li {
             margin: 0.4rem 0;
-            line-height: 1.55;
+            line-height: 1.65;
+            color: var(--text);
           }
 
           a {
-            color: inherit;
+            color: var(--gold);
             text-decoration: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+            border-bottom: 1px solid rgba(201,168,76,0.32);
+            transition: color 0.18s, border-color 0.18s;
+          }
+
+          a:hover {
+            color: var(--gold-lt);
+            border-bottom-color: var(--gold-lt);
+          }
+
+          footer {
+            max-width: 48rem;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+          }
+
+          footer a {
+            color: rgba(255,255,255,0.35);
+            border-bottom: none;
+            font-size: 0.875rem;
           }
         </style>
       </head>
       <body>
+        <header>
+          <a href="/" class="brand">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <radialGradient id="b" cx="40%" cy="36%" r="56%">
+                  <stop offset="0%" stop-color="#FFFFFF"/>
+                  <stop offset="100%" stop-color="#E2E2E2"/>
+                </radialGradient>
+              </defs>
+              <rect width="200" height="200" rx="44" fill="#0D3B1E"/>
+              <circle cx="100" cy="104" r="76" fill="url(#b)"/>
+              <text x="100" y="122" text-anchor="middle" dominant-baseline="middle"
+                font-family="Georgia, 'Times New Roman', serif"
+                font-style="italic" font-weight="bold" font-size="80" fill="#0D3B1E">ST</text>
+            </svg>
+            <span class="brand-name">Swing Thoughts Pro</span>
+          </a>
+        </header>
+
         <main>
           <h1>Privacy Policy for Swing Thoughts Pro</h1>
           <p class="effective-date"><strong>Effective Date:</strong> May 8, 2026</p>
@@ -236,5 +591,10 @@ data:
             <li><a href="https://developer.apple.com/documentation/storekit/in-app-purchase/">Apple In-App Purchase documentation</a></li>
           </ul>
         </main>
+
+        <footer>
+          <a href="/">Home</a>
+          <a href="/support">Support</a>
+        </footer>
       </body>
     </html>
