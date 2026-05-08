@@ -12,7 +12,7 @@ data:
       index index.html;
 
       location = /.well-known/apple-app-site-association {
-          add_header Content-Type application/json;
+          default_type application/json;
           try_files $uri =404;
       }
 
