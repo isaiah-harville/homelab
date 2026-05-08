@@ -5,7 +5,5 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - redirect-middleware.yaml
-  - redirect-ingress.yaml
   - ingress.yaml
 namespace: apps

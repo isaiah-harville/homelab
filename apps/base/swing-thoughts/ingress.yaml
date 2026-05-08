@@ -45,3 +45,10 @@ spec:
                 name: swing-thoughts
                 port:
                   number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80

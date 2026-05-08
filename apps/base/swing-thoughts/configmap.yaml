@@ -20,8 +20,16 @@ data:
           try_files /privacy-policy.html =404;
       }
 
+      location /import {
+          try_files /index.html =404;
+      }
+
+      location /support {
+          try_files /index.html =404;
+      }
+
       location / {
-        try_files $uri $uri/ /index.html;
+        return 301 /support;
       }
     }
   apple-app-site-association: |
