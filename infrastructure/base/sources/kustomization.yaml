@@ -12,4 +12,3 @@ resources:
   - authelia.helmrepository.yaml
   - headlamp.helmrepository.yaml
   - open-webui.helmrepository.yaml
-  - paperless-ngx.helmrepository.yaml
