@@ -36,9 +36,6 @@ spec:
                 value:
                   - name: Host
                     value: paperless.harville.dev
-              - op: replace
-                path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
-                value: paperless-longhorn
   install:
     remediation:
       retries: 3
@@ -87,7 +84,7 @@ spec:
       enabled: true
       accessMode: ReadWriteOnce
       size: 50Gi
-      storageClass: local-path
+      storageClass: longhorn
     postgresql:
       enabled: true
       primary:
