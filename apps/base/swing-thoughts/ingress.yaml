@@ -31,6 +31,13 @@ spec:
                 name: swing-thoughts
                 port:
                   number: 80
+          - path: /privacy-policy
+            pathType: Exact
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
           - path: /support
             pathType: Prefix
             backend:

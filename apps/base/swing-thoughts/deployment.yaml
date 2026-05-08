@@ -46,6 +46,10 @@ spec:
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
               readOnly: true
+            - name: html
+              mountPath: /usr/share/nginx/html/privacy-policy.html
+              subPath: privacy-policy.html
+              readOnly: true
             - name: aasa
               mountPath: /usr/share/nginx/html/.well-known
               readOnly: true
