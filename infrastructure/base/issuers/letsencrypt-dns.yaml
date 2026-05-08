@@ -13,6 +13,7 @@ spec:
       - selector:
           dnsZones:
             - harville.dev
+            - harville.ai
         dns01:
           cloudflare:
             apiTokenSecretRef:
