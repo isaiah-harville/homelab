@@ -5,6 +5,6 @@ metadata:
   name: swing-thoughts-redirect
 spec:
   redirectRegex:
-    regex: ^https?://swingthoughts\.harville\.dev/?(.*)
-    replacement: https://swing-thoughts.harville.dev/$1
+    regex: ^https?://(?:www\.)?swingthoughtspro\.com(?:/.*)?$
+    replacement: https://swingthoughtspro.com/support
     permanent: true

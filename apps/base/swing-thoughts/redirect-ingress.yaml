@@ -8,9 +8,10 @@ metadata:
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [swingthoughts.harville.dev]
+    - hosts: [swingthoughtspro.com]
+      secretName: swingthoughtspro-tls
   rules:
-    - host: swingthoughts.harville.dev
+    - host: swingthoughtspro.com
       http:
         paths:
           - path: /

@@ -46,6 +46,10 @@ spec:
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
               readOnly: true
+            - name: html
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
       volumes:
         - name: html
           configMap:

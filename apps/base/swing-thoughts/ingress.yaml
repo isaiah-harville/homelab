@@ -11,12 +11,13 @@ metadata:
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [swing-thoughts.harville.dev]
+    - hosts: [swingthoughtspro.com]
+      secretName: swingthoughtspro-tls
   rules:
-    - host: swing-thoughts.harville.dev
+    - host: swingthoughtspro.com
       http:
         paths:
-          - path: /
+          - path: /support
             pathType: Prefix
             backend:
               service:

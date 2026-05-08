@@ -4,6 +4,17 @@ kind: ConfigMap
 metadata:
   name: swing-thoughts-html
 data:
+  default.conf: |
+    server {
+      listen 8080;
+      server_name _;
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+    }
   index.html: |
     <!doctype html>
     <html lang="en">
@@ -65,7 +76,7 @@ data:
       </head>
       <body>
         <main>
-          <h1>for support email isaiah@harville.dev</h1>
+          <h1>For support, email isaiah@harville.dev</h1>
           <p class="note">Site under construction.</p>
         </main>
       </body>

@@ -18,3 +18,11 @@ spec:
             apiTokenSecretRef:
               name: cloudflare-api-token
               key: api-token
+      - selector:
+          dnsZones:
+            - swingthoughtspro.com
+        dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
