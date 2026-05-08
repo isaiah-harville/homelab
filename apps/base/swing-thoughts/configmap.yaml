@@ -29,7 +29,7 @@ data:
       }
 
       location / {
-        return 301 /support;
+        return 301 https://swingthoughtspro.com/support;
       }
     }
   apple-app-site-association: |
