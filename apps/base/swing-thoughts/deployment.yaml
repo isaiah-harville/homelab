@@ -46,6 +46,9 @@ spec:
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
               readOnly: true
+            - name: aasa
+              mountPath: /usr/share/nginx/html/.well-known
+              readOnly: true
             - name: html
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
@@ -54,3 +57,9 @@ spec:
         - name: html
           configMap:
             name: swing-thoughts-html
+        - name: aasa
+          configMap:
+            name: swing-thoughts-html
+            items:
+              - key: apple-app-site-association
+                path: apple-app-site-association

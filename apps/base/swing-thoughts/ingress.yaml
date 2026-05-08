@@ -17,6 +17,20 @@ spec:
     - host: swingthoughtspro.com
       http:
         paths:
+          - path: /.well-known/apple-app-site-association
+            pathType: Exact
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
+          - path: /import
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
           - path: /support
             pathType: Prefix
             backend:

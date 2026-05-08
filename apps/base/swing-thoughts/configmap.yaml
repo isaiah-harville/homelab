@@ -11,8 +11,26 @@ data:
       root /usr/share/nginx/html;
       index index.html;
 
+      location = /.well-known/apple-app-site-association {
+          add_header Content-Type application/json;
+          try_files $uri =404;
+      }
+
       location / {
         try_files $uri $uri/ /index.html;
+      }
+    }
+  apple-app-site-association: |
+    {
+      "applinks": {
+        "details": [
+          {
+            "appIDs": ["PUMV3ZMP9G.com.isaiah-harville.SwingThoughts"],
+            "components": [
+              { "/": "/import*", "comment": "Thought import links" }
+            ]
+          }
+        ]
       }
     }
   index.html: |
