@@ -16,7 +16,7 @@ data:
           try_files $uri =404;
       }
 
-      location = /privacy-policy {
+      location /privacy-policy {
           try_files /privacy-policy.html =404;
       }
 
