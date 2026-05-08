@@ -1,0 +1,55 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: swing-thoughts
+  namespace: apps
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Swing Thoughts Pro
+    gethomepage.dev/description: Website, support, privacy policy, and universal links
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [swingthoughtspro.com]
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: swingthoughtspro.com
+      http:
+        paths:
+          - path: /.well-known/apple-app-site-association
+            pathType: Exact
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
+          - path: /import
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
+          - path: /privacy-policy
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
+          - path: /support
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: swing-thoughts
+                port:
+                  number: 80
