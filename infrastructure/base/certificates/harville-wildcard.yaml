@@ -17,3 +17,7 @@ spec:
   dnsNames:
     - "*.harville.dev"
     - "*.int.harville.dev"
+    - "*.harville.ai"
+    - "*.int.harville.ai"
+    - "swingthoughtspro.com"
+    - "*.swingthoughtspro.com"
