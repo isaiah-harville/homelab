@@ -7,15 +7,15 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Public
-    gethomepage.dev/name: Swing Thoughts Pro
+    gethomepage.dev/name: InnerSwing
     gethomepage.dev/description: Website, support, privacy policy, and universal links
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [swingthoughtspro.com]
+    - hosts: [innerswings.com]
       secretName: harville-wildcard-shared-tls
   rules:
-    - host: swingthoughtspro.com
+    - host: innerswings.com
       http:
         paths:
           - path: /.well-known/apple-app-site-association
