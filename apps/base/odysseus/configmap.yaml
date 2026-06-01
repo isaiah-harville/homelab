@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odysseus-config
+  namespace: apps
+data:
+  OLLAMA_BASE_URL: "http://10.1.1.20:8000/v1"
+  SEARXNG_INSTANCE: "http://odysseus-searxng:8080"
+  CHROMADB_HOST: "odysseus-chromadb"
+  CHROMADB_PORT: "8000"
+  APP_BIND: "0.0.0.0"
+  APP_PORT: "7000"
+  AUTH_ENABLED: "true"
+  # Local CPU fallback for embeddings — swap for an EMBEDDING_URL if vLLM
+  # serves an embedding model (vllm serve <model> --task embed)
+  FASTEMBED_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  FASTEMBED_CACHE_PATH: "/app/data/fastembed"

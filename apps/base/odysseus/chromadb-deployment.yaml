@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odysseus-chromadb
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: odysseus-chromadb
+  template:
+    metadata:
+      labels:
+        app: odysseus-chromadb
+    spec:
+      containers:
+        - name: chromadb
+          image: docker.io/chromadb/chroma:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ANONYMIZED_TELEMETRY
+              value: "FALSE"
+          volumeMounts:
+            - name: data
+              mountPath: /chroma/chroma
+          readinessProbe:
+            httpGet:
+              path: /api/v1/heartbeat
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: odysseus-chromadb
