@@ -15,7 +15,7 @@ spec:
         app: odysseus
     spec:
       imagePullSecrets:
-        - name: ghcr-pull
+        - name: ghcr-pull-secret
       securityContext:
         fsGroup: 1000
       containers:
