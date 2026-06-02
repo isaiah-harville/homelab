@@ -27,7 +27,7 @@ spec:
               mountPath: /chroma/chroma
           readinessProbe:
             httpGet:
-              path: /api/v1/heartbeat
+              path: /api/v2/heartbeat
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -37,6 +37,7 @@ spec:
               cpu: 100m
             limits:
               memory: 1Gi
+              cpu: 500m
       volumes:
         - name: data
           persistentVolumeClaim:
