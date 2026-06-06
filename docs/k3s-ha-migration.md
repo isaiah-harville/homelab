@@ -1,8 +1,9 @@
 # k3s Control-Plane HA Migration (runbook)
 
-Status: Phases 1-2 done (2026-06-06). dl380 is on embedded etcd and the VIP
-(10.1.10.9) is live. Still to do: join precision-1 and precision-2 as servers
-(Phase 3), then repoint agents/kubectl at the VIP (Phase 4) and test (Phase 5).
+Status: Phases 1-4 done (2026-06-06). Three etcd servers (dl380, precision-1,
+precision-2) behind the VIP at 10.1.10.9; agents and kubectl point at the VIP.
+The cluster now survives losing any one server. Left to do: the failover test
+(Phase 5), whenever you want to prove it.
 
 ## Goal
 
@@ -113,49 +114,73 @@ Two settings worth remembering:
 Checked: VIP is up on `eno1`, `kubectl --server https://10.1.10.9:6443 get nodes`
 works, and kube-vip's log shows it took the lease and started the ARP broadcaster.
 
-## Phase 3 — Join `precision-1`, then `precision-2`, as servers
+## Phase 3 — precision-1 and precision-2 to servers (done 2026-06-06)
 
-Both currently hold Longhorn data, so for **each** (one at a time, verifying etcd
-health before the next): drain → detach storage → uninstall the agent → let
-ansible install the server.
+First fix: the four existing volumes were still replica-2 with both copies on
+dl380 + precision-1 (the default-3 change only affected new volumes). Evicting
+precision-1 in that state would have left single copies on dl380, so before
+touching anything the volumes were raised to 3 replicas and left to rebuild
+healthy across dl380/precision-1/precision-2.
 
 ```bash
-# 1. Drain (from dl380) and wait for Longhorn to rebuild replicas elsewhere
-kubectl cordon precision-1
-kubectl drain precision-1 --ignore-daemonsets --delete-emptydir-data
-kubectl -n longhorn-system get volumes.longhorn.io   # wait for healthy again
-
-# 2. On the node, remove the agent
-ssh isaiah@10.1.10.30 'sudo /usr/local/bin/k3s-agent-uninstall.sh'
-
-# 3. Join it as a server (ansible writes config.yaml -> VIP, installs k3s server)
-ansible-playbook playbooks/servers.yml --limit precision-1
-
-# 4. Back in the cluster
-kubectl uncordon precision-1
+for v in $(kubectl -n longhorn-system get volumes.longhorn.io -o name | sed 's#.*/##'); do
+  kubectl -n longhorn-system patch volumes.longhorn.io "$v" --type=merge \
+    -p '{"spec":{"numberOfReplicas":3}}'
+done
 ```
 
-The `k3s_server` role refuses to run while the agent is still present, so step 3
-can't accidentally stack a server on a live agent. Then repeat for `precision-2`.
-
-- [ ] `kubectl get nodes` shows 3 × `control-plane,etcd`; `sudo k3s etcd-snapshot save`;
-      etcd has 3 members; kube-vip runs on all 3.
-
-## Phase 4 — Repoint agents + kubectl to the VIP
-
-- Ansible: set `k3s_server_url: https://10.1.10.9:6443`.
-- Each remaining agent (`precision-2`, `latitude-01`): set `server: https://10.1.10.9:6443`
-  in its `config.yaml` and `sudo systemctl restart k3s-agent`.
-- Update your kubeconfig `server:` → `https://10.1.10.9:6443` for off-`dl380` access.
-
-## Phase 5 — Prove failover
+Then each node, one at a time, watching that no volume dropped below two healthy
+copies. A plain `kubectl drain` would hang on Longhorn's instance-manager PDB, so
+the replicas get evicted through Longhorn first:
 
 ```bash
-sudo k3s etcd-snapshot save                          # baseline
-sudo systemctl stop k3s          # on dl380
-kubectl --server https://10.1.10.9:6443 get nodes    # still works (VIP floated)
-# confirm apps keep running / can schedule, then:
-sudo systemctl start k3s         # dl380's etcd member rejoins
+kubectl cordon precision-1
+kubectl -n longhorn-system patch nodes.longhorn.io precision-1 --type=merge \
+  -p '{"spec":{"allowScheduling":false,"evictionRequested":true}}'
+# wait until precision-1 holds 0 replicas and volumes are still healthy
+kubectl drain precision-1 --ignore-daemonsets --delete-emptydir-data
+ansible precision-1 -m command -a /usr/local/bin/k3s-agent-uninstall.sh -b
+ansible-playbook playbooks/servers.yml --limit precision-1   # joins as etcd server
+kubectl uncordon precision-1
+kubectl -n longhorn-system patch nodes.longhorn.io precision-1 --type=merge \
+  -p '{"spec":{"allowScheduling":true,"evictionRequested":false}}'
+```
+
+`servers.yml` refuses to run while the agent is still installed, so it can't
+stack a server on a live agent. Same sequence for precision-2. End state:
+`kubectl get nodes` shows dl380, precision-1, precision-2 as `control-plane,etcd`
+(three members, tolerates one failure), volumes healthy, snapshots taken after
+each join. Note the brief two-member window between the two joins, where the
+cluster tolerated no failures — that's why precision-2 followed precision-1
+straight away.
+
+## Phase 4 — Everything onto the VIP (done 2026-06-06)
+
+The two agents were pinned to dl380 directly (`K3S_URL='https://10.1.10.10:6443'`
+in `/etc/systemd/system/k3s-agent.service.env`), so they'd have lost the API if
+dl380 went down. Repointed both at the VIP and restarted k3s-agent:
+
+```bash
+ansible k3s_agents -m replace -b \
+  -a "path=/etc/systemd/system/k3s-agent.service.env regexp='10\.1\.10\.10:6443' replace='10.1.10.9:6443'"
+ansible k3s_agents -m systemd -a "name=k3s-agent state=restarted daemon_reload=true" -b
+```
+
+Also pointed `~/.kube/config` at `https://10.1.10.9:6443`. In git: `k3s_server_url`
+now resolves to the VIP, and the `k3s_node` role keeps `K3S_URL` matched to it
+(restarts k3s-agent on change) so a re-run repoints any drifted agent.
+
+## Phase 5 — Failover test
+
+The proof that it all works. Stop k3s on dl380 and confirm the API still answers
+through the VIP and the cluster stays usable, then bring it back:
+
+```bash
+sudo k3s etcd-snapshot save                       # baseline
+sudo systemctl stop k3s                           # on dl380
+kubectl get nodes                                 # still works; VIP floated to a precision
+# confirm apps still schedule, then:
+sudo systemctl start k3s                          # dl380 rejoins etcd
 ```
 
 ---
