@@ -76,7 +76,7 @@
         state: directory
         mode: "0755"
 
-    - name: Write k3s agent config (GPU label + pinned node IP)
+    - name: Write k3s agent config (GPU labels + pinned node IP)
       # Pin node-ip: WSL has several interfaces (the LAN IP is on eth3), so don't
       # let k3s auto-pick a WSL-internal NAT address — advertise the routed LAN IP.
       ansible.builtin.copy:
@@ -87,6 +87,7 @@
           node-ip: {{ node_ip.split('/')[0] }}
           node-label:
             - "gpu=true"
+            - "nvidia.com/gpu.present=true"
           # Reserve the node for GPU work: general pods + Longhorn/metallb (which
           # don't tolerate this) stay off; vLLM + the device plugin tolerate it.
           node-taint:
