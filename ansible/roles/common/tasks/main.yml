@@ -49,3 +49,16 @@
   ansible.builtin.command: netplan apply
   when: netplan_config.changed
   changed_when: true
+
+# Keep the node up when a laptop lid is closed (no-op on machines without a lid).
+- name: Ignore laptop lid switch in logind
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/logind.conf
+    regexp: "^#?{{ item }}="
+    line: "{{ item }}=ignore"
+    state: present
+  loop:
+    - HandleLidSwitch
+    - HandleLidSwitchExternalPower
+    - HandleLidSwitchDocked
+  notify: Restart systemd-logind

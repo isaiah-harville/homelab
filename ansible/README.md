@@ -6,7 +6,7 @@ All cluster-wide settings live in `group_vars/all/`, and the secrets (k3s token,
 
 ## What it does
 
-1. **common** — sets hostname, creates/sets the user password, configures the static IP via netplan
+1. **common** — sets hostname, creates/sets the user password, configures the static IP via netplan, ignores the laptop lid switch (so closing the lid doesn't suspend the node)
 2. **longhorn** — installs the host prereqs (`open-iscsi`, `nfs-common`, `cryptsetup`, `dmsetup`), creates `/data/longhorn`, loads `iscsi_tcp` + `dm_crypt`
 3. **k3s_node** — installs the k3s agent and joins the cluster
 
