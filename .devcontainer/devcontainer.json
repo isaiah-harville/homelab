@@ -2,9 +2,19 @@
   "name": "mono",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
+    "ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
+      "packages": "pkg-config,autoconf,automake,libtool,libssl-dev,ca-certificates,curl"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/git-lfs:1": {
+      "autoPull": "false"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:3": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers-extra/features/uv:1": {},
     "ghcr.io/devcontainers/features/rust:1": {},
+    "ghcr.io/devcontainer-community/devcontainer-features/collection-c-cpp:1": {},
     "ghcr.io/devcontainers/features/node:2": {
       "version": "24",
       "pnpmVersion": "latest"
