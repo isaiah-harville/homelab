@@ -23,6 +23,18 @@ flux reconcile source git flux-system -n flux-system
 flux get kustomizations -A
 ```
 
+## Storage (Longhorn)
+
+Distributed block storage across the nodes, configured via Helm
+values in `infrastructure/base/longhorn/helmrelease.yaml`:
+
+- `defaultDataPath: /data/longhorn` + `storageReservedPercentageForDefaultDisk: 30`
+  — Longhorn auto-creates the disk on each node and reserves 30%. No per-node
+  config; provision a node with ansible and its storage appears automatically.
+- `defaultReplicaCount: 3` with strict anti-affinity puts one replica on each
+  node, so **any single node can fail with no data loss** and volumes stay
+  redundant during the outage.
+
 ## Devcontainer
 
 The `mono` devcontainer ships Python (uv), Rust, and pnpm

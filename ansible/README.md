@@ -7,8 +7,14 @@ All cluster-wide settings live in `group_vars/all/`, and the secrets (k3s token,
 ## What it does
 
 1. **common** — sets hostname, creates/sets the user password, configures the static IP via netplan
-2. **longhorn** — installs `open-iscsi`, `nfs-common`, creates `/data/longhorn`, loads `iscsi_tcp`
+2. **longhorn** — installs the host prereqs (`open-iscsi`, `nfs-common`, `cryptsetup`, `dmsetup`), creates `/data/longhorn`, loads `iscsi_tcp` + `dm_crypt`
 3. **k3s_node** — installs the k3s agent and joins the cluster
+
+> **Longhorn disks are auto-created — no per-node config.** This role prepares
+> the host and creates `/data/longhorn`. Once the node joins, Longhorn
+> auto-creates its default disk and applies the reserve % from the global
+> settings in `infrastructure/base/longhorn/helmrelease.yaml`. Provision a node
+> and its storage just appears.
 
 ## Layout
 
@@ -56,6 +62,11 @@ ansible-galaxy collection install community.general
    ```
 
    Omit `--limit` to (re)provision every host. Re-runs are idempotent.
+
+When the node joins, Longhorn auto-creates its disk at `/data/longhorn` (reserving 30% per the HelmRelease) and starts scheduling replicas there. Confirm with:
+```bash
+kubectl -n longhorn-system get nodes.longhorn.io
+```
 
 ## Common commands
 

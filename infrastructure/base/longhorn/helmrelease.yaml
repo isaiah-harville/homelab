@@ -24,10 +24,19 @@ spec:
         namespace: flux-system
   values:
     defaultSettings:
+      # Longhorn auto-creates a default disk at this path on every node and
+      # applies the reserve below. Provision a node (ansible) and its storage
+      # appears automatically — nothing per-node to declare.
       defaultDataPath: /data/longhorn
-      defaultReplicaCount: 2
+      storageReservedPercentageForDefaultDisk: 30
+      # 3 storage nodes, 3 replicas (one per node) → a single node can fail
+      # with zero data loss, and the volume stays redundant during the outage.
+      defaultReplicaCount: 3
+      # Keep new volumes fully redundant: don't create them unless all replicas
+      # can be scheduled across distinct nodes.
       allowVolumeCreationWithDegradedAvailability: false
       replicaAutoBalance: least-effort
+      # Strict anti-affinity: replicas of a volume must land on different nodes.
       replicaSoftAntiAffinity: false
     persistence:
-      defaultClassReplicaCount: 2
+      defaultClassReplicaCount: 3
