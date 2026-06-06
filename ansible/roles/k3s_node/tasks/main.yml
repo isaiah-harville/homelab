@@ -60,6 +60,10 @@
           node-ip: {{ node_ip.split('/')[0] }}
           node-label:
             - "gpu=true"
+          # Reserve the node for GPU work: general pods + Longhorn/metallb (which
+          # don't tolerate this) stay off; vLLM + the device plugin tolerate it.
+          node-taint:
+            - "dedicated=gpu:NoSchedule"
       notify: Restart k3s-agent
 
 - name: Download and run k3s agent installer

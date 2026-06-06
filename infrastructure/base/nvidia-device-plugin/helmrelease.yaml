@@ -30,6 +30,12 @@ spec:
     # Only schedule on GPU-labelled nodes (the WSL agent gets gpu=true).
     nodeSelector:
       gpu: "true"
+    # GPU nodes are tainted dedicated=gpu (reserved for GPU work) — tolerate it.
+    tolerations:
+      - key: dedicated
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
     # WSL2 exposes the GPU as a mounted device rather than via the usual NVML
     # device list, so advertise it through volume-mounts.
     deviceListStrategy: volume-mounts

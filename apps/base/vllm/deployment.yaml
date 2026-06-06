@@ -24,6 +24,13 @@ spec:
       runtimeClassName: nvidia
       nodeSelector:
         gpu: "true"
+      # The GPU node is tainted dedicated=gpu so general workloads stay off it
+      # (and Longhorn/metallb don't run there). GPU pods opt in via this toleration.
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
       containers:
         - name: vllm
           # CUDA 12.x on purpose — cu13/:latest had an Apr-2026 gibberish bug on Qwen3.
