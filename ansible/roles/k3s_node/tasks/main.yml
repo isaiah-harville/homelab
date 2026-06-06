@@ -56,6 +56,7 @@
         dest: /etc/rancher/k3s/config.yaml
         mode: "0644"
         content: |
+          node-name: {{ node_name }}
           node-ip: {{ node_ip.split('/')[0] }}
           node-label:
             - "gpu=true"
