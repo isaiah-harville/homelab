@@ -21,3 +21,7 @@ network_interface: enp1s0
 # Login user created on every node, and its password (both from the vault).
 node_user: "{{ vault_node_user }}"
 node_password: "{{ vault_node_password }}"
+
+# How Ansible connects: SSH in as the vault user and use the vault password for sudo.
+ansible_user: "{{ vault_node_user }}"
+ansible_become_password: "{{ vault_node_password }}"
