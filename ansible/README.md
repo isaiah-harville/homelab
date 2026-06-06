@@ -2,7 +2,7 @@
 
 Provisions Ubuntu 24.04 machines as k3s agent nodes with Longhorn storage.
 
-All cluster-wide settings live in `group_vars/all/`, and the secrets (k3s token, login user, password) live encrypted in `group_vars/all/vault.yml`. Adding a node is just needs a∂ hostname and a static IP.
+All cluster-wide settings live in `inventory/group_vars/all/`, and the secrets (k3s token, login user, password) live encrypted in `inventory/group_vars/all/vault.yml`. Adding a node is just needs a∂ hostname and a static IP.
 
 ## What it does
 
@@ -19,14 +19,20 @@ All cluster-wide settings live in `group_vars/all/`, and the secrets (k3s token,
 ## Layout
 
 ```
-ansible.cfg              # inventory, roles, sudo, and vault password wiring
-inventory/hosts.yml      # the nodes (no secrets — safe to commit)
-group_vars/all/vars.yml  # non-secret defaults (server URL, gateway, NIC, …)
-group_vars/all/vault.yml # ENCRYPTED secrets (token, user, password)
-.vault-pass              # vault password — gitignored, never committed
-playbooks/provision.yml  # the entrypoint
+ansible.cfg                      # inventory, roles, sudo, and vault password wiring
+inventory/
+  hosts.yml                      # the nodes (no secrets — safe to commit)
+  group_vars/all/vars.yml        # non-secret defaults (server URL, gateway, NIC, …)
+  group_vars/all/vault.yml       # ENCRYPTED secrets (token, user, password)
+.vault-pass                      # vault password — gitignored, never committed
+playbooks/provision.yml          # the entrypoint
 roles/{common,longhorn,k3s_node}
 ```
+
+> `group_vars/` lives **inside `inventory/`** on purpose: that's the one place
+> ansible loads it from no matter where the playbook is run. (If it sits at the
+> ansible/ root, ad-hoc commands find it but `ansible-playbook` does not — which
+> surfaces as a confusing "Missing sudo password".)
 
 The vault password file `.vault-pass` is the only thing kept out of git. The
 vault itself is encrypted, so it's committed alongside everything else. Keep a
@@ -89,16 +95,16 @@ ansible-playbook playbooks/provision.yml --limit node-03 -vv
 
 ```bash
 # Edit secrets (opens decrypted in $EDITOR, re-encrypts on save)
-ansible-vault edit group_vars/all/vault.yml
+ansible-vault edit inventory/group_vars/all/vault.yml
 
 # View secrets without editing
-ansible-vault view group_vars/all/vault.yml
+ansible-vault view inventory/group_vars/all/vault.yml
 
 # Change the vault password (re-encrypts with a new key)
-ansible-vault rekey group_vars/all/vault.yml
+ansible-vault rekey inventory/group_vars/all/vault.yml
 
 # Encrypt a brand-new plaintext file in place
-ansible-vault encrypt group_vars/all/vault.yml
+ansible-vault encrypt inventory/group_vars/all/vault.yml
 ```
 
 ### Inventory & connectivity
