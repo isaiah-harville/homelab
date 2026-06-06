@@ -1,0 +1,77 @@
+---
+# Joins this node to the cluster as an embedded-etcd control-plane SERVER,
+# via the VIP. This is for JOINERS only (precision-1, precision-2); dl380 is the
+# bootstrap server and is converted manually (docs/k3s-ha-migration.md).
+#
+# DELIBERATE PRE-REQS (not automated here, on purpose — they're destructive):
+#   1. The cluster VIP is already up (dl380 etcd + kube-vip done).
+#   2. This node has been drained and its k3s AGENT uninstalled
+#      (`sudo /usr/local/bin/k3s-agent-uninstall.sh`).
+# The role refuses to run while an agent is still present so it can't silently
+# stack a server on top of an agent.
+
+- name: Check whether a k3s agent is still installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s-agent-uninstall.sh
+  register: k3s_agent
+
+- name: Refuse to convert while the agent is still present
+  ansible.builtin.assert:
+    that:
+      - not k3s_agent.stat.exists
+    fail_msg: >
+      {{ inventory_hostname }} is still a k3s AGENT. Drain it
+      (`kubectl drain {{ node_name }} --ignore-daemonsets --delete-emptydir-data`),
+      wait for Longhorn to rebuild its replicas elsewhere, then
+      `sudo /usr/local/bin/k3s-agent-uninstall.sh` before running this play.
+
+- name: Assert join inputs are set
+  ansible.builtin.assert:
+    that:
+      - k3s_api_vip_url is defined and k3s_api_vip_url | length > 0
+      - vault_k3s_token is defined and vault_k3s_token != "CHANGE_ME"
+    fail_msg: "k3s_api_vip_url and vault_k3s_token (server join token) must be set."
+
+- name: Ensure k3s config directory exists
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: "0755"
+
+- name: Write k3s server config (joins the existing etcd cluster via the VIP)
+  ansible.builtin.copy:
+    dest: /etc/rancher/k3s/config.yaml
+    mode: "0600"
+    content: |
+      server: {{ k3s_api_vip_url }}
+      token: "{{ vault_k3s_token }}"
+      tls-san:
+        - {{ k3s_vip }}
+      node-ip: {{ node_ip.split('/')[0] }}
+  register: k3s_config
+
+- name: Check if the k3s binary is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Install k3s as a server and join via the VIP
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" sh -s -
+  args:
+    creates: /usr/local/bin/k3s
+  when: not k3s_binary.stat.exists
+
+- name: Ensure k3s server is enabled and running
+  ansible.builtin.systemd:
+    name: k3s
+    enabled: true
+    state: started
+
+- name: Restart k3s when the config changed on an already-installed server
+  ansible.builtin.systemd:
+    name: k3s
+    state: restarted
+  when:
+    - k3s_binary.stat.exists
+    - k3s_config.changed

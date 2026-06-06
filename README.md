@@ -15,8 +15,7 @@ ansible/            — Provision Ubuntu 24 machines as k3s nodes
 ## Clusters
 
 ### k3s
-
-Main cluster. Flux reconciles from `clusters/homelab/`.
+High Availability cluster. Flux reconciles from `clusters/homelab/`.
 
 ```bash
 flux reconcile source git flux-system -n flux-system

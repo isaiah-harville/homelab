@@ -21,13 +21,20 @@ All cluster-wide settings live in `inventory/group_vars/all/`, and the secrets (
 ```
 ansible.cfg                      # inventory, roles, sudo, and vault password wiring
 inventory/
-  hosts.yml                      # the nodes (no secrets — safe to commit)
+  hosts.yml                      # nodes, grouped: k3s_servers / k3s_agents / k3s_bootstrap
   group_vars/all/vars.yml        # non-secret defaults (server URL, gateway, NIC, …)
   group_vars/all/vault.yml       # ENCRYPTED secrets (token, user, password)
 .vault-pass                      # vault password — gitignored, never committed
-playbooks/provision.yml          # the entrypoint
-roles/{common,longhorn,k3s_node}
+playbooks/provision.yml          # provision AGENTS (common, longhorn, k3s_node)
+playbooks/servers.yml            # join control-plane SERVERS (longhorn, k3s_server)
+roles/{common,longhorn,k3s_node,k3s_server}
 ```
+
+**Agents vs servers.** `provision.yml` provisions worker nodes (`k3s_agents`).
+`servers.yml` joins control-plane/etcd nodes (`k3s_servers`) and is part of the
+HA migration — see [docs/k3s-ha-migration.md](../docs/k3s-ha-migration.md).
+`dl380` (the bootstrap server we run from) is in `k3s_bootstrap` for reference
+only; no play targets it.
 
 > `group_vars/` lives **inside `inventory/`** on purpose: that's the one place
 > ansible loads it from no matter where the playbook is run. (If it sits at the

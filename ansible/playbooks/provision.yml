@@ -16,8 +16,8 @@
 #   ansible-playbook -i inventory/hosts.yml playbooks/provision.yml
 #   ansible-playbook -i inventory/hosts.yml playbooks/provision.yml --limit node-01
 
-- name: Provision k3s node
-  hosts: k3s_nodes
+- name: Provision k3s agent node
+  hosts: k3s_agents
   become: true
   gather_facts: true
 
