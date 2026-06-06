@@ -9,6 +9,8 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: InnerSwings
     gethomepage.dev/description: Website, support, privacy policy, and universal links
+    gethomepage.dev/href: https://innerswings.com
+    gethomepage.dev/siteMonitor: https://innerswings.com
 spec:
   ingressClassName: traefik-public
   tls:

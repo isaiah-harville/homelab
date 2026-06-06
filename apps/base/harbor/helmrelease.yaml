@@ -43,6 +43,8 @@ spec:
           gethomepage.dev/group: Infrastructure
           gethomepage.dev/name: Harbor
           gethomepage.dev/description: Container registry
+          gethomepage.dev/href: https://harbor.harville.dev
+          gethomepage.dev/siteMonitor: https://harbor.harville.dev
     # Admin password from SOPS; all other internal secrets are auto-generated
     # by the chart and preserved across upgrades.
     existingSecretAdminPassword: harbor-secrets
