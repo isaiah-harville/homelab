@@ -1,0 +1,88 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: seaweedfs
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: seaweedfs
+      version: "4.31.0"
+      sourceRef:
+        kind: HelmRepository
+        name: seaweedfs
+        namespace: flux-system
+  values:
+    # Single-node homelab topology; all state on Longhorn so any node can host it.
+    master:
+      replicas: 1
+      data:
+        type: persistentVolumeClaim
+        size: 1Gi
+        storageClass: longhorn
+      logs:
+        type: persistentVolumeClaim
+        size: 1Gi
+        storageClass: longhorn
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+    volume:
+      replicas: 1
+      dataDirs:
+        - name: data1
+          type: persistentVolumeClaim
+          size: 50Gi
+          storageClass: longhorn
+          maxVolumes: 0
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+    filer:
+      replicas: 1
+      data:
+        type: persistentVolumeClaim
+        size: 8Gi
+        storageClass: longhorn
+      logs:
+        type: persistentVolumeClaim
+        size: 1Gi
+        storageClass: longhorn
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+    # Standalone S3 gateway (Service: seaweedfs-s3 on :8333).
+    # Identities/access keys come from the SOPS-managed secret.
+    s3:
+      enabled: true
+      replicas: 1
+      port: 8333
+      existingConfigSecret: seaweedfs-s3-config
+      createBuckets:
+        - name: general
+        - name: backups
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
