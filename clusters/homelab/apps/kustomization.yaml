@@ -10,6 +10,8 @@ resources:
   - ./secrets/authelia-secrets.yaml
   - ./secrets/authelia-users-database.yaml
   - ./secrets/swing-thoughts-auth.yaml
+  - ./secrets/seaweedfs-s3-config.yaml
+  - ./secrets/harbor-secrets.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
@@ -19,6 +21,8 @@ resources:
   - ../../../apps/base/admin
   - ../../../apps/releases/website
   - ../../../apps/base/openwebui
+  - ../../../apps/base/seaweedfs
+  - ../../../apps/base/harbor
 patches:
   - target:
       kind: Ingress

@@ -12,3 +12,5 @@ resources:
   - authelia.helmrepository.yaml
   - headlamp.helmrepository.yaml
   - open-webui.helmrepository.yaml
+  - seaweedfs.helmrepository.yaml
+  - harbor.helmrepository.yaml
