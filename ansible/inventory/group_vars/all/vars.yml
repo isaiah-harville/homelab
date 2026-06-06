@@ -25,6 +25,12 @@ network_interface: enp1s0
 node_user: "{{ vault_node_user }}"
 node_password: "{{ vault_node_password }}"
 
+# SSH public keys authorized for node_user on every node (the common role
+# installs these into ~/.ssh/authorized_keys).
+ssh_authorized_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMuUl/9NL4klfG7Fs56DX9MJ6F8KPVol3lW5Ybv1Sn8W iharville@MacBook-Pro"
+  - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC1R1alNXuZoRjKeceMktJb3KNQ95E9stcY5f04tS76uRA6Q9XVMjV0UWyCtqhm02IKT+fNfJF+eLCZrKtDdVEJUXZu3a7aXrNtc/n4IMlNbYxlWFrZs+P17A0h5fwQ9YcIuMbfTVqjk69Kf1QHGJ80VUdC65DSQPZ9HEgw/1ei10iVU4IlpRaO3LuHhAYznVCHiJc5ta1ENZU9wjMVJgE04BfUx6iOiFxE6VP1G7U92DnmmB/C3V6kh6apuWrUAtKlgCKGTsAwagPgUWmXp06nvQNu1eNEfjLY68ftqASTPzpSz70JDBpZfTJu81aLfOHCOtvNVZwrSBklXh27aMeGlNoUiP3tiW45GFzqesGMc8c9RYcvkmu3SKgdK/kxdmB1d4eNCeD9DAB1jojtBEbFHVqKdt7BgLB/elj845PAuh/D/WAXkL5KFrnXhyBKTBwGG0wnwzmNAUJwCTO1yC/KNq1ocB6SziRZ/q/OazqMRpcCdIZZWbD34CzVk3TZhY0= isaiah@dl380"
+
 # How Ansible connects: SSH in as the vault user and use the vault password for sudo.
 ansible_user: "{{ vault_node_user }}"
 ansible_become_password: "{{ vault_node_password }}"
