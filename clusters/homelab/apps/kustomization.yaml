@@ -10,7 +10,6 @@ resources:
   - ./secrets/authelia-secrets.yaml
   - ./secrets/authelia-users-database.yaml
   - ./secrets/swing-thoughts-auth.yaml
-  - ./secrets/odysseus-searxng.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
@@ -20,7 +19,6 @@ resources:
   - ../../../apps/base/admin
   - ../../../apps/releases/website
   - ../../../apps/base/openwebui
-  - ../../../apps/base/odysseus
 patches:
   - target:
       kind: Ingress
