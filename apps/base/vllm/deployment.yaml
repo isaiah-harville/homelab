@@ -1,0 +1,97 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+  namespace: apps
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  # Single GPU, weights on a node-local volume — never run two at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      # Run under the nvidia container runtime (k3s auto-creates this RuntimeClass
+      # once the NVIDIA Container Toolkit is on the node) and pin to the GPU node.
+      runtimeClassName: nvidia
+      nodeSelector:
+        gpu: "true"
+      containers:
+        - name: vllm
+          # CUDA 12.x on purpose — cu13/:latest had an Apr-2026 gibberish bug on Qwen3.
+          image: vllm/vllm-openai:v0.22.1-cu129-ubuntu2404
+          args:
+            - --model
+            - Qwen/Qwen3-14B-AWQ
+            - --served-model-name
+            - qwen3-14b
+            - --quantization
+            - awq_marlin
+            # 12 GB is tight: start conservative, raise --max-model-len toward 8192
+            # once you confirm it fits.
+            - --max-model-len
+            - "4096"
+            - --gpu-memory-utilization
+            - "0.90"
+            - --kv-cache-dtype
+            - fp8
+            - --api-key
+            - $(VLLM_API_KEY)
+          env:
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-api-key
+                  key: VLLM_API_KEY
+            # Cache weights on the node-local PVC instead of the container layer.
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+            requests:
+              cpu: "1"
+              memory: 4Gi
+          # First start downloads ~9 GB and loads the model — give it room before
+          # liveness/readiness kick in.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 15
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-models
+        # vLLM needs shared memory for its worker IPC.
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

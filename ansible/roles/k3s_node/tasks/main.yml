@@ -4,6 +4,63 @@
     path: /usr/local/bin/k3s
   register: k3s_binary
 
+# GPU prep runs BEFORE the agent install so k3s detects the NVIDIA container
+# runtime on first start (it auto-creates the `nvidia` RuntimeClass). On WSL the
+# GPU driver lives on the Windows host — we only install the toolkit here.
+- name: Configure GPU support
+  when: node_gpu | default(false)
+  block:
+    - name: Fetch the NVIDIA Container Toolkit GPG key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /tmp/nvidia-container-toolkit.asc
+        mode: "0644"
+
+    - name: Install the key into a keyring
+      ansible.builtin.command:
+        cmd: >-
+          gpg --batch --yes --dearmor
+          -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+          /tmp/nvidia-container-toolkit.asc
+        creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+    - name: Add the NVIDIA Container Toolkit apt repository
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
+        dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        mode: "0644"
+
+    - name: Point the repository at the signed keyring
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        regexp: '^deb https://'
+        replace: "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://"
+
+    - name: Install nvidia-container-toolkit
+      ansible.builtin.apt:
+        name: nvidia-container-toolkit
+        state: present
+        update_cache: true
+      notify: Restart k3s-agent
+
+    - name: Ensure k3s config directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: "0755"
+
+    - name: Write k3s agent config (GPU label + pinned node IP)
+      # Pin node-ip: WSL has several interfaces (the LAN IP is on eth3), so don't
+      # let k3s auto-pick a WSL-internal NAT address — advertise the routed LAN IP.
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        mode: "0644"
+        content: |
+          node-ip: {{ node_ip.split('/')[0] }}
+          node-label:
+            - "gpu=true"
+      notify: Restart k3s-agent
+
 - name: Download and run k3s agent installer
   ansible.builtin.shell: |
     curl -sfL https://get.k3s.io | \

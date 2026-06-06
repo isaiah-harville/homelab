@@ -43,6 +43,25 @@ spec:
                 value:
                   name: WEBUI_AUTH_SIGNOUT_REDIRECT_URL
                   value: https://auth.harville.dev/logout
+              # vLLM as an OpenAI-compatible backend (in-cluster service DNS).
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_OPENAI_API
+                  value: "true"
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: OPENAI_API_BASE_URL
+                  value: http://vllm:8000/v1
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: vllm-api-key
+                      key: VLLM_API_KEY
   install:
     remediation:
       retries: 3

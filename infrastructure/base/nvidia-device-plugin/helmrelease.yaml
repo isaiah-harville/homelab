@@ -1,0 +1,35 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nvidia-device-plugin
+  namespace: kube-system
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: nvidia-device-plugin
+      version: "0.19.2"
+      sourceRef:
+        kind: HelmRepository
+        name: nvidia-device-plugin
+        namespace: flux-system
+  values:
+    # k3s auto-creates the `nvidia` RuntimeClass once the NVIDIA Container Toolkit
+    # is installed on the node (see ansible k3s_node role). The plugin must run
+    # under it to see the GPU.
+    runtimeClassName: nvidia
+    # Only schedule on GPU-labelled nodes (the WSL agent gets gpu=true).
+    nodeSelector:
+      gpu: "true"
+    # WSL2 exposes the GPU as a mounted device rather than via the usual NVML
+    # device list, so advertise it through volume-mounts.
+    deviceListStrategy: volume-mounts
