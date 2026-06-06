@@ -32,13 +32,6 @@ The vault password file `.vault-pass` is the only thing kept out of git. The
 vault itself is encrypted, so it's committed alongside everything else. Keep a
 backup of `.vault-pass` somewhere safe (a password manager) — without it the
 vault can't be decrypted.
-
-## Prerequisites
-
-```bash
-ansible-galaxy collection install community.general
-```
-
 ## Adding a node
 
 1. Install Ubuntu 24.04 and give it the target static IP during install (or via
