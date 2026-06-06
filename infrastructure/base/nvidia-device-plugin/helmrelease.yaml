@@ -27,6 +27,10 @@ spec:
     # is installed on the node (see ansible k3s_node role). The plugin must run
     # under it to see the GPU.
     runtimeClassName: nvidia
+    # Drop the chart's default NFD-based nodeAffinity (pci-10de / nvidia.com/gpu.present):
+    # WSL doesn't expose the GPU as a PCI device, so NFD never sets those labels.
+    # We gate on our own gpu=true label instead.
+    affinity: {}
     # Only schedule on GPU-labelled nodes (the WSL agent gets gpu=true).
     nodeSelector:
       gpu: "true"

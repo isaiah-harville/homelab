@@ -43,6 +43,33 @@
         update_cache: true
       notify: Restart k3s-agent
 
+    # WSL2 mounts / as a private mount; containerd refuses containers that need
+    # mount propagation (GPU device injection, node-exporter) with "path / is
+    # mounted on / but it is not a shared or slave mount". Mark it rshared, and
+    # persist it across WSL restarts with a oneshot unit ordered before k3s-agent.
+    - name: Install make-rshared oneshot unit (WSL mount propagation)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/rshared-root.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Make / rshared for k8s mount propagation (WSL)
+          DefaultDependencies=no
+          Before=k3s-agent.service
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/mount --make-rshared /
+          RemainAfterExit=yes
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable + run make-rshared now
+      ansible.builtin.systemd:
+        name: rshared-root.service
+        enabled: true
+        state: started
+        daemon_reload: true
+
     - name: Ensure k3s config directory exists
       ansible.builtin.file:
         path: /etc/rancher/k3s
