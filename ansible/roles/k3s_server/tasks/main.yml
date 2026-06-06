@@ -48,6 +48,13 @@
       tls-san:
         - {{ k3s_vip }}
       node-ip: {{ node_ip.split('/')[0] }}
+      # We run our own Traefik (traefik-internal/traefik-public) and MetalLB via
+      # Flux, so disable the bundled k3s addons. Must match the bootstrap server
+      # (dl380) — if any server still ships them, k3s redeploys the HelmChart CR
+      # cluster-wide and the bundled traefik-crd installer crashloops.
+      disable:
+        - traefik
+        - servicelb
   register: k3s_config
 
 - name: Check if the k3s binary is already installed
