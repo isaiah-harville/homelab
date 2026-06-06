@@ -8,7 +8,8 @@ resources:
   - metallb.helmrepository.yaml
   - prometheus-community.helmrepository.yaml
   - traefik.helmrepository.yaml
-  - weave-gitops.helmrepository.yaml
   - authelia.helmrepository.yaml
   - headlamp.helmrepository.yaml
   - open-webui.helmrepository.yaml
+  - seaweedfs.helmrepository.yaml
+  - harbor.helmrepository.yaml
