@@ -1,0 +1,51 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ node_name }}"
+
+- name: Update /etc/hosts with new hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ node_name }}"
+    state: present
+
+- name: Set user password
+  ansible.builtin.user:
+    name: "{{ node_user }}"
+    password: "{{ node_password | password_hash('sha512') }}"
+    update_password: always
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+      - apt-transport-https
+    state: present
+    update_cache: true
+
+- name: Write netplan static IP config
+  ansible.builtin.copy:
+    dest: /etc/netplan/99-static.yaml
+    mode: "0600"
+    content: |
+      network:
+        version: 2
+        ethernets:
+          {{ network_interface }}:
+            dhcp4: false
+            addresses:
+              - {{ node_ip }}
+            routes:
+              - to: default
+                via: {{ node_gateway }}
+            nameservers:
+              addresses: {{ node_dns }}
+  register: netplan_config
+
+- name: Apply netplan config
+  ansible.builtin.command: netplan apply
+  when: netplan_config.changed
+  changed_when: true

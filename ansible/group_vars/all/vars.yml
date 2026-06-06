@@ -1,0 +1,23 @@
+---
+# Non-secret cluster-wide defaults. Secrets live in vault.yml (encrypted)
+# and are referenced here via vault_* variables.
+
+# k3s cluster connection — single control node at 10.1.10.10.
+k3s_server_url: "https://10.1.10.10:6443"
+k3s_token: "{{ vault_k3s_token }}"
+
+# Longhorn data directory (must match Helm values defaultDataPath)
+longhorn_data_path: /data/longhorn
+
+# Netplan defaults
+node_gateway: "10.1.10.1"
+node_dns:
+  - "1.1.1.1"
+  - "8.8.8.8"
+# Ubuntu 24.04 uses predictable NIC names (enp1s0 on bare metal, ens18 on
+# Proxmox), not eth0. Check `ip link` on the target.
+network_interface: enp1s0
+
+# Login user created on every node, and its password (both from the vault).
+node_user: "{{ vault_node_user }}"
+node_password: "{{ vault_node_password }}"

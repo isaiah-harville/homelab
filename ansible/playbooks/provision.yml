@@ -1,0 +1,43 @@
+---
+# Provision an Ubuntu 24 machine as a k3s agent node with Longhorn storage.
+#
+# Required per-host variables (set in inventory or --extra-vars):
+#   node_name     — hostname to assign
+#   node_user     — login user to create / set the password on
+#   node_password — password for that user
+#   node_ip       — static IP in CIDR notation, e.g. 10.1.10.101/24
+#                   (ansible_host is derived from this — see inventory)
+#
+# Cluster variables (already set in group_vars/all.yml — single control node):
+#   k3s_server_url — https://10.1.10.10:6443
+#   k3s_token      — node join token from /var/lib/rancher/k3s/server/node-token
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.yml playbooks/provision.yml
+#   ansible-playbook -i inventory/hosts.yml playbooks/provision.yml --limit node-01
+
+- name: Provision k3s node
+  hosts: k3s_nodes
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Assert required variables are set
+      ansible.builtin.assert:
+        that:
+          - node_name is defined and node_name | length > 0
+          - node_password is defined and node_password | length > 0
+          - node_ip is defined and node_ip | length > 0
+          - k3s_server_url is defined and k3s_server_url | length > 0
+          - k3s_token is defined and k3s_token != "CHANGE_ME"
+        fail_msg: >
+          node_name, node_password, node_ip, k3s_server_url, and k3s_token
+          must all be set. See ansible/README.md.
+
+  roles:
+    - role: common
+      tags: [common]
+    - role: longhorn
+      tags: [longhorn]
+    - role: k3s_node
+      tags: [k3s]
