@@ -2,15 +2,12 @@
 # Non-secret cluster-wide defaults. Secrets live in vault.yml (encrypted)
 # and are referenced here via vault_* variables.
 
-# k3s cluster connection.
-# Agents currently join dl380 directly; after the HA migration this flips to
-# the VIP (docs/k3s-ha-migration.md, Phase 4).
-k3s_server_url: "https://10.1.10.10:6443"
-k3s_token: "{{ vault_k3s_token }}"
-
-# Control-plane HA: floating VIP served by kube-vip. Server joiners point here.
+# k3s cluster connection. Everything talks to the control plane through the
+# kube-vip floating VIP, so the endpoint survives losing any one server.
 k3s_vip: "10.1.10.9"
 k3s_api_vip_url: "https://10.1.10.9:6443"
+k3s_server_url: "{{ k3s_api_vip_url }}"
+k3s_token: "{{ vault_k3s_token }}"
 
 # Longhorn data directory (must match Helm values defaultDataPath)
 longhorn_data_path: /data/longhorn

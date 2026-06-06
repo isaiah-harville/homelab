@@ -13,6 +13,13 @@
   when: not k3s_binary.stat.exists
   changed_when: true
 
+- name: Keep the agent pointed at the current server endpoint (the VIP)
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/system/k3s-agent.service.env
+    regexp: '^K3S_URL='
+    line: "K3S_URL='{{ k3s_server_url }}'"
+  notify: Restart k3s-agent
+
 - name: Ensure k3s-agent service is enabled and running
   ansible.builtin.systemd:
     name: k3s-agent
