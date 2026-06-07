@@ -43,6 +43,12 @@ spec:
                 value:
                   name: WEBUI_AUTH_SIGNOUT_REDIRECT_URL
                   value: https://auth.harville.dev/logout
+              # vLLM is the only backend — disable the Ollama API probing.
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: ENABLE_OLLAMA_API
+                  value: "false"
               # vLLM as an OpenAI-compatible backend (in-cluster service DNS).
               - op: add
                 path: /spec/template/spec/containers/0/env/-
@@ -80,14 +86,9 @@ spec:
         namespace: flux-system
   values:
     fullnameOverride: openwebui
+    # Ollama dropped — Open WebUI uses vLLM via the OpenAI API only.
     ollama:
-      enabled: true
-      persistentVolume:
-        enabled: true
-        existingClaim: openwebui-ollama-longhorn
-        size: 50Gi
-        accessModes:
-          - ReadWriteOnce
+      enabled: false
     pipelines:
       enabled: false
     persistence:
