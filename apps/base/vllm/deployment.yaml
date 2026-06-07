@@ -19,6 +19,10 @@ spec:
       labels:
         app: vllm
     spec:
+      # The Service is named `vllm`, so Kubernetes would inject VLLM_PORT=tcp://<clusterIP>
+      # which collides with vLLM's own VLLM_PORT env var (it errors on the URI).
+      # We resolve everything via DNS, so disable the legacy Service env links.
+      enableServiceLinks: false
       # The GPU node is a WSL2 box whose flannel VXLAN overlay can't receive
       # inbound (WSL mirrored networking doesn't deliver to the kernel VXLAN
       # handler). hostNetwork bypasses the overlay: vLLM binds the node's LAN IP
