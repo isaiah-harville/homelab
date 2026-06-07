@@ -8,7 +8,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: AI
     gethomepage.dev/name: vLLM
-    gethomepage.dev/description: Qwen3-14B OpenAI-compatible inference
+    gethomepage.dev/description: Qwen3-8B OpenAI-compatible inference
     gethomepage.dev/pod-selector: app=vllm
 spec:
   ingressClassName: traefik-internal

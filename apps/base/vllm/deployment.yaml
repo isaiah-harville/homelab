@@ -47,16 +47,17 @@ spec:
           # CUDA 12.x on purpose — cu13/:latest had an Apr-2026 gibberish bug on Qwen3.
           image: vllm/vllm-openai:v0.22.1-cu129-ubuntu2404
           args:
+            # 8B AWQ (~5 GiB) fits comfortably on the desktop-shared 12 GB card,
+            # leaving room for a real context window and for the desktop/gaming to
+            # use the GPU without OOM-killing inference. (14B scraped the ceiling.)
             - --model
-            - Qwen/Qwen3-14B-AWQ
+            - Qwen/Qwen3-8B-AWQ
             - --served-model-name
-            - qwen3-14b
+            - qwen3-8b
             - --quantization
             - awq_marlin
-            # 12 GB is tight: start conservative, raise --max-model-len toward 8192
-            # once you confirm it fits.
             - --max-model-len
-            - "4096"
+            - "8192"
             # GPU is shared with the Windows desktop (~1.2 GiB already used), so
             # keep the target under the free memory and leave headroom.
             - --gpu-memory-utilization
