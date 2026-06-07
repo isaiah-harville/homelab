@@ -57,8 +57,10 @@ spec:
             # once you confirm it fits.
             - --max-model-len
             - "4096"
+            # GPU is shared with the Windows desktop (~1.2 GiB already used), so
+            # keep the target under the free memory and leave headroom.
             - --gpu-memory-utilization
-            - "0.90"
+            - "0.85"
             - --kv-cache-dtype
             - fp8
             - --api-key
