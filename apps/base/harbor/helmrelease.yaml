@@ -24,6 +24,12 @@ spec:
         namespace: flux-system
   values:
     externalURL: https://harbor.harville.dev
+    # registry/jobservice use ReadWriteOnce Longhorn volumes; the default
+    # RollingUpdate starts the new pod before releasing the old one's volume,
+    # which deadlocks on Multi-Attach and times out every upgrade. Recreate kills
+    # the old pod first so the RWO volume frees up.
+    updateStrategy:
+      type: Recreate
     # Harbor ships its own auth, and `docker login` can't traverse Authelia
     # forwardauth — so this is exposed publicly with no forwardauth middleware.
     expose:
