@@ -4,95 +4,44 @@
     path: /usr/local/bin/k3s
   register: k3s_binary
 
-# GPU prep runs BEFORE the agent install so k3s detects the NVIDIA container
-# runtime on first start (it auto-creates the `nvidia` RuntimeClass). On WSL the
-# GPU driver lives on the Windows host — we only install the toolkit here.
-- name: Configure GPU support
+# GPU / WSL prep runs BEFORE the agent install so k3s picks up the NVIDIA runtime
+# on first start. Two independent, composable flags:
+#   node_gpu  — generic NVIDIA GPU node (toolkit + GPU labels/taint)  -> gpu.yml
+#   node_wsl  — WSL2-only quirks (mount-propagation fix, pinned node-ip) -> wsl.yml
+# A bare-metal GPU node sets only node_gpu; the WSL box sets both.
+- name: Generic GPU node setup
+  ansible.builtin.include_tasks: gpu.yml
   when: node_gpu | default(false)
-  block:
-    - name: Fetch the NVIDIA Container Toolkit GPG key
-      ansible.builtin.get_url:
-        url: https://nvidia.github.io/libnvidia-container/gpgkey
-        dest: /tmp/nvidia-container-toolkit.asc
-        mode: "0644"
 
-    - name: Install the key into a keyring
-      ansible.builtin.command:
-        cmd: >-
-          gpg --batch --yes --dearmor
-          -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-          /tmp/nvidia-container-toolkit.asc
-        creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+- name: WSL-specific node setup
+  ansible.builtin.include_tasks: wsl.yml
+  when: node_wsl | default(false)
 
-    - name: Add the NVIDIA Container Toolkit apt repository
-      ansible.builtin.get_url:
-        url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
-        dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
-        mode: "0644"
-
-    - name: Point the repository at the signed keyring
-      ansible.builtin.replace:
-        path: /etc/apt/sources.list.d/nvidia-container-toolkit.list
-        regexp: '^deb https://'
-        replace: "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://"
-
-    - name: Install nvidia-container-toolkit
-      ansible.builtin.apt:
-        name: nvidia-container-toolkit
-        state: present
-        update_cache: true
-      notify: Restart k3s-agent
-
-    # WSL2 mounts / as a private mount; containerd refuses containers that need
-    # mount propagation (GPU device injection, node-exporter) with "path / is
-    # mounted on / but it is not a shared or slave mount". Mark it rshared, and
-    # persist it across WSL restarts with a oneshot unit ordered before k3s-agent.
-    - name: Install make-rshared oneshot unit (WSL mount propagation)
-      ansible.builtin.copy:
-        dest: /etc/systemd/system/rshared-root.service
-        mode: "0644"
-        content: |
-          [Unit]
-          Description=Make / rshared for k8s mount propagation (WSL)
-          DefaultDependencies=no
-          Before=k3s-agent.service
-          [Service]
-          Type=oneshot
-          ExecStart=/bin/mount --make-rshared /
-          RemainAfterExit=yes
-          [Install]
-          WantedBy=multi-user.target
-
-    - name: Enable + run make-rshared now
-      ansible.builtin.systemd:
-        name: rshared-root.service
-        enabled: true
-        state: started
-        daemon_reload: true
-
-    - name: Ensure k3s config directory exists
-      ansible.builtin.file:
-        path: /etc/rancher/k3s
-        state: directory
-        mode: "0755"
-
-    - name: Write k3s agent config (GPU labels + pinned node IP)
-      # Pin node-ip: WSL has several interfaces (the LAN IP is on eth3), so don't
-      # let k3s auto-pick a WSL-internal NAT address — advertise the routed LAN IP.
-      ansible.builtin.copy:
-        dest: /etc/rancher/k3s/config.yaml
-        mode: "0644"
-        content: |
-          node-name: {{ node_name }}
-          node-ip: {{ node_ip.split('/')[0] }}
-          node-label:
-            - "gpu=true"
-            - "nvidia.com/gpu.present=true"
-          # Reserve the node for GPU work: general pods + Longhorn/metallb (which
-          # don't tolerate this) stay off; vLLM + the device plugin tolerate it.
-          node-taint:
-            - "dedicated=gpu:NoSchedule"
-      notify: Restart k3s-agent
+- name: Write k3s agent config (GPU labels/taint + WSL node-ip pin)
+  when: (node_gpu | default(false)) or (node_wsl | default(false))
+  ansible.builtin.copy:
+    dest: /etc/rancher/k3s/config.yaml
+    mode: "0644"
+    content: |
+      {% if node_wsl | default(false) %}
+      # WSL has several interfaces; pin the routed LAN IP instead of letting k3s
+      # auto-pick a WSL-internal NAT address. node-name set since the WSL hostname
+      # is what k3s would use anyway, kept explicit for clarity.
+      node-name: {{ node_name }}
+      node-ip: {{ node_ip.split('/')[0] }}
+      {% endif %}
+      {% if node_gpu | default(false) %}
+      # gpu=true gates our own scheduling; nvidia.com/gpu.present satisfies the
+      # device-plugin chart's GPU nodeAffinity (no NFD on these nodes).
+      node-label:
+        - "gpu=true"
+        - "nvidia.com/gpu.present=true"
+      # Reserve the node for GPU work: general pods + Longhorn/metallb (which
+      # don't tolerate this) stay off; vLLM + the device plugin tolerate it.
+      node-taint:
+        - "dedicated=gpu:NoSchedule"
+      {% endif %}
+  notify: Restart k3s-agent
 
 - name: Download and run k3s agent installer
   ansible.builtin.shell: |

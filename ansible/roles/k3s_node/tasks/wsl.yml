@@ -1,0 +1,34 @@
+---
+# WSL2-only node quirks (node_wsl: true). These are NOT needed on bare-metal
+#
+# Networking note: flannel's VXLAN overlay can't receive inbound on WSL mirrored
+# networking, so a WSL node does NOT do cross-node pod networking. Workloads that
+# must be reachable (vLLM) run with hostNetwork instead (see apps/base/vllm) and
+# the node-ip below is pinned so they advertise the routed LAN address.
+
+# WSL2 mounts / as a private mount; containerd refuses containers that need mount
+# propagation (NVIDIA GPU device injection) with "path / is mounted on / but it
+# is not a shared or slave mount". Mark it rshared, persisted across WSL restarts
+# with a oneshot unit ordered before k3s-agent.
+- name: Install make-rshared oneshot unit (WSL mount propagation)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/rshared-root.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Make / rshared for GPU container mount propagation (WSL)
+      DefaultDependencies=no
+      Before=k3s-agent.service
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/mount --make-rshared /
+      RemainAfterExit=yes
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable + run make-rshared now
+  ansible.builtin.systemd:
+    name: rshared-root.service
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -19,6 +19,13 @@ spec:
       labels:
         app: vllm
     spec:
+      # The GPU node is a WSL2 box whose flannel VXLAN overlay can't receive
+      # inbound (WSL mirrored networking doesn't deliver to the kernel VXLAN
+      # handler). hostNetwork bypasses the overlay: vLLM binds the node's LAN IP
+      # directly (reachable like SSH) and dnsPolicy:Default uses the node's
+      # resolver/egress instead of CoreDNS, so it can pull the model from HF.
+      hostNetwork: true
+      dnsPolicy: Default
       # Run under the nvidia container runtime (k3s auto-creates this RuntimeClass
       # once the NVIDIA Container Toolkit is on the node) and pin to the GPU node.
       runtimeClassName: nvidia
