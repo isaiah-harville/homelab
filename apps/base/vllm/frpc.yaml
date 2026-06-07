@@ -1,0 +1,72 @@
+---
+# Reverse-tunnel client. Runs on the WSL GPU node, dials OUT to frps (via the
+# control NodePort on a normal node), and exposes the local vLLM (10.1.1.20:8000)
+# back through frps as remotePort 8000. Outbound from WSL works, so this avoids
+# WSL's broken inbound entirely.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frpc-config
+  namespace: apps
+data:
+  frpc.toml: |
+    # dl380 (stable control-plane) NodePort for the frps control port.
+    serverAddr = "10.1.10.10"
+    serverPort = 30700
+    auth.method = "token"
+    auth.token = "{{ .Envs.FRP_TOKEN }}"
+
+    [[proxies]]
+    name = "vllm"
+    type = "tcp"
+    # vLLM is hostNetwork on this node; reach it via the node IP (localhost does
+    # not work under WSL mirrored networking).
+    localIP = "10.1.1.20"
+    localPort = 8000
+    remotePort = 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frpc
+  namespace: apps
+  labels:
+    app: frpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frpc
+  template:
+    metadata:
+      labels:
+        app: frpc
+    spec:
+      enableServiceLinks: false
+      # Pin to the GPU/WSL node so it can reach vLLM at the node IP and dial out.
+      hostNetwork: true
+      dnsPolicy: Default
+      nodeSelector:
+        gpu: "true"
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
+      containers:
+        - name: frpc
+          image: snowdreamtech/frpc:0.61.1
+          env:
+            - name: FRP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: frp-token
+                  key: FRP_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /etc/frp/frpc.toml
+              subPath: frpc.toml
+      volumes:
+        - name: config
+          configMap:
+            name: frpc-config

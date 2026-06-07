@@ -7,3 +7,5 @@ resources:
   - pvc.yaml
   - service.yaml
   - ingress.yaml
+  - frps.yaml
+  - frpc.yaml
