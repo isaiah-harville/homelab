@@ -27,6 +27,13 @@ spec:
                 name: pigeon
                 port:
                   number: 80
+          - path: /support
+            pathType: Prefix
+            backend:
+              service:
+                name: pigeon
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
