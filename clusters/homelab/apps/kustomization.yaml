@@ -20,6 +20,7 @@ resources:
   - ../../../apps/base/homepage
   - ../../../apps/releases/swing-thoughts
   - ../../../apps/releases/pigeon
+  - ../../../apps/base/pigeon-relay
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
   - ../../../apps/releases/website

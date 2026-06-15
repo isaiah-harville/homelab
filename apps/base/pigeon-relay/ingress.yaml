@@ -1,0 +1,28 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pigeon-relay
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Pigeon Relay
+    gethomepage.dev/description: Zero-knowledge ciphertext mailbox
+    gethomepage.dev/href: https://relay.pigeonwire.app
+    gethomepage.dev/siteMonitor: https://relay.pigeonwire.app/healthz
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [relay.pigeonwire.app]
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: relay.pigeonwire.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pigeon-relay
+                port:
+                  number: 80
