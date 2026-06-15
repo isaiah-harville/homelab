@@ -1,0 +1,36 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pigeon
+  namespace: apps
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Pigeon
+    gethomepage.dev/description: Website, privacy policy
+    gethomepage.dev/href: https://pigeonwire.app
+    gethomepage.dev/siteMonitor: https://pigeonwire.app
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [pigeonwire.app]
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: pigeonwire.app
+      http:
+        paths:
+          - path: /privacy-policy
+            pathType: Prefix
+            backend:
+              service:
+                name: pigeon
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pigeon
+                port:
+                  number: 80

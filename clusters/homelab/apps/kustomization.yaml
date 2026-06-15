@@ -19,6 +19,7 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/releases/swing-thoughts
+  - ../../../apps/releases/pigeon
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
   - ../../../apps/releases/website
