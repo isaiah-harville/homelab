@@ -21,3 +21,5 @@ spec:
     - "*.int.harville.ai"
     - "innerswings.com"
     - "*.innerswings.com"
+    - "pigeonwire.app"
+    - "*.pigeonwire.app"

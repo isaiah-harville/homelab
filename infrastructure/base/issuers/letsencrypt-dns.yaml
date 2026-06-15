@@ -14,13 +14,7 @@ spec:
           dnsZones:
             - harville.dev
             - harville.ai
-        dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: api-token
-      - selector:
-          dnsZones:
+            - pigeonwire.app
             - innerswings.com
         dns01:
           cloudflare:
