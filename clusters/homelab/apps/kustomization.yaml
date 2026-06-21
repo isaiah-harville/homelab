@@ -13,6 +13,7 @@ resources:
   - ./secrets/seaweedfs-s3-config.yaml
   - ./secrets/harbor-secrets.yaml
   - ./secrets/vllm-api-key.yaml
+  - ./secrets/pigeon-relay-apns.yaml
   - ./secrets/frp-token.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
