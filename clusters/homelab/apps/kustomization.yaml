@@ -15,6 +15,7 @@ resources:
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
   - ./secrets/frp-token.yaml
+  - ./secrets/openvitae-secrets.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
@@ -24,7 +25,7 @@ resources:
   - ../../../apps/base/pigeon-relay
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
-  - ../../../apps/releases/website
+  - ../../../apps/releases/openvitae
   - ../../../apps/base/openwebui
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor

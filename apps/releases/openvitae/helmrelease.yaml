@@ -1,0 +1,82 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openvitae
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      # Chart lives in the OpenVitae repo (Git source), not a Helm registry.
+      chart: helm/openvitae
+      sourceRef:
+        kind: GitRepository
+        name: openvitae
+        namespace: flux-system
+      interval: 10m
+  # Sensitive values come from the SOPS-decrypted Secret, so nothing secret
+  # sits in plaintext git. Everything else is non-secret values below.
+  valuesFrom:
+    - kind: Secret
+      name: openvitae-secrets
+      valuesKey: jwtSecret
+      targetPath: auth.jwtSecret
+    - kind: Secret
+      name: openvitae-secrets
+      valuesKey: adminPassword
+      targetPath: auth.admin.password
+    - kind: Secret
+      name: openvitae-secrets
+      valuesKey: postgresPassword
+      targetPath: postgres.auth.password
+    - kind: Secret
+      name: openvitae-secrets
+      valuesKey: minioRootPassword
+      targetPath: minio.auth.rootPassword
+  values:
+    # Track the moving `latest` images published from main.
+    api:
+      image:
+        tag: latest
+        pullPolicy: Always
+    frontend:
+      image:
+        tag: latest
+        pullPolicy: Always
+    auth:
+      admin:
+        email: isaiah@harville.dev
+    # Bundled Postgres + MinIO on Longhorn (default StorageClass).
+    minio:
+      auth:
+        rootUser: openvitae
+      bucket: openvitae
+    # The chart renders its own Ingress, so the cluster's repo-wide Ingress
+    # patches do NOT apply — set class / TLS / entrypoint here. The site is
+    # public, and object storage gets its own public host so presigned
+    # headshot/PDF URLs resolve for outside visitors.
+    ingress:
+      enabled: true
+      className: traefik-public
+      host: isaiah.harville.dev
+      s3Host: openvitae-s3.harville.dev
+      tls:
+        enabled: true
+        secretName: harville-wildcard-shared-tls
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: Public
+        gethomepage.dev/name: CV
+        gethomepage.dev/description: Isaiah's CV & publications
+        gethomepage.dev/href: https://isaiah.harville.dev
+        gethomepage.dev/siteMonitor: https://isaiah.harville.dev
