@@ -39,6 +39,8 @@ spec:
             items:
               - key: index.html
                 path: index.html
+              - key: styles.css
+                path: styles.css
               - key: privacy-policy.html
                 path: privacy-policy/index.html
               - key: support.html

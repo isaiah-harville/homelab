@@ -6,6 +6,7 @@ configMapGenerator:
   - name: lucerna-site
     files:
       - site/index.html
+      - styles.css=site/styles.css
       - privacy-policy.html=site/privacy-policy/index.html
       - support.html=site/support/index.html
 generatorOptions:
