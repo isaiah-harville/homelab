@@ -26,6 +26,7 @@ resources:
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
   - ../../../apps/releases/openvitae
+  - ../../../apps/base/lucerna
   - ../../../apps/base/openwebui
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor

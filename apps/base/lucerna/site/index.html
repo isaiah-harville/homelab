@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lucerna</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #020711;
+        --bg-soft: #071936;
+        --fg: #fffaf0;
+        --muted: #c7d0df;
+        --dim: #8c9ab0;
+        --gold: #f4c84e;
+        --gold-deep: #b68a32;
+        --line: rgba(244, 200, 78, 0.5);
+        --phone: #061634;
+        --panel: rgba(7, 25, 54, 0.72);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--bg);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 50% 42%, rgba(33, 78, 135, 0.56), transparent 34rem),
+          radial-gradient(circle at 50% 64%, rgba(244, 200, 78, 0.13), transparent 27rem),
+          linear-gradient(90deg, #020711, #071936 24%, #0a1b39 50%, #071936 76%, #020711);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.65;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(180deg, rgba(2, 7, 17, 0.96), transparent 17%, transparent 78%, rgba(2, 7, 17, 0.9)),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 8px);
+        opacity: 0.8;
+      }
+
+      a {
+        color: var(--gold);
+        font-weight: 700;
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.2em;
+      }
+
+      main {
+        position: relative;
+        width: min(100% - 32px, 1120px);
+        margin: 0 auto;
+        padding: 64px 0 80px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        gap: 34px;
+        text-align: center;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 940px;
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 4.2rem;
+        font-weight: 700;
+        line-height: 0.98;
+        letter-spacing: 0;
+        text-shadow: 0 0 34px rgba(255, 250, 240, 0.16);
+      }
+
+      .lead {
+        max-width: 650px;
+        margin: 0;
+        color: var(--fg);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.65rem;
+        line-height: 1.25;
+      }
+
+      .phone-wrap {
+        position: relative;
+        width: min(100%, 390px);
+        aspect-ratio: 0.49;
+        margin: 4px auto 0;
+        filter: drop-shadow(0 0 18px rgba(244, 200, 78, 0.28)) drop-shadow(0 28px 54px rgba(0, 0, 0, 0.54));
+      }
+
+      .phone {
+        position: absolute;
+        inset: 0;
+        padding: 14px;
+        border: 2px solid rgba(255, 250, 240, 0.72);
+        border-radius: 54px;
+        background: linear-gradient(100deg, #111, #d3c6aa 6%, #171717 11%, #111 89%, #d9c89d 96%, #111);
+        box-shadow:
+          inset 0 0 0 2px rgba(255, 255, 255, 0.1),
+          0 0 26px rgba(244, 200, 78, 0.3);
+      }
+
+      .screen {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 42px;
+        background:
+          radial-gradient(circle at 50% 18%, rgba(26, 71, 132, 0.7), transparent 21rem),
+          linear-gradient(155deg, #0b2a61 0%, #071936 42%, #030b1a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .notch {
+        position: absolute;
+        left: 50%;
+        top: 18px;
+        width: 112px;
+        height: 30px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: #02050b;
+      }
+
+      .status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 29px 34px 0;
+        color: #fffaf0;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      .icons {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.8rem;
+      }
+
+      .battery {
+        width: 22px;
+        height: 11px;
+        border: 2px solid rgba(255, 255, 255, 0.78);
+        border-radius: 3px;
+        box-shadow: inset 13px 0 0 rgba(255, 255, 255, 0.86);
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        gap: 18px;
+        padding: 32px 26px 0;
+      }
+
+      .circle {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 1px solid rgba(244, 200, 78, 0.35);
+        border-radius: 50%;
+        background: rgba(9, 36, 86, 0.72);
+        color: var(--gold);
+        font-size: 1.4rem;
+        font-weight: 400;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 3px;
+        border: 1px solid rgba(119, 153, 214, 0.42);
+        border-radius: 999px;
+        background: rgba(6, 20, 47, 0.74);
+        color: #fffaf0;
+        font-weight: 800;
+      }
+
+      .segmented span {
+        padding: 9px 12px;
+        border-radius: 999px;
+      }
+
+      .segmented span:first-child {
+        color: var(--gold);
+        background: rgba(255, 255, 255, 0.11);
+        box-shadow: inset 0 1px 8px rgba(255, 255, 255, 0.08);
+      }
+
+      .widget-area {
+        padding: 98px 30px 0;
+        text-align: left;
+      }
+
+      .widget-note {
+        margin: 0 0 18px;
+        color: var(--dim);
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .verse-card {
+        padding: 24px 20px;
+        border: 2px solid var(--gold);
+        border-radius: 24px;
+        background: rgba(4, 16, 38, 0.68);
+        box-shadow: 0 0 28px rgba(244, 200, 78, 0.13);
+      }
+
+      .card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .card-title {
+        margin: 0;
+        color: #fffaf0;
+        font-size: 1.45rem;
+        font-weight: 850;
+      }
+
+      .pill {
+        align-self: start;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.13);
+        color: var(--gold);
+        font-size: 0.82rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .verse {
+        margin: 0 0 22px;
+        color: #fffaf0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.16rem;
+        line-height: 1.55;
+      }
+
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 0 0 18px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+        color: var(--dim);
+        font-size: 0.92rem;
+        font-weight: 750;
+      }
+
+      .button {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #d8b35e, #b88b36);
+        color: #061634;
+        text-align: center;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .story {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin: 72px auto 0;
+        text-align: left;
+      }
+
+      .panel {
+        padding: 22px;
+        border: 1px solid rgba(244, 200, 78, 0.22);
+        border-radius: 8px;
+        background: rgba(3, 13, 31, 0.58);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        color: var(--fg);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.4rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 18px;
+        margin-top: 42px;
+      }
+
+      @media (max-width: 840px) {
+        main {
+          padding-top: 44px;
+        }
+
+        h1 {
+          font-size: 3rem;
+        }
+
+        .lead {
+          font-size: 1.35rem;
+        }
+
+        .story {
+          grid-template-columns: 1fr;
+          margin-top: 48px;
+        }
+      }
+
+      @media (max-width: 460px) {
+        main {
+          width: min(100% - 22px, 1120px);
+        }
+
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        .lead {
+          font-size: 1.18rem;
+        }
+
+        .phone-wrap {
+          width: min(100%, 330px);
+        }
+
+        .toolbar {
+          grid-template-columns: 36px 1fr 36px;
+          gap: 12px;
+          padding-inline: 20px;
+        }
+
+        .circle {
+          width: 36px;
+          height: 36px;
+          font-size: 1.15rem;
+        }
+
+        .widget-area {
+          padding: 78px 24px 0;
+        }
+
+        .verse {
+          font-size: 1.02rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero" aria-label="Lucerna introduction">
+        <p class="eyebrow">Lucerna for iOS</p>
+        <h1>Scripture on Your Screen</h1>
+        <p class="lead">Organize verses into albums and add them to simple, beautiful Scripture Widgets.</p>
+
+        <div class="phone-wrap" aria-hidden="true">
+          <div class="phone">
+            <div class="screen">
+              <div class="notch"></div>
+              <div class="status">
+                <span>2:14</span>
+                <span class="icons">||| Wi-Fi <span class="battery"></span></span>
+              </div>
+              <div class="toolbar">
+                <span class="circle">?</span>
+                <div class="segmented"><span>Albums</span><span>Read</span></div>
+                <span class="circle">+</span>
+              </div>
+              <div class="widget-area">
+                <p class="widget-note">Starred verses stay close</p>
+                <div class="verse-card">
+                  <div class="card-top">
+                    <p class="card-title">Favorites</p>
+                    <span class="pill">Every day</span>
+                  </div>
+                  <p class="verse">For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.</p>
+                  <p class="meta"><span>John 3:16</span><span>3 verses &middot; WEB</span></p>
+                  <span class="button">On your widgets</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="story" aria-label="About Lucerna">
+        <article class="panel">
+          <h2>A Small Light</h2>
+          <p>The word &ldquo;Lucerna&rdquo; comes from Latin, meaning &ldquo;lamp&rdquo; or &ldquo;light.&rdquo; The app keeps Scripture close, visible, and quietly present throughout your day.</p>
+        </article>
+        <article class="panel">
+          <h2>Never a Subscription</h2>
+          <p>God&rsquo;s Word should not be locked behind a subscription. Lucerna has no premium tiers, paid unlocks, or artificial limits.</p>
+        </article>
+        <article class="panel">
+          <h2>Carry Scripture</h2>
+          <p>Choose a daily verse, a passage to memorize, or a quiet reminder of truth, then keep it near on your Lock Screen or Home Screen.</p>
+        </article>
+      </section>
+
+      <nav aria-label="Lucerna links">
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/support">Support</a>
+      </nav>
+    </main>
+  </body>
+</html>
