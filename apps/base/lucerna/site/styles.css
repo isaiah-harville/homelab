@@ -74,8 +74,8 @@ main {
   border: 1px solid rgba(244, 200, 78, 0.36);
   border-radius: 50%;
   background:
-    linear-gradient(var(--gold), var(--gold)) center 22px / 10px 42px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) center 44px / 42px 10px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) center 16px / 10px 56px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) center 32px / 42px 10px no-repeat,
     radial-gradient(circle, rgba(244, 200, 78, 0.2), rgba(244, 200, 78, 0.04) 58%, transparent 60%);
   box-shadow:
     0 0 38px rgba(244, 200, 78, 0.18),
@@ -164,8 +164,8 @@ nav {
     width: 72px;
     height: 72px;
     background:
-      linear-gradient(var(--gold), var(--gold)) center 18px / 8px 36px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) center 36px / 36px 8px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) center 14px / 8px 46px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) center 27px / 36px 8px no-repeat,
       radial-gradient(circle, rgba(244, 200, 78, 0.2), rgba(244, 200, 78, 0.04) 58%, transparent 60%);
   }
 }
