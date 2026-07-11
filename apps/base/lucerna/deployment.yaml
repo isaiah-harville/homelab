@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lucerna
+  labels:
+    app: lucerna
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lucerna
+  template:
+    metadata:
+      labels:
+        app: lucerna
+    spec:
+      containers:
+        - name: nginx
+          image: docker.io/library/nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: lucerna-site
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+      volumes:
+        - name: lucerna-site
+          configMap:
+            name: lucerna-site
+            items:
+              - key: index.html
+                path: index.html
+              - key: styles.css
+                path: styles.css
+              - key: privacy-policy.html
+                path: privacy-policy/index.html
+              - key: support.html
+                path: support/index.html

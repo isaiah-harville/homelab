@@ -14,7 +14,6 @@ resources:
   - ./secrets/harbor-secrets.yaml
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
-  - ./secrets/frp-token.yaml
   - ./secrets/openvitae-secrets.yaml
   - ../../../apps/base/authelia
   - ../../../apps/base/echo-server
@@ -26,10 +25,13 @@ resources:
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
   - ../../../apps/releases/openvitae
+  - ../../../apps/base/lucerna
   - ../../../apps/base/openwebui
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor
-  - ../../../apps/base/vllm
+  - ../../../apps/base/vllm-wsl
+  - ../../../apps/base/vllm-dgx
+  - ../../../apps/base/vllm-router
 patches:
   - target:
       kind: Ingress

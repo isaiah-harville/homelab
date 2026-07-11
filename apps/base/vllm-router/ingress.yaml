@@ -2,14 +2,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: vllm
+  name: vllm-router
   namespace: apps
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: AI
     gethomepage.dev/name: vLLM
-    gethomepage.dev/description: Qwen3-8B OpenAI-compatible inference
-    gethomepage.dev/pod-selector: app=vllm
+    gethomepage.dev/description: OpenAI-compatible inference (Qwen3-8B, gpt-oss-120b)
+    gethomepage.dev/pod-selector: app=vllm-router
 spec:
   ingressClassName: traefik-internal
   tls:
@@ -22,6 +22,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: vllm
+                name: vllm-router
                 port:
-                  number: 8000
+                  number: 8001

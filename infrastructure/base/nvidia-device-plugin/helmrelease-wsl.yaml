@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: nvidia-device-plugin
+  name: nvidia-device-plugin-wsl
   namespace: kube-system
 spec:
   interval: 30m
@@ -17,7 +17,7 @@ spec:
   chart:
     spec:
       chart: nvidia-device-plugin
-      version: "0.19.3"
+      version: "0.19.2"
       sourceRef:
         kind: HelmRepository
         name: nvidia-device-plugin
@@ -27,23 +27,24 @@ spec:
     # is installed on the node (see ansible k3s_node role). The plugin must run
     # under it to see the GPU.
     runtimeClassName: nvidia
-    # Any bare-metal GPU node (gpu=true, no gpu-wsl label) — WSL boxes use the
-    # nvidia-device-plugin-wsl release instead, since they need a different
-    # deviceListStrategy. affinity excludes gpu-wsl nodes (nodeSelector alone
-    # can't express "label absent"); this also replaces the chart's default
-    # NFD-based GPU-detection nodeAffinity, which doesn't apply here.
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-                - key: gpu-wsl
-                  operator: DoesNotExist
+    # The chart keeps its default GPU-detection nodeAffinity even with affinity: {}
+    # in values. WSL does not expose the GPU as PCI, so Ansible labels the node
+    # nvidia.com/gpu.present=true to satisfy the chart's accepted GPU labels.
+    affinity: {}
+    # Only WSL boxes (gpu-wsl label set by ansible's k3s_node role when
+    # node_wsl: true) — bare-metal GPU nodes use the plain nvidia-device-plugin
+    # release instead, since they need a different deviceListStrategy (see below).
     nodeSelector:
       gpu: "true"
+      gpu-wsl: "true"
     # GPU nodes are tainted dedicated=gpu (reserved for GPU work) — tolerate it.
     tolerations:
       - key: dedicated
         operator: Equal
         value: gpu
         effect: NoSchedule
+    # WSL2 exposes the GPU as a mounted device rather than via the usual NVML
+    # device list, so advertise it through volume-mounts. This is a WSL-only
+    # workaround — do NOT apply it to bare-metal GPU nodes (breaks their normal
+    # CDI-based device injection).
+    deviceListStrategy: volume-mounts

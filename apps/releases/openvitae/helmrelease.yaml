@@ -55,6 +55,10 @@ spec:
     auth:
       admin:
         email: isaiah@harville.dev
+      # Delegate admin auth to Authelia (forward-auth). The chart guards
+      # /admin + /api with the middleware below; the API trusts the Remote-*
+      # headers Authelia injects. Public CV + S3 host stay anonymous.
+      mode: proxy
     # Bundled Postgres + MinIO on Longhorn (default StorageClass).
     minio:
       auth:
@@ -72,11 +76,16 @@ spec:
       tls:
         enabled: true
         secretName: harville-wildcard-shared-tls
+      # Forward-auth only the admin surface (/admin + /api). The chart renders a
+      # second Ingress carrying this middleware; the public CV and the S3 host
+      # stay anonymous. Authelia access_control restricts it to user:isaiah.
+      protectedAnnotations:
+        traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
       annotations:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         gethomepage.dev/enabled: "true"
         gethomepage.dev/group: Public
         gethomepage.dev/name: CV
-        gethomepage.dev/description: Isaiah's CV & publications
+        gethomepage.dev/description: Personal CV site
         gethomepage.dev/href: https://isaiah.harville.dev
         gethomepage.dev/siteMonitor: https://isaiah.harville.dev
