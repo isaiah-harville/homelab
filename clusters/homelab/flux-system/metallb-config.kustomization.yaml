@@ -8,6 +8,8 @@ spec:
   interval: 10m
   path: ./infrastructure/base/metallb-config
   prune: true
+  wait: true
+  timeout: 5m
   sourceRef:
     kind: GitRepository
     name: flux-system
