@@ -1,0 +1,108 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-dgx
+  namespace: apps
+  labels:
+    app: vllm-dgx
+spec:
+  replicas: 1
+  # Single GPU, weights on a node-local volume — never run two at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm-dgx
+  template:
+    metadata:
+      labels:
+        app: vllm-dgx
+    spec:
+      runtimeClassName: nvidia
+      # Both GPU nodes carry gpu=true; pin this one to the DGX Spark specifically.
+      # Use nodeSelector, not .spec.nodeName — nodeName bypasses the scheduler
+      # entirely, which breaks WaitForFirstConsumer PVC binding (the local-path
+      # PV never gets created because the scheduler's volume-binding plugin,
+      # which WaitForFirstConsumer relies on, never runs for this pod).
+      nodeSelector:
+        gpu: "true"
+        kubernetes.io/hostname: spark-a97a
+      # The GPU node is tainted dedicated=gpu so general workloads stay off it
+      # (and Longhorn/metallb don't run there). GPU pods opt in via this toleration.
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
+      containers:
+        - name: vllm-dgx
+          image: vllm/vllm-openai:v0.25.0-aarch64-ubuntu2404
+          args:
+            # gpt-oss-120b (MXFP4, ~65 GiB) is the standard fit for the Spark's
+            # 128 GiB unified memory, leaving headroom for OS/runtime/KV cache.
+            - --model
+            - openai/gpt-oss-120b
+            - --served-model-name
+            - gpt-oss-120b
+            - --max-model-len
+            - "131072"
+            - --gpu-memory-utilization
+            - "0.85"
+            # Spark is bandwidth- not concurrency-bound; keep batch depth low.
+            - --max-num-seqs
+            - "4"
+            - --kv-cache-dtype
+            - fp8
+            - --api-key
+            - $(VLLM_API_KEY)
+          env:
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-api-key
+                  key: VLLM_API_KEY
+            # Cache weights on the node-local PVC instead of the container layer.
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+            requests:
+              cpu: "1"
+              memory: 4Gi
+          # First start downloads ~65 GB and loads the model — give it room
+          # before liveness/readiness kick in.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 15
+            failureThreshold: 120
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-dgx-models
+        # vLLM needs shared memory for its worker IPC.
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi

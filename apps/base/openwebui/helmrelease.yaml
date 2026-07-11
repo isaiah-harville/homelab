@@ -63,12 +63,13 @@ spec:
     fullnameOverride: openwebui
     # Ollama dropped — Open WebUI uses vLLM via the OpenAI API only. These are the
     # chart's native OpenAI values (NOT postRenderers env, which would duplicate
-    # the chart-set env and break Helm's patch). The vllm Service points at the
-    # frp tunnel to the GPU node.
+    # the chart-set env and break Helm's patch). Points at the vLLM router
+    # (apps/base/vllm-router), which fronts both GPU backends and exposes them
+    # as separate selectable models.
     ollama:
       enabled: false
     enableOpenaiApi: true
-    openaiBaseApiUrl: http://vllm:8000/v1
+    openaiBaseApiUrl: http://vllm-router:8001/v1
     openaiApiKeyExistingSecret: vllm-api-key
     openaiApiKeyExistingSecretKey: VLLM_API_KEY
     pipelines:
