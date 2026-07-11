@@ -46,7 +46,6 @@ spec:
             - qwen3-8b,gpt-oss-120b
             - --static-model-types
             - chat,chat
-            - --static-backend-health-checks
             - --routing-logic
             - roundrobin
             - --log-stats
