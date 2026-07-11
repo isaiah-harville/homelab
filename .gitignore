@@ -8,7 +8,6 @@ public-cert.pem
 
 # Misc.
 NOTES.md
-agents.md
 
 # Pre-commit stuff
 node_modules/
