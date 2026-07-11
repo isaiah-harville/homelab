@@ -17,6 +17,13 @@
   ansible.builtin.include_tasks: wsl.yml
   when: node_wsl | default(false)
 
+- name: Ensure /etc/rancher/k3s exists
+  when: (node_gpu | default(false)) or (node_wsl | default(false))
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: "0755"
+
 - name: Write k3s agent config (GPU labels/taint + WSL node-ip pin)
   when: (node_gpu | default(false)) or (node_wsl | default(false))
   ansible.builtin.copy:
