@@ -82,6 +82,13 @@ spec:
     # config here: the chart's default local embedding model + Chroma vector
     # DB are already on by default.
     extraEnvVars:
+      # Separate from ENABLE_RAG_WEB_SEARCH below: this is the global switch
+      # that actually surfaces the web-search toggle in the chat UI at all
+      # (exposed to the frontend as /api/config's features.web_search).
+      # Without it the toggle never appears, regardless of the RAG_WEB_SEARCH_*
+      # settings.
+      - name: ENABLE_WEB_SEARCH
+        value: "true"
       - name: ENABLE_RAG_WEB_SEARCH
         value: "true"
       - name: RAG_WEB_SEARCH_ENGINE
