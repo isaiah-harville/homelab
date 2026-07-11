@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vllm
+  name: vllm-wsl
   namespace: apps
   labels:
-    app: vllm
+    app: vllm-wsl
 spec:
   replicas: 1
   # Single GPU, weights on a node-local volume — never run two at once.
@@ -13,28 +13,36 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: vllm
+      app: vllm-wsl
   template:
     metadata:
       labels:
-        app: vllm
+        app: vllm-wsl
     spec:
-      # The Service is named `vllm`, so Kubernetes would inject VLLM_PORT=tcp://<clusterIP>
-      # which collides with vLLM's own VLLM_PORT env var (it errors on the URI).
-      # We resolve everything via DNS, so disable the legacy Service env links.
+      # No Service targets this pod (hostNetwork means the router in
+      # apps/base/vllm-router reaches it directly at the node IP), but leave
+      # legacy Service env injection off regardless.
       enableServiceLinks: false
       # The GPU node is a WSL2 box whose flannel VXLAN overlay can't receive
       # inbound (WSL mirrored networking doesn't deliver to the kernel VXLAN
       # handler). hostNetwork bypasses the overlay: vLLM binds the node's LAN IP
-      # directly (reachable like SSH) and dnsPolicy:Default uses the node's
-      # resolver/egress instead of CoreDNS, so it can pull the model from HF.
+      # directly (reachable like SSH, and how apps/base/vllm-router reaches it)
+      # and dnsPolicy:Default uses the node's resolver/egress instead of
+      # CoreDNS, so it can pull the model from HF.
       hostNetwork: true
       dnsPolicy: Default
       # Run under the nvidia container runtime (k3s auto-creates this RuntimeClass
-      # once the NVIDIA Container Toolkit is on the node) and pin to the GPU node.
+      # once the NVIDIA Container Toolkit is on the node).
       runtimeClassName: nvidia
+      # Both GPU nodes carry gpu=true; pin to the WSL box specifically — the
+      # router hardcodes this pod's node IP (10.1.1.20) as a static backend, and
+      # hostNetwork below only makes sense on the WSL box (see comment above).
+      # Use nodeSelector, not .spec.nodeName — nodeName bypasses the scheduler
+      # entirely, which breaks WaitForFirstConsumer PVC binding (see
+      # apps/base/vllm-dgx/deployment.yaml for the full explanation).
       nodeSelector:
         gpu: "true"
+        kubernetes.io/hostname: harvi-desktop
       # The GPU node is tainted dedicated=gpu so general workloads stay off it
       # (and Longhorn/metallb don't run there). GPU pods opt in via this toleration.
       tolerations:
@@ -43,7 +51,7 @@ spec:
           value: gpu
           effect: NoSchedule
       containers:
-        - name: vllm
+        - name: vllm-wsl
           # CUDA 12.x on purpose — cu13/:latest had an Apr-2026 gibberish bug on Qwen3.
           image: vllm/vllm-openai:v0.22.1-cu129-ubuntu2404
           args:
@@ -110,7 +118,7 @@ spec:
       volumes:
         - name: models
           persistentVolumeClaim:
-            claimName: vllm-models
+            claimName: vllm-wsl-models
         # vLLM needs shared memory for its worker IPC.
         - name: dshm
           emptyDir:
