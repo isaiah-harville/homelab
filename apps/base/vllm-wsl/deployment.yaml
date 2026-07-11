@@ -32,10 +32,17 @@ spec:
       hostNetwork: true
       dnsPolicy: Default
       # Run under the nvidia container runtime (k3s auto-creates this RuntimeClass
-      # once the NVIDIA Container Toolkit is on the node) and pin to the GPU node.
+      # once the NVIDIA Container Toolkit is on the node).
       runtimeClassName: nvidia
+      # Both GPU nodes carry gpu=true; pin to the WSL box specifically — the
+      # router hardcodes this pod's node IP (10.1.1.20) as a static backend, and
+      # hostNetwork below only makes sense on the WSL box (see comment above).
+      # Use nodeSelector, not .spec.nodeName — nodeName bypasses the scheduler
+      # entirely, which breaks WaitForFirstConsumer PVC binding (see
+      # apps/base/vllm-dgx/deployment.yaml for the full explanation).
       nodeSelector:
         gpu: "true"
+        kubernetes.io/hostname: harvi-desktop
       # The GPU node is tainted dedicated=gpu so general workloads stay off it
       # (and Longhorn/metallb don't run there). GPU pods opt in via this toleration.
       tolerations:

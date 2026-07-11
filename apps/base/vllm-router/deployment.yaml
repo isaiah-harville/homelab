@@ -35,8 +35,13 @@ spec:
             - "8001"
             - --service-discovery
             - static
+            # The router's URL validator requires a dotted hostname (or IPv4/
+            # localhost) — a bare Service name like "vllm-dgx" fails validation
+            # and gets silently dropped, which then crashes the router on the
+            # URLs/models length-mismatch assertion. Use the fully-qualified
+            # in-cluster DNS name instead.
             - --static-backends
-            - http://10.1.1.20:8000,http://vllm-dgx:8000
+            - http://10.1.1.20:8000,http://vllm-dgx.apps.svc.cluster.local:8000
             - --static-models
             - qwen3-8b,gpt-oss-120b
             - --static-model-types

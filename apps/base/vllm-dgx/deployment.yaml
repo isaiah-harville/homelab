@@ -21,9 +21,13 @@ spec:
     spec:
       runtimeClassName: nvidia
       # Both GPU nodes carry gpu=true; pin this one to the DGX Spark specifically.
-      nodeName: spark-a97a
+      # Use nodeSelector, not .spec.nodeName — nodeName bypasses the scheduler
+      # entirely, which breaks WaitForFirstConsumer PVC binding (the local-path
+      # PV never gets created because the scheduler's volume-binding plugin,
+      # which WaitForFirstConsumer relies on, never runs for this pod).
       nodeSelector:
         gpu: "true"
+        kubernetes.io/hostname: spark-a97a
       # The GPU node is tainted dedicated=gpu so general workloads stay off it
       # (and Longhorn/metallb don't run there). GPU pods opt in via this toleration.
       tolerations:
