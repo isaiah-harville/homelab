@@ -77,3 +77,18 @@ spec:
     persistence:
       enabled: true
       existingClaim: openwebui-longhorn
+    # Web search via the in-cluster SearXNG instance (apps/base/searxng) —
+    # private, no external API key. Document/knowledge-base RAG needs no
+    # config here: the chart's default local embedding model + Chroma vector
+    # DB are already on by default.
+    extraEnvVars:
+      - name: ENABLE_RAG_WEB_SEARCH
+        value: "true"
+      - name: RAG_WEB_SEARCH_ENGINE
+        value: searxng
+      - name: SEARXNG_QUERY_URL
+        value: "http://searxng:8080/search?q=<query>"
+      - name: RAG_WEB_SEARCH_RESULT_COUNT
+        value: "5"
+      - name: RAG_WEB_SEARCH_CONCURRENT_REQUESTS
+        value: "5"
