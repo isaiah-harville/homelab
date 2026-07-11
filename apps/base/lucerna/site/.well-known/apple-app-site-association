@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["PUMV3ZMP9G.com.isaiah-harville.Lucerna"],
+        "components": [
+          {
+            "/": "/verse/*",
+            "comment": "Open shared Bible verses in Lucerna."
+          }
+        ]
+      }
+    ]
+  }
+}

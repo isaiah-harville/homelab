@@ -9,6 +9,8 @@ configMapGenerator:
       - styles.css=site/styles.css
       - privacy-policy.html=site/privacy-policy/index.html
       - support.html=site/support/index.html
+      - apple-app-site-association=site/.well-known/apple-app-site-association
+      - nginx.conf
 generatorOptions:
   disableNameSuffixHash: true
 resources:
