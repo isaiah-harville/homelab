@@ -39,10 +39,17 @@
       {% endif %}
       {% if node_gpu | default(false) %}
       # gpu=true gates our own scheduling; nvidia.com/gpu.present satisfies the
-      # device-plugin chart's GPU nodeAffinity (no NFD on these nodes).
+      # device-plugin chart's GPU nodeAffinity (no NFD on these nodes). gpu-wsl
+      # distinguishes WSL boxes (need the volume-mounts device-plugin release,
+      # infrastructure/base/nvidia-device-plugin/helmrelease-wsl.yaml) from
+      # bare-metal GPU nodes (the plain helmrelease.yaml, normal CDI-based
+      # detection) — see node_wsl below.
       node-label:
         - "gpu=true"
         - "nvidia.com/gpu.present=true"
+        {% if node_wsl | default(false) %}
+        - "gpu-wsl=true"
+        {% endif %}
       # Reserve the node for GPU work: general pods + Longhorn/metallb (which
       # don't tolerate this) stay off; vLLM + the device plugin tolerate it.
       node-taint:
