@@ -8,8 +8,8 @@
 #   node_ip       — static IP in CIDR notation, e.g. 10.1.10.101/24
 #                   (ansible_host is derived from this — see inventory)
 #
-# Cluster variables (already set in inventory/group_vars/all/ — single control node):
-#   k3s_server_url — https://10.1.10.10:6443
+# Cluster variables (already set in inventory/group_vars/all/ — HA control plane via the VIP):
+#   k3s_server_url — the kube-vip VIP, https://10.1.10.9:6443
 #   k3s_token      — node join token from /var/lib/rancher/k3s/server/node-token
 #
 # Usage:

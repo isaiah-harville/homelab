@@ -2,7 +2,7 @@
 
 Provisions Ubuntu 24.04 machines as k3s agent nodes with Longhorn storage.
 
-All cluster-wide settings live in `inventory/group_vars/all/`, and the secrets (k3s token, login user, password) live encrypted in `inventory/group_vars/all/vault.yml`. Adding a node is just needs a∂ hostname and a static IP.
+All cluster-wide settings live in `inventory/group_vars/all/`, and the secrets (k3s token, login user, password) live encrypted in `inventory/group_vars/all/vault.yml`. Adding a node just needs a hostname and a static IP.
 
 ## What it does
 
@@ -149,7 +149,7 @@ kubectl -n longhorn-system get nodes.longhorn.io
 | `vault_node_user` | vault.yml | Login user created on every node |
 | `vault_node_password` | vault.yml | Password for that user |
 | `vault_k3s_token` | vault.yml | k3s node join token |
-| `k3s_server_url` | vars.yml | k3s API URL — `https://10.1.10.10:6443` |
+| `k3s_server_url` | vars.yml | k3s API URL — the kube-vip VIP, `https://10.1.10.9:6443` |
 | `node_gateway` | vars.yml | Default gateway (`10.1.10.1`) |
 | `node_dns` | vars.yml | DNS servers list |
 | `network_interface` | vars.yml | NIC to configure (default: `enp1s0`) |
