@@ -37,9 +37,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: vllm-dgx
-          # Official arm64 build — CUDA 12.9 satisfies GB10/sm_121's FlashInfer
-          # JIT requirement.
-          image: vllm/vllm-openai:v0.25.0-aarch64-cu129-ubuntu2404
+          image: vllm/vllm-openai:v0.25.0-aarch64-ubuntu2404
           args:
             # gpt-oss-120b (MXFP4, ~65 GiB) is the standard fit for the Spark's
             # 128 GiB unified memory, leaving headroom for OS/runtime/KV cache.
