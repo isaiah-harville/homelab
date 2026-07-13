@@ -37,11 +37,6 @@ spec:
           effect: NoSchedule
       containers:
         - name: vllm-dgx
-          # Qwen3.6-35B-A3B (FP8 block-128, ~35 GiB weights) — MoE, 3B active,
-          # outscores gpt-oss-120b on most knowledge/reasoning benches while
-          # leaving far more of the Spark's 128 GiB unified memory for KV cache
-          # (~64 GiB here). Stick to FP8, NOT NVFP4: NVFP4 crashes with a CUDA
-          # illegal instruction on the GB10 (ARM64 Blackwell) — vllm#35519.
           image: vllm/vllm-openai:v0.25.0-aarch64-ubuntu2404
           args:
             - --model
@@ -49,17 +44,17 @@ spec:
             - --served-model-name
             - qwen3.6-35b
             - --trust-remote-code
-            # 262144 is the native context window; the FP8 KV cache fits it here.
             - --max-model-len
             - "262144"
             - --gpu-memory-utilization
             - "0.85"
-            # Spark is bandwidth- not concurrency-bound; keep batch depth low.
             - --max-num-seqs
             - "4"
             - --kv-cache-dtype
             - fp8
             - --enable-prefix-caching
+            - --max-num-batched-tokens
+            - "4096"
             - --enable-auto-tool-choice
             - --tool-call-parser
             - qwen3_xml
