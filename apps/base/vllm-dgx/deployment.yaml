@@ -35,38 +35,23 @@ spec:
           operator: Equal
           value: gpu
           effect: NoSchedule
-      # gpt-oss-120b's tokenizer (openai-harmony) tries to download its o200k
-      # vocab file over HTTPS the first time a chat request is rendered — not
-      # at model load, so vLLM reports healthy right up until the first real
-      # request 500s. On this image/arch the embedded Rust HTTPS client fails
-      # that download instantly (no network attempt is even observable), so
-      # pre-fetch the file with a normal HTTP client onto the persistent
-      # models volume and point openai-harmony at the local copy instead.
-      initContainers:
-        - name: fetch-tiktoken-vocab
-          image: curlimages/curl:8.11.1
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /models/tiktoken-encodings
-              curl -sSf -o /models/tiktoken-encodings/o200k_base.tiktoken \
-                https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken
-          volumeMounts:
-            - name: models
-              mountPath: /models
       containers:
         - name: vllm-dgx
+          # Qwen3.6-35B-A3B (FP8 block-128, ~35 GiB weights) — MoE, 3B active,
+          # outscores gpt-oss-120b on most knowledge/reasoning benches while
+          # leaving far more of the Spark's 128 GiB unified memory for KV cache
+          # (~64 GiB here). Stick to FP8, NOT NVFP4: NVFP4 crashes with a CUDA
+          # illegal instruction on the GB10 (ARM64 Blackwell) — vllm#35519.
           image: vllm/vllm-openai:v0.25.0-aarch64-ubuntu2404
           args:
-            # gpt-oss-120b (MXFP4, ~65 GiB) is the standard fit for the Spark's
-            # 128 GiB unified memory, leaving headroom for OS/runtime/KV cache.
             - --model
-            - openai/gpt-oss-120b
+            - Qwen/Qwen3.6-35B-A3B-FP8
             - --served-model-name
-            - gpt-oss-120b
+            - qwen3.6-35b
+            - --trust-remote-code
+            # 262144 is the native context window; the FP8 KV cache fits it here.
             - --max-model-len
-            - "131072"
+            - "262144"
             - --gpu-memory-utilization
             - "0.85"
             # Spark is bandwidth- not concurrency-bound; keep batch depth low.
@@ -74,9 +59,12 @@ spec:
             - "4"
             - --kv-cache-dtype
             - fp8
+            - --enable-prefix-caching
             - --enable-auto-tool-choice
             - --tool-call-parser
-            - openai
+            - qwen3_xml
+            - --reasoning-parser
+            - qwen3
             - --api-key
             - $(VLLM_API_KEY)
           env:
@@ -88,10 +76,6 @@ spec:
             # Cache weights on the node-local PVC instead of the container layer.
             - name: HF_HOME
               value: /models
-            # See the initContainer comment above — points openai-harmony at
-            # the pre-fetched vocab file instead of downloading it itself.
-            - name: TIKTOKEN_ENCODINGS_BASE
-              value: /models/tiktoken-encodings
           ports:
             - name: http
               containerPort: 8000
@@ -101,7 +85,7 @@ spec:
             requests:
               cpu: "1"
               memory: 4Gi
-          # First start downloads ~65 GB and loads the model — give it room
+          # First start downloads ~35 GB and loads the model — give it room
           # before liveness/readiness kick in.
           startupProbe:
             httpGet:

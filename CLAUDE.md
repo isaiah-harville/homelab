@@ -119,7 +119,7 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
 - **vllm** — GPU inference, OpenAI-compatible API at `vllm.int.harville.dev` (API-key
   auth), wired into Open WebUI. Two backends behind a router (`apps/base/vllm-router`,
   the vLLM Production Stack router): `apps/base/vllm-wsl` (Qwen3-8B-AWQ, WSL box) and
-  `apps/base/vllm-dgx` (gpt-oss-120b, DGX Spark). The router picks the backend by the
+  `apps/base/vllm-dgx` (Qwen3.6-35B-A3B-FP8, DGX Spark). The router picks the backend by the
   requested model name, so both show up as separate models in Open WebUI.
 - **nvidia-device-plugin** (kube-system) — advertises `nvidia.com/gpu`; runs on
   `gpu=true` nodes under the k3s-auto-created `nvidia` RuntimeClass.

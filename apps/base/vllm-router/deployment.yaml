@@ -43,7 +43,7 @@ spec:
             - --static-backends
             - http://10.1.1.20:8000,http://vllm-dgx.apps.svc.cluster.local:8000
             - --static-models
-            - qwen3-8b,gpt-oss-120b
+            - qwen3-8b,qwen3.6-35b
             - --static-model-types
             - chat,chat
             - --routing-logic
