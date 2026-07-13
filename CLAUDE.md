@@ -15,7 +15,7 @@ stick; edit the repo.
 clusters/homelab/   Flux composition (Kustomizations, cluster-specific secrets, patches)
 infrastructure/base/ Cluster plumbing: traefik, cert-manager, metallb, longhorn, monitoring, reflector, sources
 apps/base/          Reusable app building blocks (HelmRelease + ingress + kustomization)
-apps/releases/      Apps deployed from their own GitRepository sources
+apps/releases/      Apps deployed from their OWN external git repos (see below)
 ansible/            Provisions Ubuntu 24 machines as k3s nodes
 docs/, NOTES.md     Runbooks + ops cheatsheet
 ```
@@ -46,6 +46,23 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
 2. If the chart is from a new Helm repo, add a `HelmRepository` under
    `infrastructure/base/sources/` and register it in that dir's `kustomization.yaml`.
 3. Register the app dir (and any secret files) in `clusters/homelab/apps/kustomization.yaml`.
+
+## Apps from external repos (`apps/releases/`)
+
+Some apps aren't built from a Helm chart here — they live in their **own GitHub
+repos** and this repo only points Flux at them. Each `apps/releases/<name>/` holds:
+
+- `gitrepository.yaml` — a Flux `GitRepository` (in `flux-system`) for the app's repo.
+- `release.kustomization.yaml` — a Flux `Kustomization` whose `spec.path` points at a
+  deploy dir **inside that external repo** (not this one), `dependsOn` infra +
+  certificates. This is why `orion`, `pigeon`, `swing-thoughts`, `openvitae` show up
+  as their own top-level entries in `flux get kustomizations -A`.
+- `ingress.yaml` — the Ingress lives here (so it gets the `apps` Ingress patches).
+
+They're still registered as resources in `clusters/homelab/apps/kustomization.yaml`,
+so the parent `apps` Kustomization creates the GitRepository + child Kustomization,
+and the child then reconciles the app from its own source. `apps/base/` HelmRelease
+apps and these external-repo apps are mixed together in that one kustomization list.
 
 ## Ingress conventions
 
@@ -97,6 +114,12 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
   root so `.sops.yaml` is picked up). The age **private** key lives only in-cluster
   (`sops-age` secret) — you can encrypt locally but not decrypt without it.
 - yamllint/pre-commit excludes `secrets/` and `sops/` dirs.
+- **Rollout-on-secret-change:** `clusters/homelab/apps/kustomization.yaml` has a
+  `replacements` block that copies each authelia secret's `sops.mac` into a pod
+  annotation on the authelia HelmRelease. Because the MAC changes whenever the
+  secret content changes, editing an authelia secret changes the annotation, which
+  rolls the pods — otherwise a plain Secret update wouldn't restart them. Reuse this
+  pattern for any app that reads secrets only at startup.
 
 ## Networking (MetalLB)
 
@@ -113,6 +136,8 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
 - **longhorn** — distributed block storage / default SC.
 - **authelia** — SSO / forwardauth provider.
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
+- **searxng** — self-hosted metasearch; backs Open WebUI's web-search
+  (`http://searxng:8080`, see `apps/base/openwebui`).
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **harbor** — container registry, public at `harbor.harville.dev`.
@@ -121,6 +146,14 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
   the vLLM Production Stack router): `apps/base/vllm-wsl` (Qwen3-8B-AWQ, WSL box) and
   `apps/base/vllm-dgx` (Qwen3.6-35B-A3B-FP8, DGX Spark). The router picks the backend by the
   requested model name, so both show up as separate models in Open WebUI.
+  > **Hybrid-model gotcha (Qwen3.6 / any Mamba-MoE):** with `--enable-prefix-caching`
+  > vLLM forces the Mamba KV cache into "align" mode, which pins `block_size` to 2096
+  > and asserts `block_size <= max-num-batched-tokens`. The chunked-prefill default is
+  > 2048 < 2096, so the engine core **crash-loops on startup**. Fix is set
+  > `--max-num-batched-tokens 4096` (done in `apps/base/vllm-dgx/deployment.yaml`).
+  > When a vLLM pod restart-loops but the model *finishes loading* first, read the
+  > `--previous` logs — the real error is an `AssertionError`/`ValueError` during KV
+  > cache init, well below the "Engine core initialization failed" line.
 - **nvidia-device-plugin** (kube-system) — advertises `nvidia.com/gpu`; runs on
   `gpu=true` nodes under the k3s-auto-created `nvidia` RuntimeClass.
 
