@@ -25,6 +25,19 @@ spec:
         name: traefik
         namespace: flux-system
   values:
+    deployment:
+      replicas: 2
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: traefik
+            app.kubernetes.io/instance: traefik-public-traefik-public
     ingressClass:
       enabled: true
       isDefaultClass: false
