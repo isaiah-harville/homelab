@@ -176,12 +176,12 @@ all `NoSchedule` taints so it stays.
 There are two GPU nodes, both `gpu=true` (a `nodeName` pin disambiguates their vLLM
 deployments — see `apps/base/vllm-dgx/deployment.yaml`):
 
-- **`harvi-desktop`** (`10.1.1.20`, routed subnet) — a WSL2 box, both `node_gpu` and
+- **`harvi-desktop`** (`10.1.10.20`, main cluster subnet) — a WSL2 box, both `node_gpu` and
   `node_wsl`. **WSL caveat:** flannel's VXLAN overlay can't receive inbound on WSL
   mirrored networking, so the node does **no cross-node pod networking** — its vLLM
   (`apps/base/vllm-wsl`) therefore runs with `hostNetwork: true` + `dnsPolicy: Default`
   (binds the node's LAN IP, uses node DNS/egress). The router
-  (`apps/base/vllm-router`) reaches it directly at `10.1.1.20:8000` — same as
+  (`apps/base/vllm-router`) reaches it directly at `10.1.10.20:8000` — same as
   SSH/ansible already do — no tunnel needed. See the inventory comment for WSL
   prereqs (systemd, mirrored networking + `firewall=false`, Windows driver, sshd).
 - **`spark-a97a`** (DGX Spark, `10.1.10.75`, main cluster subnet) — a normal Linux box (stock DGX

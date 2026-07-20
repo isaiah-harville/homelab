@@ -35,7 +35,7 @@ spec:
       # once the NVIDIA Container Toolkit is on the node).
       runtimeClassName: nvidia
       # Both GPU nodes carry gpu=true; pin to the WSL box specifically — the
-      # router hardcodes this pod's node IP (10.1.1.20) as a static backend, and
+      # router hardcodes this pod's node IP (10.1.10.20) as a static backend, and
       # hostNetwork below only makes sense on the WSL box (see comment above).
       # Use nodeSelector, not .spec.nodeName — nodeName bypasses the scheduler
       # entirely, which breaks WaitForFirstConsumer PVC binding (see

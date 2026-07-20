@@ -41,7 +41,7 @@ spec:
             # URLs/models length-mismatch assertion. Use the fully-qualified
             # in-cluster DNS name instead.
             - --static-backends
-            - http://10.1.1.20:8000,http://vllm-dgx.apps.svc.cluster.local:8000
+            - http://10.1.10.20:8000,http://vllm-dgx.apps.svc.cluster.local:8000
             - --static-models
             - qwen3-8b,qwen3.6-35b
             - --static-model-types
