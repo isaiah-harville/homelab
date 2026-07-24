@@ -11,7 +11,6 @@ resources:
   - ../../../infrastructure/base/reflector
   - ../../../infrastructure/base/longhorn
   - ../../../infrastructure/base/monitoring
-  - ../../../infrastructure/base/nvidia-device-plugin
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
 patches:

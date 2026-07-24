@@ -29,8 +29,6 @@ resources:
   - ../../../apps/base/openwebui
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor
-  - ../../../apps/base/vllm-wsl
-  - ../../../apps/base/vllm-dgx
   - ../../../apps/base/vllm-router
   - ../../../apps/base/searxng
 patches:

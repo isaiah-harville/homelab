@@ -13,4 +13,3 @@ resources:
   - open-webui.helmrepository.yaml
   - seaweedfs.helmrepository.yaml
   - harbor.helmrepository.yaml
-  - nvidia-device-plugin.helmrepository.yaml

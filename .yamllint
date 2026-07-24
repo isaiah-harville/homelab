@@ -6,8 +6,6 @@ ignore: |
   clusters/**/sops/**
   clusters/**/flux-system/gotk-*.yaml
   clusters/**/flux-system/gotk-*.yml
-  scripts/encrypt-secret.yaml
-  ansible/**
 
 rules:
   line-length:

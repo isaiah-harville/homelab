@@ -11,5 +11,3 @@ NOTES.md
 
 # Pre-commit stuff
 node_modules/
-
-ansible/.vault-pass
