@@ -44,7 +44,10 @@ services:
       - ./certs/server-chain.pem:/server-chain.pem:ro
       - ./certs/server-key.pem:/server-key.pem:ro
       - ./secrets/omni.asc:/omni.asc:ro
-      - ./data/etcd:/_out/etcd:rw
+      - ./secrets/omni-public.asc:/omni-public.asc:ro
+      # /_out holds BOTH the embedded-etcd db and the SQLite store — persist the
+      # whole dir (Omni v1.9 made --sqlite-storage-path required). BACK THIS UP.
+      - ./data:/_out:rw
     command:
       - --name=omni
       - --cert=/server-chain.pem
@@ -52,12 +55,19 @@ services:
       - --machine-api-cert=/server-chain.pem
       - --machine-api-key=/server-key.pem
       - --machine-api-bind-addr=0.0.0.0:8090
+      - --machine-api-advertised-url=https://${OMNI_HOST}:8090/
+      # etcd master-key slot: encrypt with the public key, decrypt with the secret.
       - --private-key-source=file:///omni.asc
+      - --public-key-files=/omni-public.asc
+      # Storage: embedded etcd for cluster state + SQLite for logs/audit.
+      - --storage-kind=etcd
+      - --etcd-embedded
+      - --etcd-embedded-db-path=/_out/etcd
+      - --sqlite-storage-path=/_out/omni.db
       - --event-sink-port=8091
       - --bind-addr=0.0.0.0:443
       - --k8s-proxy-bind-addr=0.0.0.0:8100
       - --advertised-api-url=https://${OMNI_HOST}/
-      - --siderolink-api-advertised-url=https://${OMNI_HOST}:8090/
       - --siderolink-wireguard-advertised-addr=${OMNI_LAN_IP}:50180
       - --advertised-kubernetes-proxy-url=https://${OMNI_HOST}:8100/
       # Auth: generic OIDC → Dex (which fronts authelia + a static admin).
@@ -69,7 +79,6 @@ services:
       - --auth-oidc-scopes=openid
       - --auth-oidc-scopes=profile
       - --auth-oidc-scopes=email
-      - --etcd-embedded-unsafe-fsync=false
       - --initial-users=${OMNI_ADMIN_EMAIL}
       - --eula-accept-name=${EULA_NAME}
       - --eula-accept-email=${EULA_EMAIL}
