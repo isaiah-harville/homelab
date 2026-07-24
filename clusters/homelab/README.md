@@ -1,6 +1,6 @@
 # Homelab Layout
 
-`clusters/homelab/` is the composition layer for the main homelab k3s cluster.
+`clusters/homelab/` is the composition layer for the main homelab Talos cluster.
 
 Folders:
 - `flux-system/`: Flux `Kustomization` objects and sync bootstrap

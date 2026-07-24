@@ -4,21 +4,54 @@ Operational knowledge for working in this repo. Read this before making changes.
 
 ## What this is
 
-GitOps repo for a **k3s HA cluster** (the "homelab" cluster). **Flux** reconciles
-everything from `clusters/homelab/`. Nothing is applied by hand — you change YAML,
+GitOps repo for a **Talos Linux cluster** (the "homelab" cluster) managed by a
+**self-hosted Omni**. **Flux** reconciles everything at the k8s layer from
+`clusters/homelab/`. Nothing k8s-side is applied by hand — you change YAML,
 commit, and Flux converges the cluster. Don't `kubectl apply` to make a change
 stick; edit the repo.
+
+The machine/OS layer is **Talos** (immutable, API-driven — no SSH, no config
+management). Machines are provisioned and their lifecycle (Talos + k8s upgrades,
+node health) is driven from **Omni**, not from this repo's manifests. Talos +
+Omni replaced the old k3s + Ansible + kube-vip + kured + medik8s stack entirely.
 
 ## Layout
 
 ```
-clusters/homelab/   Flux composition (Kustomizations, cluster-specific secrets, patches)
+omni-server/         Self-hosted Omni (docker-compose + runbook) — the management plane
+talos/               Talos image schematic + Omni cluster template + machine-config patches
+clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
 infrastructure/base/ Cluster plumbing: traefik, cert-manager, metallb, longhorn, monitoring, reflector, sources
-apps/base/          Reusable app building blocks (HelmRelease + ingress + kustomization)
-apps/releases/      Apps deployed from their OWN external git repos (see below)
-ansible/            Provisions Ubuntu 24 machines as k3s nodes
-docs/, NOTES.md     Runbooks + ops cheatsheet
+apps/base/           Reusable app building blocks (HelmRelease + ingress + kustomization)
+apps/releases/       Apps deployed from their OWN external git repos (see below)
 ```
+
+## Provisioning: Talos + Omni (replaces ansible)
+
+There is **no ansible** and no per-node OS config in this repo. To stand up or
+extend the cluster:
+
+1. **Omni** (`omni-server/`) is the management plane. It runs in Docker *outside*
+   the cluster (must survive a node wipe), fronts auth via **Dex → authelia**
+   (with a static break-glass admin), and terminates the SideroLink WireGuard
+   tunnel machines join through. See `omni-server/README.md`.
+2. **Talos image** (`talos/image/schematic.yaml`) is an Image Factory schematic
+   pinning the system extensions Longhorn needs (`iscsi-tools`, `util-linux-tools`).
+3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
+   (3 laptops control-plane/etcd, dl380 + thinkcentre-01 workers) and pins the
+   Talos + k8s versions. Machine-config **patches** live in `talos/omni/patches/`:
+   - `controlplane-vip.yaml` — floating API VIP **10.1.10.9** (replaces kube-vip).
+   - `allow-scheduling.yaml` — run workloads on control-plane nodes (needed for
+     Longhorn's 3-replica anti-affinity with only 2 dedicated workers).
+   - `install-disk.yaml` / `longhorn-disk.yaml` — OS disk + dedicated Longhorn disk.
+
+   Full bring-up runbook: `talos/README.md`. Node UUIDs and per-node disk
+   selectors are filled in at enrollment time.
+4. **Upgrades / node health / reboots** are driven from Omni (rolling, one node at
+   a time). No `talosctl upgrade` by hand, no kured, no medik8s.
+
+The kubeconfig comes from Omni (`omnictl kubeconfig --cluster homelab`), and Flux
+is bootstrapped onto the cluster from this repo.
 
 ## Flux reconcile order
 
@@ -93,17 +126,37 @@ apps and these external-repo apps are mixed together in that one kustomization l
   namespaces listed in the Certificate's `reflector.*` annotations (currently
   `apps,monitoring,longhorn-system`). **If you add an app in a new namespace, add that
   namespace to those annotations** or the cert won't be there.
+- **Omni is external and can't use this in-cluster cert.** Its host mints its own
+  `*.int.harville.dev` cert with **lego (Cloudflare DNS-01)**, same token, independent
+  renewal — see `omni-server/README.md`.
 
-## Storage (Longhorn)
+## Storage (Longhorn on Talos)
 
 - Longhorn is the **default StorageClass** (`longhorn`); `local-path` is pinned
-  non-default. Just omit `storageClassName` to get Longhorn, or name it explicitly.
+  non-default. Omit `storageClassName` to get Longhorn, or name it explicitly.
+- **Data path is `/var/mnt/longhorn`** (Helm `defaultDataPath`). On Talos that's a
+  **dedicated disk** mounted via `UserVolumeConfig` (NOT the deprecated
+  `machine.disks`), made visible to Longhorn's pods by a kubelet `extraMounts` bind —
+  both in `talos/omni/patches/longhorn-disk.yaml`. Enroll a node with that patch and
+  its storage appears. Longhorn also needs the `iscsi-tools` + `util-linux-tools`
+  system extensions (baked into the image via `talos/image/schematic.yaml`).
+  > **Single-disk nodes:** `UserVolumeConfig` claims a *separate* disk. Single-NVMe
+  > laptops have none — carve a partition or fall back to a system-disk directory for
+  > that machine class (see the caveat in `longhorn-disk.yaml`).
 - `defaultReplicaCount: 3` + strict anti-affinity → one replica per node, any single
-  node can fail with no data loss. Disks auto-create on each node at `/data/longhorn`
-  (30% reserved). Provision a node with ansible and its storage appears.
+  node can fail with no data loss. Disks auto-create per node (30% reserved).
 - Consequence: data on Longhorn is ~3x amplified. For an app that does its **own**
   replication (e.g. SeaweedFS), run it **single-replica** and let Longhorn provide
   redundancy — don't stack app-level replication on top of Longhorn-level replication.
+
+## Pod Security (Talos)
+
+Talos enforces Pod Security **baseline** by default (kube-system exempt). Namespaces
+that run privileged pods are labeled `pod-security.kubernetes.io/enforce: privileged`
+in `infrastructure/base/namespaces/namespaces.yaml`: **longhorn-system** (engine/
+manager), **metallb-system** (speaker: hostNetwork + NET_RAW), **monitoring**
+(node-exporter: hostNetwork/hostPath). Add the label if you introduce another
+privileged workload's namespace, or Talos baseline will block its pods.
 
 ## Secrets (SOPS + age)
 
@@ -127,6 +180,8 @@ apps and these external-repo apps are mixed together in that one kustomization l
   traefik-internal/.251 and traefik-public/.252). Need a new LoadBalancer IP? Expand
   the pool in `infrastructure/base/metallb-config/ipaddresspool.yaml`. Prefer routing
   through an existing Traefik ingress instead of claiming a new LB IP.
+- The control-plane API VIP (**10.1.10.9**) is served by Talos itself (see
+  `controlplane-vip.yaml`), not MetalLB.
 
 ## Services worth knowing
 
@@ -134,70 +189,32 @@ apps and these external-repo apps are mixed together in that one kustomization l
 - **cert-manager** + **letsencrypt-dns** ClusterIssuer (Cloudflare DNS-01).
 - **reflector** (emberstack) — copies the wildcard TLS secret across namespaces.
 - **longhorn** — distributed block storage / default SC.
-- **authelia** — SSO / forwardauth provider.
+- **authelia** — SSO / forwardauth provider. Also fronts Omni's login (via Dex).
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
 - **searxng** — self-hosted metasearch; backs Open WebUI's web-search
   (`http://searxng:8080`, see `apps/base/openwebui`).
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **harbor** — container registry, public at `harbor.harville.dev`.
-- **vllm** — GPU inference, OpenAI-compatible API at `vllm.int.harville.dev` (API-key
-  auth), wired into Open WebUI. Two backends behind a router (`apps/base/vllm-router`,
-  the vLLM Production Stack router): `apps/base/vllm-wsl` (Qwen3-8B-AWQ, WSL box) and
-  `apps/base/vllm-dgx` (Qwen3.6-35B-A3B-FP8, DGX Spark). The router picks the backend by the
-  requested model name, so both show up as separate models in Open WebUI.
-  > **Hybrid-model gotcha (Qwen3.6 / any Mamba-MoE):** with `--enable-prefix-caching`
-  > vLLM forces the Mamba KV cache into "align" mode, which pins `block_size` to 2096
-  > and asserts `block_size <= max-num-batched-tokens`. The chunked-prefill default is
-  > 2048 < 2096, so the engine core **crash-loops on startup**. Fix is set
-  > `--max-num-batched-tokens 4096` (done in `apps/base/vllm-dgx/deployment.yaml`).
-  > When a vLLM pod restart-loops but the model *finishes loading* first, read the
-  > `--previous` logs — the real error is an `AssertionError`/`ValueError` during KV
-  > cache init, well below the "Engine core initialization failed" line.
-- **nvidia-device-plugin** (kube-system) — advertises `nvidia.com/gpu`; runs on
-  `gpu=true` nodes under the k3s-auto-created `nvidia` RuntimeClass.
+- **vllm** — OpenAI-compatible inference at `vllm.int.harville.dev` (API-key auth),
+  wired into Open WebUI. See "GPU / vLLM" below.
 
-## GPU nodes
+## GPU / vLLM (external, not a cluster node)
 
-The `k3s_node` role has two composable per-host flags (inventory):
-- **`node_gpu: true`** → generic GPU setup (`gpu.yml`): NVIDIA Container Toolkit
-  (k3s then auto-creates the `nvidia` RuntimeClass), `gpu=true` +
-  `nvidia.com/gpu.present` labels, and the `dedicated=gpu:NoSchedule` taint. Same
-  on bare-metal GPU nodes.
-- **`node_wsl: true`** → WSL2-only quirks (`wsl.yml`): the `/`-rshared mount fix
-  (GPU device injection needs mount propagation) and a pinned `node-ip`.
+There are **no GPU nodes in the cluster** — the Talos cluster is CPU-only. GPU
+inference runs on a **standalone WSL box** (`harvi-desktop`, `10.1.10.20`) that is
+**not** a Talos node. vLLM runs on that box directly and serves an OpenAI-compatible
+API on `10.1.10.20:8000`.
 
-GPU workloads set `runtimeClassName: nvidia`, `nodeSelector: {gpu: "true"}`, tolerate
-`dedicated=gpu`, and request `nvidia.com/gpu: 1`. The node is **reserved** by the taint:
-general workloads (and Longhorn/metallb, which don't tolerate it) stay off, so it never
-becomes a storage node; only vLLM + the device plugin run there. node-exporter tolerates
-all `NoSchedule` taints so it stays.
+Inside the cluster, `apps/base/vllm-router` (the vLLM Production Stack router) points
+at that box as a **static external backend** and exposes it at `vllm.int.harville.dev`
+(so Open WebUI sees the model). Today it fronts a single backend (`qwen3-8b`); add
+more `--static-backends` entries to fan out to additional external endpoints.
 
-There are two GPU nodes, both `gpu=true` (a `nodeName` pin disambiguates their vLLM
-deployments — see `apps/base/vllm-dgx/deployment.yaml`):
-
-- **`harvi-desktop`** (`10.1.10.20`, main cluster subnet) — a WSL2 box, both `node_gpu` and
-  `node_wsl`. **WSL caveat:** flannel's VXLAN overlay can't receive inbound on WSL
-  mirrored networking, so the node does **no cross-node pod networking** — its vLLM
-  (`apps/base/vllm-wsl`) therefore runs with `hostNetwork: true` + `dnsPolicy: Default`
-  (binds the node's LAN IP, uses node DNS/egress). The router
-  (`apps/base/vllm-router`) reaches it directly at `10.1.10.20:8000` — same as
-  SSH/ansible already do — no tunnel needed. See the inventory comment for WSL
-  prereqs (systemd, mirrored networking + `firewall=false`, Windows driver, sshd).
-- **`spark-a97a`** (DGX Spark, `10.1.10.75`, main cluster subnet) — a normal Linux box (stock DGX
-  OS, arm64 GB10 Grace Blackwell), only `node_gpu`. Ordinary pod networking, no
-  workarounds; its vLLM (`apps/base/vllm-dgx`) is reached via a normal ClusterIP
-  Service.
-
-**Free / reclaim the WSL box's GPU** (it's the intermittent one; its vLLM deployment
-is the only consumer — the DGX Spark is a dedicated cluster member, not something to
-free/reclaim):
-
-```bash
-scripts/gpu.sh free     # scale vllm-wsl to 0, release the GPU
-scripts/gpu.sh claim    # scale vllm-wsl to 1, reclaim it
-scripts/gpu.sh status
-```
+> History: this used to run in-cluster on two GPU nodes (a WSL box + a DGX Spark)
+> with `nvidia-device-plugin`, hostNetwork, and per-node taints. The DGX was retired
+> and the WSL box moved out of the cluster during the Talos rebuild, so all of that
+> (device plugin, RuntimeClass, `dedicated=gpu` taint, `scripts/gpu.sh`) is gone.
 
 ## Ops cheatsheet
 
@@ -212,4 +229,9 @@ kubectl -n flux-system describe kustomization infra
 
 # Unstick a wedged kustomization
 kubectl -n flux-system rollout restart deployment/kustomize-controller
+
+# Cluster access + lifecycle (from Omni, not this repo)
+omnictl kubeconfig --cluster homelab     # (re)fetch kubeconfig
+omnictl get machines                     # machine inventory
+# Talos/k8s upgrades + node health: drive from the Omni UI (rolling).
 ```

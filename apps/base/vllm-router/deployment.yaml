@@ -1,13 +1,10 @@
 ---
-# Request router in front of the two vLLM backends (apps/base/vllm-wsl,
-# apps/base/vllm-dgx). Replaces the old frps/frpc reverse-tunnel hack: the WSL
-# backend is still only reachable at its node IP (hostNetwork, VXLAN inbound
-# is broken there), but the router just hits that directly as a static
-# backend — same as SSH/ansible already do — instead of tunneling through it.
-# Static (not k8s) service discovery because the two backends serve different
-# models on different networking modes; the router picks the backend by the
-# "model" field in each request, so this also gives Open WebUI both models
-# through one OpenAI-compatible endpoint.
+# Request router in front of the vLLM backend on the WSL GPU box (harvi-desktop,
+# 10.1.10.20). That box is NOT a cluster node — it runs vLLM standalone and the
+# router reaches it as a static external backend (same address SSH already uses).
+# Static (not k8s) service discovery: the router picks the backend by the
+# "model" field, giving Open WebUI an OpenAI-compatible endpoint. Single backend
+# today (the DGX box was retired); add more static-backends here to fan out.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,16 +33,13 @@ spec:
             - --service-discovery
             - static
             # The router's URL validator requires a dotted hostname (or IPv4/
-            # localhost) — a bare Service name like "vllm-dgx" fails validation
-            # and gets silently dropped, which then crashes the router on the
-            # URLs/models length-mismatch assertion. Use the fully-qualified
-            # in-cluster DNS name instead.
+            # localhost), so use the WSL box's LAN IP directly.
             - --static-backends
-            - http://10.1.10.20:8000,http://vllm-dgx.apps.svc.cluster.local:8000
+            - http://10.1.10.20:8000
             - --static-models
-            - qwen3-8b,qwen3.6-35b
+            - qwen3-8b
             - --static-model-types
-            - chat,chat
+            - chat
             - --routing-logic
             - roundrobin
             - --log-stats

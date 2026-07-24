@@ -25,9 +25,11 @@ spec:
   values:
     defaultSettings:
       # Longhorn auto-creates a default disk at this path on every node and
-      # applies the reserve below. Provision a node (ansible) and its storage
-      # appears automatically — nothing per-node to declare.
-      defaultDataPath: /data/longhorn
+      # applies the reserve below. On Talos this is the UserVolume mount from
+      # talos/omni/patches/longhorn-disk.yaml (a dedicated disk mounts at
+      # /var/mnt/longhorn); the kubelet extraMounts bind makes it visible to
+      # Longhorn's pods. Enroll a node with that patch and its storage appears.
+      defaultDataPath: /var/mnt/longhorn
       storageReservedPercentageForDefaultDisk: 30
       # 3 storage nodes, 3 replicas (one per node) → a single node can fail
       # with zero data loss, and the volume stays redundant during the outage.
