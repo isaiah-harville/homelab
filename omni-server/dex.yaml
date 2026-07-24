@@ -1,0 +1,56 @@
+# Dex config for Omni's OIDC auth.
+#
+# Two identity paths, on purpose:
+#   1. staticPasswords — a break-glass admin that works even when the cluster
+#      (and therefore authelia) is down. This is why Omni does NOT depend on the
+#      cluster it manages. Set the bcrypt hash via `htpasswd -bnBC 10 "" <pw>`.
+#   2. authelia connector — the unified-SSO path. Once the cluster is up and
+#      authelia has an OIDC client registered for Dex, human logins flow
+#      omni → dex → authelia. Uncomment when authelia is live.
+---
+issuer: https://dex.int.harville.dev:5556
+
+storage:
+  type: sqlite3
+  config:
+    file: /etc/dex/dex.db
+
+web:
+  https: 0.0.0.0:5556
+  tlsCert: /etc/dex/tls/server-chain.pem
+  tlsKey: /etc/dex/tls/server-key.pem
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - name: Omni
+    id: omni
+    # Must match DEX_OMNI_CLIENT_SECRET in .env.
+    secret: change-me-long-random
+    redirectURIs:
+      - https://omni.int.harville.dev/oidc/consume
+
+# --- Break-glass local admin (always available) ---
+enablePasswordDB: true
+staticPasswords:
+  - email: admin@int.harville.dev
+    username: admin
+    # htpasswd -bnBC 10 "" 'yourpassword' | tr -d ':\n'
+    hash: "$2y$10$REPLACE_WITH_BCRYPT_HASH"
+
+# --- Unified SSO via in-cluster authelia (enable after cluster is up) ---
+# connectors:
+#   - type: oidc
+#     id: authelia
+#     name: Authelia
+#     config:
+#       issuer: https://auth.int.harville.dev
+#       clientID: dex
+#       clientSecret: <authelia-oidc-client-secret-for-dex>
+#       redirectURI: https://dex.int.harville.dev:5556/callback
+#       scopes:
+#         - openid
+#         - profile
+#         - email
+#         - groups

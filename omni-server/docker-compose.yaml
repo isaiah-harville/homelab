@@ -1,0 +1,75 @@
+# Self-hosted Omni — the Talos management plane for the homelab cluster.
+#
+# Runs OUTSIDE the cluster it manages (must survive a full node wipe). Two
+# services:
+#   dex  — OIDC identity layer. Ships a static break-glass admin (always works,
+#          even with the cluster down) AND proxies to in-cluster authelia so
+#          day-2 human logins use the same SSO as everything else (see dex.yaml).
+#   omni — Omni itself, embedded etcd, SideloLink/WireGuard for machine join.
+#
+# TLS: the *.int.harville.dev wildcard covers both hostnames below. Because Omni
+# is external, its cert is minted independently with lego (Cloudflare DNS-01) —
+# see README.md — NOT the in-cluster cert-manager wildcard.
+#
+# Fill in .env (copy from .env.example) before `docker compose up -d`.
+---
+services:
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    container_name: dex
+    restart: unless-stopped
+    command: ["dex", "serve", "/etc/dex/dex.yaml"]
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./dex.yaml:/etc/dex/dex.yaml:ro
+      - ./certs/server-chain.pem:/etc/dex/tls/server-chain.pem:ro
+      - ./certs/server-key.pem:/etc/dex/tls/server-key.pem:ro
+
+  omni:
+    image: ghcr.io/siderolabs/omni:${OMNI_VERSION}
+    container_name: omni
+    restart: unless-stopped
+    depends_on:
+      - dex
+    # host networking + tun device: Omni terminates the SideroLink WireGuard
+    # tunnel that machines dial back through.
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./certs/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro
+      - ./certs/server-chain.pem:/server-chain.pem:ro
+      - ./certs/server-key.pem:/server-key.pem:ro
+      - ./secrets/omni.asc:/omni.asc:ro
+      - ./data/etcd:/_out/etcd:rw
+    command:
+      - --name=omni
+      - --cert=/server-chain.pem
+      - --key=/server-key.pem
+      - --machine-api-cert=/server-chain.pem
+      - --machine-api-key=/server-key.pem
+      - --machine-api-bind-addr=0.0.0.0:8090
+      - --private-key-source=file:///omni.asc
+      - --event-sink-port=8091
+      - --bind-addr=0.0.0.0:443
+      - --k8s-proxy-bind-addr=0.0.0.0:8100
+      - --advertised-api-url=https://${OMNI_HOST}/
+      - --siderolink-api-advertised-url=https://${OMNI_HOST}:8090/
+      - --siderolink-wireguard-advertised-addr=${OMNI_LAN_IP}:50180
+      - --advertised-kubernetes-proxy-url=https://${OMNI_HOST}:8100/
+      # Auth: generic OIDC → Dex (which fronts authelia + a static admin).
+      - --auth-auth0-enabled=false
+      - --auth-oidc-enabled=true
+      - --auth-oidc-provider-url=https://${DEX_HOST}:5556
+      - --auth-oidc-client-id=omni
+      - --auth-oidc-client-secret=${DEX_OMNI_CLIENT_SECRET}
+      - --auth-oidc-scopes=openid
+      - --auth-oidc-scopes=profile
+      - --auth-oidc-scopes=email
+      - --etcd-embedded-unsafe-fsync=false
+      - --initial-users=${OMNI_ADMIN_EMAIL}
+      - --eula-accept-name=${EULA_NAME}
+      - --eula-accept-email=${EULA_EMAIL}

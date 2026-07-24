@@ -1,0 +1,18 @@
+# Talos Image Factory schematic for the homelab cluster.
+#
+# System extensions absent from the stock Talos rootfs that Longhorn needs:
+#   iscsi-tools     — iscsid daemon + iscsiadm (Longhorn volume attach)
+#   util-linux-tools — fstrim etc. (Longhorn volume trim)
+# No NVIDIA extensions: there are no in-cluster GPU nodes (the WSL box runs
+# vLLM standalone, outside the cluster).
+#
+# Turn this into an installer image / schematic ID:
+#   curl -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics
+# Use the returned id to build the ISO (see ../README.md), and register the same
+# extensions in Omni so upgrades keep them.
+---
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools

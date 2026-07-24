@@ -1,0 +1,17 @@
+# Control-plane VIP — replaces the old kube-vip DaemonSet.
+# Talos serves a floating VIP on the physical NIC of whichever control-plane
+# node currently holds it, so the k8s API endpoint survives losing any one
+# laptop. Reuses 10.1.10.9 (the old kube-vip VIP) so nothing downstream re-points.
+#
+# deviceSelector(physical:true) instead of a hard-coded interface name because
+# the three laptops have different NICs (enp0s31f6 / eno1). DHCP for the node IP
+# (no static pinning — see repo memory).
+---
+machine:
+  network:
+    interfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: true
+        vip:
+          ip: 10.1.10.9

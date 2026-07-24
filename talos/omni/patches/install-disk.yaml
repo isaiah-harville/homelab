@@ -1,0 +1,12 @@
+# OS install disk selection.
+#
+# Selects the install target by size as a sane default. VERIFY PER NODE at
+# bring-up — if a node has two similarly-sized disks, pin by model/serial/bus
+# instead (e.g. busPath, or `talosctl get disks` to find the right device).
+# The Longhorn UserVolume (longhorn-disk.yaml) claims the *other* (non-system)
+# disk, so the two selectors must not collide.
+---
+machine:
+  install:
+    diskSelector:
+      size: ">= 100GB"

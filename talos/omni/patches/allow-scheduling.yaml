@@ -1,0 +1,10 @@
+# Let workloads run on the control-plane nodes (removes the default
+# node-role.kubernetes.io/control-plane:NoSchedule taint).
+#
+# Required here: the cluster has only 2 dedicated workers, but Longhorn runs 3
+# replicas with strict anti-affinity (one per node), so it needs >=3 schedulable
+# storage nodes. Scheduling on the 3 control-plane laptops gives 5 storage nodes.
+# This matches the old k3s setup, where the laptop "servers" also ran workloads.
+---
+cluster:
+  allowSchedulingOnControlPlanes: true

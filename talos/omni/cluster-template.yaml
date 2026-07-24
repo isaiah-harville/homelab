@@ -1,0 +1,46 @@
+# Omni cluster template for the homelab cluster.
+#
+# Apply with:  omnictl cluster template sync -f cluster-template.yaml
+# Validate:    omnictl cluster template validate -f cluster-template.yaml
+#
+# Machine IDs (UUIDs) are unknown until the nodes enroll in Omni over SideroLink.
+# Boot each node off the Talos image (../README.md), then `omnictl get machines`
+# and paste the UUIDs below. The <PLACEHOLDER> lines MUST be filled before sync.
+#
+# Topology mirrors the old k3s layout:
+#   control plane / etcd → the 3 always-on laptops (precision-1/-2, latitude-01)
+#   workers              → dl380, thinkcentre-01
+# GPU boxes (harvi-desktop WSL, spark-a97a DGX) are NOT cluster members.
+---
+kind: Cluster
+name: homelab
+# Pin both versions; bump deliberately via Omni (rolling, one node at a time).
+kubernetes:
+  version: v1.31.4
+talos:
+  version: v1.9.2
+# Applied to every machine in the cluster.
+patches:
+  - name: install-disk
+    file: patches/install-disk.yaml
+  - name: allow-scheduling
+    file: patches/allow-scheduling.yaml
+---
+kind: ControlPlane
+machines:
+  - <PLACEHOLDER-precision-1-uuid>
+  - <PLACEHOLDER-precision-2-uuid>
+  - <PLACEHOLDER-latitude-01-uuid>
+patches:
+  - name: controlplane-vip
+    file: patches/controlplane-vip.yaml
+  - name: longhorn-disk
+    file: patches/longhorn-disk.yaml
+---
+kind: Workers
+machines:
+  - <PLACEHOLDER-dl380-uuid>
+  - <PLACEHOLDER-thinkcentre-01-uuid>
+patches:
+  - name: longhorn-disk
+    file: patches/longhorn-disk.yaml
