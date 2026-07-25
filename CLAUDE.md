@@ -66,17 +66,23 @@ keep `terraform/omni/locals.tf` and `cluster-template.yaml` topologies in step.
 
 Jobs run on an **in-cluster GitHub Actions self-hosted runner** (ARC,
 `infrastructure/base/actions-runner-controller/`, namespaces `arc-systems` /
-`arc-runners`) so they can reach the **LAN-only** Omni + SeaweedFS. The runner pod
-gets `OMNI_*` and `AWS_*` (S3) creds via `envFrom` from two SOPS secrets, so the
-workflow needs no GitHub secrets. `.github/workflows/terraform.yaml`: plan on PR,
-apply on merge to `main`. **State** lives in SeaweedFS S3 (`tfstate` bucket); Omni
-is the real source of truth, so lost state is re-`import`ed, never catastrophic.
+`arc-runners`) so they can reach the **LAN-only** Omni. The runner pod gets
+`OMNI_*` creds via `envFrom` the `omni-terraform` SOPS secret (+ a `github_token`
+PAT in `github-config`), so the workflow needs no GitHub secrets.
+`.github/workflows/terraform.yaml`: plan on PR, apply on merge to `main`.
+**State** lives in a **Kubernetes Secret** (`tfstate-default-omni-homelab` in
+`arc-runners`) via the Terraform `kubernetes` backend — the runner reaches it with
+the `terraform` ServiceAccount (`terraform-rbac.yaml`) + `KUBE_IN_CLUSTER_CONFIG`.
+(The S3 backend was dropped: Terraform's AWS SDK v2 writes state with a chunked
+trailer upload SeaweedFS rejects.) Omni is the real source of truth, so lost state
+is re-`import`ed, never catastrophic.
 
 The provider is **alpha**. ARC and its SOPS secrets are enabled in
-`clusters/homelab/infra/kustomization.yaml`; the existing Omni resources must be
-imported before the workflow is allowed to apply. Full setup and recovery steps
-are in `terraform/omni/README.md`. Keep `cluster-template.yaml` as the manual
-fallback while the provider remains alpha.
+`clusters/homelab/infra/kustomization.yaml`, the live cluster has been imported,
+and `terraform plan` is clean — so CI may apply. Full setup and recovery steps are
+in `terraform/omni/README.md`. Keep `cluster-template.yaml` as the manual fallback
+while the provider remains alpha (Terraform reads the same patch files, so a
+one-off `omnictl cluster template sync` after editing patches keeps them aligned).
 
 ## Flux reconcile order
 

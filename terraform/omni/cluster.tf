@@ -9,8 +9,7 @@ resource "omni_machine_set" "control_plane" {
   role    = "controlplane"
 
   # Roll config changes and Talos/k8s upgrades ONE control-plane node at a time so
-  # etcd keeps quorum throughout. Applying these is a safe in-place update (Omni
-  # just records the strategy — no node churn).
+  # etcd keeps quorum throughout.
   update_strategy = {
     type            = "Rolling"
     max_parallelism = 1
