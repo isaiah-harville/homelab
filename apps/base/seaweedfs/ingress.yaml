@@ -25,3 +25,31 @@ spec:
                 name: seaweedfs-s3
                 port:
                   number: 8333
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: seaweedfs-admin
+  namespace: apps
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Storage
+    gethomepage.dev/name: SeaweedFS Admin
+    gethomepage.dev/description: SeaweedFS cluster + S3 file browser
+    gethomepage.dev/pod-selector: app.kubernetes.io/component=admin
+spec:
+  ingressClassName: traefik-internal
+  tls:
+    - hosts: [seaweedfs.int.harville.dev]
+  rules:
+    - host: seaweedfs.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweedfs-admin
+                port:
+                  number: 23646

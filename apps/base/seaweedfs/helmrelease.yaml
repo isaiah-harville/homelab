@@ -86,3 +86,21 @@ spec:
           memory: 128Mi
         limits:
           memory: 256Mi
+    # Web UI: cluster topology, volumes, and an S3/filer file browser.
+    # No built-in auth (adminPassword unset) — gated by Authelia forwardauth
+    # on the ingress instead, same as other internal admin panels.
+    admin:
+      enabled: true
+      replicas: 1
+      data:
+        type: persistentVolumeClaim
+        size: 2Gi
+        storageClass: longhorn
+      logs:
+        type: emptyDir
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
