@@ -1,0 +1,49 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homelab-runners
+  namespace: arc-runners
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  dependsOn:
+    - name: gha-runner-scale-set-controller
+      namespace: arc-systems
+  chart:
+    spec:
+      chart: gha-runner-scale-set
+      version: ">=0.9.0 <1.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: actions-runner-controller
+        namespace: flux-system
+  values:
+    runnerScaleSetName: homelab
+    githubConfigUrl: https://github.com/isaiah-harville/homelab
+    githubConfigSecret: github-config
+
+    minRunners: 0
+    maxRunners: 1
+
+    # Expose the Omni and S3 credentials to Terraform jobs:
+    #   omni-terraform → OMNI_ENDPOINT, OMNI_SERVICE_ACCOUNT_KEY
+    #   tfstate-s3     → AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (SeaweedFS S3 backend)
+    template:
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/actions/actions-runner:latest
+            command: ["/home/runner/run.sh"]
+            envFrom:
+              - secretRef:
+                  name: omni-terraform
+              - secretRef:
+                  name: tfstate-s3

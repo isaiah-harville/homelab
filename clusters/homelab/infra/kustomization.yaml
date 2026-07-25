@@ -12,11 +12,11 @@ resources:
   - ../../../infrastructure/base/metrics-server
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
-  # Enable after filling and encrypting the runner secrets below.
-  # - ../../../infrastructure/base/actions-runner-controller
-  # - ./secrets/actions-runner-controller/github-config.yaml
-  # - ./secrets/actions-runner-controller/omni-terraform.yaml
-  # - ./secrets/actions-runner-controller/tfstate-s3.yaml
+  # actions-runner-controller — self-hosted runner for the Terraform jobs.
+  - ../../../infrastructure/base/actions-runner-controller
+  - ./secrets/actions-runner-controller/github-config.yaml
+  - ./secrets/actions-runner-controller/omni-terraform.yaml
+  - ./secrets/actions-runner-controller/tfstate-s3.yaml
 patches:
   - target:
       kind: Ingress

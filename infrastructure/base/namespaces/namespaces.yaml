@@ -24,8 +24,7 @@ kind: Namespace
 metadata:
   name: certificates
 ---
-# Talos enforces Pod Security "baseline" by default. metallb's speaker
-# (hostNetwork + NET_RAW/NET_ADMIN) needs privileged.
+# MetalLB speakers require host networking and NET_RAW/NET_ADMIN.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -35,7 +34,7 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 ---
-# Longhorn's manager/engine/instance pods run privileged.
+# Longhorn's manager, engine, and instance pods require privileged access.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -48,9 +47,19 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: arc-systems
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: apps
 ---
-# node-exporter runs with hostNetwork/hostPath, needs privileged.
+# node-exporter requires hostNetwork and hostPath.
 apiVersion: v1
 kind: Namespace
 metadata:
