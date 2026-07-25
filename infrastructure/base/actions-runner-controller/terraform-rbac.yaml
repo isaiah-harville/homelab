@@ -1,0 +1,38 @@
+---
+# ServiceAccount the Terraform runner pods run as, so the Terraform kubernetes
+# state backend can reach the cluster API in-cluster (no kubeconfig needed).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: terraform
+  namespace: arc-runners
+---
+# Least-privilege access for the kubernetes backend: it stores state in a Secret
+# (tfstate-omni-homelab) and takes a Lease (lock-omni-homelab) for state locking,
+# both in this namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: terraform-tfstate
+  namespace: arc-runners
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: terraform-tfstate
+  namespace: arc-runners
+subjects:
+  - kind: ServiceAccount
+    name: terraform
+    namespace: arc-runners
+roleRef:
+  kind: Role
+  name: terraform-tfstate
+  apiGroup: rbac.authorization.k8s.io

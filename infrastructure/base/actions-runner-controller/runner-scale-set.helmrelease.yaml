@@ -33,17 +33,20 @@ spec:
     minRunners: 0
     maxRunners: 1
 
-    # Expose the Omni and S3 credentials to Terraform jobs:
-    #   omni-terraform → OMNI_ENDPOINT, OMNI_SERVICE_ACCOUNT_KEY
-    #   tfstate-s3     → AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (SeaweedFS S3 backend)
     template:
       spec:
+        # Run as the `terraform` SA (see terraform-rbac.yaml) so the kubernetes
+        # state backend can read/write the state Secret + lock Lease in-cluster.
+        serviceAccountName: terraform
         containers:
           - name: runner
             image: ghcr.io/actions/actions-runner:latest
             command: ["/home/runner/run.sh"]
+            env:
+              # Make Terraform's kubernetes backend use the pod ServiceAccount.
+              - name: KUBE_IN_CLUSTER_CONFIG
+                value: "true"
+            # omni-terraform → OMNI_ENDPOINT, OMNI_SERVICE_ACCOUNT_KEY (provider auth).
             envFrom:
               - secretRef:
                   name: omni-terraform
-              - secretRef:
-                  name: tfstate-s3

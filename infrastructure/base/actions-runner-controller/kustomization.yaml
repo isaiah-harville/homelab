@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - controller.helmrelease.yaml
   - runner-scale-set.helmrelease.yaml
+  - terraform-rbac.yaml

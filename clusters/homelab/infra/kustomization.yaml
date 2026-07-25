@@ -16,7 +16,6 @@ resources:
   - ../../../infrastructure/base/actions-runner-controller
   - ./secrets/actions-runner-controller/github-config.yaml
   - ./secrets/actions-runner-controller/omni-terraform.yaml
-  - ./secrets/actions-runner-controller/tfstate-s3.yaml
 patches:
   - target:
       kind: Ingress
