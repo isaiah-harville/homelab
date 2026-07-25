@@ -3,44 +3,71 @@
 # Apply with:  omnictl cluster template sync -f cluster-template.yaml
 # Validate:    omnictl cluster template validate -f cluster-template.yaml
 #
-# Machine IDs (UUIDs) are unknown until the nodes enroll in Omni over SideroLink.
-# Boot each node off the Talos image (../README.md), then `omnictl get machines`
-# and paste the UUIDs below. The <PLACEHOLDER> lines MUST be filled before sync.
-#
 # Topology mirrors the old k3s layout:
-#   control plane / etcd → the 3 always-on laptops (precision-1/-2, latitude-01)
-#   workers              → dl380, thinkcentre-01
+#   control plane / etcd → the 3 Dell laptops
+#   workers              → thinkcentre-01 (Lenovo mini); dl380 added later
 # GPU boxes (harvi-desktop WSL, spark-a97a DGX) are NOT cluster members.
+#
+# Disk layouts are heterogeneous, so install-disk + Longhorn are set PER MACHINE
+# (see the kind: Machine docs below) rather than with one blanket patch:
+#   4c4c4544-0030… 256GB NVMe (OS) + 1TB HDD  (Longhorn)
+#   4c4c4544-0039… 256GB NVMe (OS) + 1TB NVMe (Longhorn)
+#   4c4c4544-0052… 512GB NVMe only  (OS; no dedicated Longhorn disk)
+#   9ba21500-a881… 256GB SSD (OS)   (Lenovo mini; 15GB USB ignored)
 ---
 kind: Cluster
 name: homelab
 # Pin both versions; bump deliberately via Omni (rolling, one node at a time).
 kubernetes:
-  version: v1.31.4
+  version: v1.33.3
 talos:
-  version: v1.9.2
-# Applied to every machine in the cluster.
+  version: v1.13.5
 patches:
-  - name: install-disk
-    file: patches/install-disk.yaml
   - name: allow-scheduling
     file: patches/allow-scheduling.yaml
 ---
 kind: ControlPlane
 machines:
-  - <PLACEHOLDER-precision-1-uuid>
-  - <PLACEHOLDER-precision-2-uuid>
-  - <PLACEHOLDER-latitude-01-uuid>
+  - 4c4c4544-0030-5910-805a-c6c04f503133
+  - 4c4c4544-0039-4210-8046-b8c04f314a33
+  - 4c4c4544-0052-3610-8039-cac04f484733
 patches:
   - name: controlplane-vip
     file: patches/controlplane-vip.yaml
-  - name: longhorn-disk
-    file: patches/longhorn-disk.yaml
 ---
 kind: Workers
 machines:
-  - <PLACEHOLDER-dl380-uuid>
-  - <PLACEHOLDER-thinkcentre-01-uuid>
+  - 9ba21500-a881-11e5-ae5a-d524518f0c00
+---
+# ---- Per-machine disk config ----
+# Dell laptop: OS on the NVMe, Longhorn on the 1TB HDD.
+kind: Machine
+name: 4c4c4544-0030-5910-805a-c6c04f503133
 patches:
+  - name: install-nvme
+    file: patches/install-type-nvme.yaml
   - name: longhorn-disk
     file: patches/longhorn-disk.yaml
+---
+# Dell laptop: OS on the 256GB NVMe, Longhorn on the 1TB NVMe.
+kind: Machine
+name: 4c4c4544-0039-4210-8046-b8c04f314a33
+patches:
+  - name: install-256
+    file: patches/install-le400gb.yaml
+  - name: longhorn-disk
+    file: patches/longhorn-disk.yaml
+---
+# Dell laptop: single 512GB NVMe — OS only, no dedicated Longhorn disk.
+kind: Machine
+name: 4c4c4544-0052-3610-8039-cac04f484733
+patches:
+  - name: install-single
+    file: patches/install-ge100gb.yaml
+---
+# Lenovo mini (thinkcentre-01): OS on the 256GB SSD, ignore the 15GB USB.
+kind: Machine
+name: 9ba21500-a881-11e5-ae5a-d524518f0c00
+patches:
+  - name: install-single
+    file: patches/install-ge100gb.yaml
