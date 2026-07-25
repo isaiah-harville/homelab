@@ -10,15 +10,15 @@ GitOps repo for a **Talos Linux cluster** (the "homelab" cluster) managed by a
 commit, and Flux converges the cluster. Don't `kubectl apply` to make a change
 stick; edit the repo.
 
-The machine/OS layer is **Talos** (immutable, API-driven — no SSH, no config
-management). Machines are provisioned and their lifecycle (Talos + k8s upgrades,
-node health) is driven from **Omni**, not from this repo's manifests. Talos +
+The machine/OS layer is **Talos** (immutable and API-driven; no SSH or mutable
+host configuration). Omni applies the lifecycle operations, while
+`terraform/omni/` declares the cluster topology and shared Talos patches. Talos +
 Omni replaced the old k3s + Ansible + kube-vip + kured + medik8s stack entirely.
 
 ## Layout
 
 ```
-omni-server/         Self-hosted Omni (docker-compose + runbook) — the management plane
+omni-server/         Self-hosted Omni (Compose stack + runbook) — the management plane
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
@@ -29,8 +29,8 @@ apps/releases/       Apps deployed from their OWN external git repos (see below)
 
 ## Provisioning: Talos + Omni (replaces ansible)
 
-There is **no ansible** and no per-node OS config in this repo. To stand up or
-extend the cluster:
+There is **no ansible** or mutable per-node host configuration. Talos patches
+under `talos/omni/patches/` provide the declarative machine configuration.
 
 1. **Omni** (`omni-server/`) is the management plane. It runs in Docker *outside*
    the cluster (must survive a node wipe), fronts auth via **Dex → authelia**
@@ -44,10 +44,12 @@ extend the cluster:
    - `controlplane-vip.yaml` — floating API VIP **10.1.10.9** (replaces kube-vip).
    - `allow-scheduling.yaml` — run workloads on control-plane nodes (needed for
      Longhorn's 3-replica anti-affinity with only 2 dedicated workers).
-   - `install-disk.yaml` / `longhorn-disk.yaml` — OS disk + dedicated Longhorn disk.
+   - `install-*.yaml` — per-machine OS disk selectors.
+   - `longhorn-disk.yaml` + `longhorn-storage-node.yaml` — claim and label
+     dedicated Longhorn disks.
 
-   Full bring-up runbook: `talos/README.md`. Node UUIDs and per-node disk
-   selectors are filled in at enrollment time.
+   Full bring-up runbook: `talos/README.md`. When topology changes, update both
+   `talos/omni/cluster-template.yaml` and `terraform/omni/locals.tf`.
 4. **Upgrades / node health / reboots** are driven from Omni (rolling, one node at
    a time). No `talosctl upgrade` by hand, no kured, no medik8s.
 
@@ -70,11 +72,11 @@ workflow needs no GitHub secrets. `.github/workflows/terraform.yaml`: plan on PR
 apply on merge to `main`. **State** lives in SeaweedFS S3 (`tfstate` bucket); Omni
 is the real source of truth, so lost state is re-`import`ed, never catastrophic.
 
-The provider is **alpha** and this is **not activated yet** — ARC + its secrets are
-commented out in `clusters/homelab/infra/kustomization.yaml`, and the live cluster
-must be `terraform import`ed before the first apply. Full runbook + import steps:
-`terraform/omni/README.md`. Until it's stable, `cluster-template.yaml` +
-`omnictl cluster template sync` remain the working path.
+The provider is **alpha**. ARC and its SOPS secrets are enabled in
+`clusters/homelab/infra/kustomization.yaml`; the existing Omni resources must be
+imported before the workflow is allowed to apply. Full setup and recovery steps
+are in `terraform/omni/README.md`. Keep `cluster-template.yaml` as the manual
+fallback while the provider remains alpha.
 
 ## Flux reconcile order
 
@@ -105,20 +107,24 @@ carry no encrypted resources. `infra` has `healthChecks` on the core HelmRelease
 
 ## Apps from external repos (`apps/releases/`)
 
-Some apps aren't built from a Helm chart here — they live in their **own GitHub
-repos** and this repo only points Flux at them. Each `apps/releases/<name>/` holds:
+Most apps in this directory are reconciled from their **own GitHub repositories**.
+The common pattern under `apps/releases/<name>/` is:
 
 - `gitrepository.yaml` — a Flux `GitRepository` (in `flux-system`) for the app's repo.
 - `release.kustomization.yaml` — a Flux `Kustomization` whose `spec.path` points at a
   deploy dir **inside that external repo** (not this one), `dependsOn` infra +
-  certificates. This is why `orion`, `pigeon`, `swing-thoughts`, `openvitae` show up
-  as their own top-level entries in `flux get kustomizations -A`.
+  certificates. This is why `orion`, `pigeon`, and `swing-thoughts` show up as
+  top-level entries in `flux get kustomizations -A`.
 - `ingress.yaml` — the Ingress lives here (so it gets the `apps` Ingress patches).
 
-They're still registered as resources in `clusters/homelab/apps/kustomization.yaml`,
-so the parent `apps` Kustomization creates the GitRepository + child Kustomization,
-and the child then reconciles the app from its own source. `apps/base/` HelmRelease
-apps and these external-repo apps are mixed together in that one kustomization list.
+`openvitae` is the exception: its directory contains a `GitRepository` and an
+in-repo `HelmRelease` that loads the chart from that source. It does not create a
+child Flux Kustomization or a separate repository-defined Ingress.
+
+All release directories are registered in
+`clusters/homelab/apps/kustomization.yaml`. For the common pattern, the parent
+creates the GitRepository and child Kustomization, and the child reconciles the
+external deployment.
 
 ## Ingress conventions
 
@@ -144,7 +150,8 @@ apps and these external-repo apps are mixed together in that one kustomization l
 - One wildcard `Certificate` `harville-wildcard` (`infrastructure/base/certificates/`)
   via cert-manager + the `letsencrypt-dns` ClusterIssuer (Cloudflare DNS-01).
   Covers `*.harville.dev`, `*.int.harville.dev`, `*.harville.ai`, `*.int.harville.ai`,
-  `innerswings.com`, `*.innerswings.com`.
+  `innerswings.com`, `*.innerswings.com`, `pigeonwire.app`, and
+  `*.pigeonwire.app`.
 - Secret `harville-wildcard-shared-tls` is **reflected** (emberstack reflector) into the
   namespaces listed in the Certificate's `reflector.*` annotations (currently
   `apps,monitoring,longhorn-system`). **If you add an app in a new namespace, add that
@@ -160,12 +167,12 @@ apps and these external-repo apps are mixed together in that one kustomization l
 - **Data path is `/var/mnt/longhorn`** (Helm `defaultDataPath`). On Talos that's a
   **dedicated disk** mounted via `UserVolumeConfig` (NOT the deprecated
   `machine.disks`), made visible to Longhorn's pods by a kubelet `extraMounts` bind —
-  both in `talos/omni/patches/longhorn-disk.yaml`. Enroll a node with that patch and
-  its storage appears. Longhorn also needs the `iscsi-tools` + `util-linux-tools`
-  system extensions (baked into the image via `talos/image/schematic.yaml`).
-  > **Single-disk nodes:** `UserVolumeConfig` claims a *separate* disk. Single-NVMe
-  > laptops have none — carve a partition or fall back to a system-disk directory for
-  > that machine class (see the caveat in `longhorn-disk.yaml`).
+  both in `talos/omni/patches/longhorn-disk.yaml`. The node also needs
+  `longhorn-storage-node.yaml`, because Longhorn only creates disks on labeled
+  nodes. Longhorn needs the `iscsi-tools` + `util-linux-tools` system extensions
+  from `talos/image/schematic.yaml`.
+  > **Single-disk nodes:** do not apply either Longhorn storage patch; the current
+  > configuration only uses dedicated spare disks.
 - `defaultReplicaCount: 3` + strict anti-affinity → one replica per node, any single
   node can fail with no data loss. Disks auto-create per node (30% reserved).
 - Consequence: data on Longhorn is ~3x amplified. For an app that does its **own**
@@ -187,9 +194,12 @@ privileged workload's namespace, or Talos baseline will block its pods.
   rule matches files under `secrets/` or `sops/` dirs and encrypts `^(data|stringData)$`.
 - To add a secret: write the plaintext `Secret` manifest under
   `clusters/homelab/.../secrets/`, then `sops --encrypt --in-place <file>` (run from repo
-  root so `.sops.yaml` is picked up). The age **private** key lives only in-cluster
-  (`sops-age` secret) — you can encrypt locally but not decrypt without it.
+  root so `.sops.yaml` is picked up). The age **private** key is not in Git; the
+  cluster has a copy in the `sops-age` Secret. Keep a secure external backup for
+  cluster recovery. Local decryption requires that identity.
 - yamllint/pre-commit excludes `secrets/` and `sops/` dirs.
+- During a cluster rebuild, restore the `sops-age` Secret in `flux-system` before
+  reconciling `infra` or `apps`; both Kustomizations require it for decryption.
 - **Rollout-on-secret-change:** `clusters/homelab/apps/kustomization.yaml` has a
   `replacements` block that copies each authelia secret's `sops.mac` into a pod
   annotation on the authelia HelmRelease. Because the MAC changes whenever the
@@ -217,6 +227,8 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **searxng** — self-hosted metasearch; backs Open WebUI's web-search
   (`http://searxng:8080`, see `apps/base/openwebui`).
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
+- **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
+- **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **harbor** — container registry, public at `harbor.harville.dev`.
 - **vllm** — OpenAI-compatible inference at `vllm.int.harville.dev` (API-key auth),
@@ -253,8 +265,18 @@ kubectl -n flux-system describe kustomization infra
 # Unstick a wedged kustomization
 kubectl -n flux-system rollout restart deployment/kustomize-controller
 
-# Cluster access + lifecycle (from Omni, not this repo)
+# Cluster access + lifecycle
 omnictl kubeconfig --cluster homelab     # (re)fetch kubeconfig
 omnictl get machines                     # machine inventory
-# Talos/k8s upgrades + node health: drive from the Omni UI (rolling).
+# Terraform declares topology; Omni performs rolling lifecycle operations.
+```
+
+## Validation
+
+```bash
+uvx pre-commit run --all-files
+kubectl kustomize clusters/homelab/apps >/dev/null
+kubectl kustomize clusters/homelab/infra >/dev/null
+kubectl kustomize clusters/homelab/flux-system >/dev/null
+terraform -chdir=terraform/omni fmt -check -recursive
 ```

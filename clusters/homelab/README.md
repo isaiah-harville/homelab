@@ -7,6 +7,13 @@ Folders:
 - `infra/`: homelab-specific infrastructure assembly and encrypted infra secrets
 - `apps/`: homelab-specific app assembly and encrypted app secrets
 
-In practice:
-- `infra/` brings up platform services first
-- `apps/` depends on those platform services and then deploys workloads
+The Flux dependency order is:
+
+```text
+sources → infra → issuers → certificates → apps
+              └→ metallb-config
+```
+
+The `infra` and `apps` Kustomizations decrypt SOPS resources with the
+`flux-system/sops-age` Secret. Restore that Secret before reconciliation when
+rebuilding the cluster.

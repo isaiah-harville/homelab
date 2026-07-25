@@ -1,8 +1,9 @@
 # Self-hosted Omni
 
-The Talos management plane for the homelab cluster. Runs **outside** the cluster
-it manages (Docker host on the LAN) so it survives a full node wipe — this is
-what replaces Ansible + kube-vip for provisioning and control-plane lifecycle.
+The Talos management plane for the homelab cluster. It runs **outside** the
+cluster on a LAN Docker host so it survives a full node wipe. Omni replaces the
+old Ansible-based provisioning and manages cluster lifecycle; Talos provides the
+control-plane VIP.
 
 > **Where it runs: a dedicated Ubuntu Server box, `10.1.10.88`** (hostname `omni`) —
 > deliberately **not** a cluster node, so it survives a full cluster wipe. Omni was
@@ -50,7 +51,7 @@ gpg --batch --passphrase '' --quick-generate-key \
 FPR=$(gpg --list-keys --with-colons omni@int.harville.dev | awk -F: '/^fpr/{print $10; exit}')
 gpg --batch --passphrase '' --quick-add-key "$FPR" rsa4096 encrypt never
 # Omni v1.9 wants BOTH: public key to encrypt the slot, secret key to decrypt.
-gpg --export-secret-key --armor omni@int.harville.dev > secrets/omni.asc
+gpg --export-secret-keys --armor omni@int.harville.dev > secrets/omni.asc
 gpg --export        --armor omni@int.harville.dev > secrets/omni-public.asc
 chmod 600 secrets/omni.asc
 ```
@@ -127,13 +128,28 @@ Once the cluster is up and authelia is running:
 3. Human logins now flow **omni → dex → authelia**. Keep the static admin as
    break-glass for when the cluster is down.
 
+## Backup and restore
+
+The `data/` directory contains Omni's embedded etcd and SQLite databases. Back up
+the full runtime state while the stack is stopped:
+
+```bash
+docker compose stop
+sudo tar -czf /secure/path/omni-backup.tgz \
+  data secrets certs .env dex.yaml compose.yaml
+docker compose start
+```
+
+The archive contains private keys and credentials; store it encrypted. Restore
+it on the same paths and start the pinned Omni version before upgrading.
+
 ## Layout
 
 ```
-docker-compose.yaml   Dex + Omni
+compose.yaml          Dex + Omni
 .env.example          copy to .env
 dex.yaml              OIDC config (static admin + authelia connector)
 certs/                lego-minted TLS (gitignored)
 secrets/omni.asc      GPG etcd key (gitignored)
-data/etcd/            Omni state (gitignored) — BACK THIS UP
+data/                 embedded etcd + SQLite state (gitignored)
 ```
