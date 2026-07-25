@@ -3,6 +3,8 @@ secrets/
 data/
 dex.db
 .env
+.lego/
+.lego-cf.env
 
 # Override the root .env.* rule.
 !.env.example

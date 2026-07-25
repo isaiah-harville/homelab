@@ -1,0 +1,53 @@
+---
+# Omni's etcd-backup-s3 feature (see omni-server/) writes a new snapshot to
+# the "backups" bucket roughly once a day (interval: 24h, not clock-aligned)
+# and has no built-in pruning (https://github.com/siderolabs/omni/issues/610),
+# so the bucket grows forever unless something else trims it. This keeps a
+# rolling 3-day window instead of literally overwriting in place, so a bad
+# recent snapshot still has a couple of siblings to fall back to.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: seaweedfs-backup-prune
+  namespace: apps
+spec:
+  # Runs every morning; Omni's own backup interval isn't clock-aligned so
+  # this is a best-effort "after the daily backup" offset, not a guarantee.
+  schedule: "0 7 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: mc-prune
+              image: minio/mc:latest
+              env:
+                - name: ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: omni-backup-s3-creds
+                      key: accessKey
+                - name: SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: omni-backup-s3-creds
+                      key: secretKey
+                - name: MC_HOST_backup
+                  value: http://$(ACCESS_KEY):$(SECRET_KEY)@seaweedfs-s3.apps.svc.cluster.local:8333
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  mc rm --recursive --force --older-than 76h backup/backups/
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi

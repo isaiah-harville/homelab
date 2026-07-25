@@ -115,8 +115,51 @@ Once the cluster is up and authelia is running:
 
 ## Backup and restore
 
-The `data/` directory contains Omni's embedded etcd and SQLite databases. Back up
-the full runtime state while the stack is stopped:
+### etcd → S3 (seaweedfs), automatic
+
+Omni natively backs up its embedded etcd store on a schedule. The `omni`
+container runs with `--etcd-backup-s3`; the bucket/credentials come from an
+`EtcdBackupS3Configs` resource (not a compose flag), and the schedule comes
+from the cluster's `backupConfiguration` (set in `terraform/omni/cluster.tf`,
+mirrored in `talos/omni/cluster-template.yaml`):
+
+```bash
+export OMNI_ENDPOINT=https://omni.int.harville.dev/
+export OMNI_SERVICE_ACCOUNT_KEY=...   # SA with Admin role
+
+cat <<EOF | omnictl apply -f -
+metadata:
+  namespace: default
+  type: EtcdBackupS3Configs.omni.sidero.dev
+  id: etcd-backup-s3-conf
+spec:
+  bucket: backups
+  region: us-east-1
+  endpoint: https://s3.int.harville.dev
+  accesskeyid: <seaweedfs "omni-backup" identity access key>
+  secretaccesskey: <seaweedfs "omni-backup" identity secret key>
+  sessiontoken: ""
+EOF
+```
+
+The `omni-backup` seaweedfs identity (scoped to `Read/Write/List/Tagging` on
+the `backups` bucket only) lives in
+`clusters/homelab/apps/secrets/seaweedfs-s3-config.yaml` (SOPS-encrypted).
+After editing `compose.yaml` to add the flag, redeploy on the omni host:
+`docker compose up -d`. Backups land under `s3://backups/omni/...` in
+seaweedfs; list them with `omnictl etcd-backup list --cluster homelab` (or the
+Omni UI's Backups tab).
+
+**Restore**: `omnictl cluster template sync` a template with the target
+cluster's `id` sourced from the backup, or use the Omni UI "Restore from
+backup" flow when creating/re-pointing a cluster. This only restores Omni's
+view of cluster/machine state — Talos itself is unaffected.
+
+### Full host state, manual
+
+The `data/` directory (etcd + SQLite) plus GPG/TLS/Dex secrets are what make
+this specific Omni instance work at all — the S3 etcd backups above don't
+cover them. Back up the full runtime state while the stack is stopped:
 
 ```bash
 docker compose stop

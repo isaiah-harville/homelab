@@ -9,6 +9,13 @@ kubernetes:
   version: v1.33.3
 talos:
   version: v1.13.5
+features:
+  # etcd backups to the seaweedfs "backups" bucket (EtcdBackupS3Configs
+  # resource, applied separately with omnictl). Requires the omni container
+  # to run with --etcd-backup-s3 (see omni-server/compose.yaml). Interval is
+  # relative (since last backup), not clock-aligned to a specific time.
+  backupConfiguration:
+    interval: 24h
 patches:
   - name: allow-scheduling
     file: patches/allow-scheduling.yaml

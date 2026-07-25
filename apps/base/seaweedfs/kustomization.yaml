@@ -5,3 +5,4 @@ namespace: apps
 resources:
   - helmrelease.yaml
   - ingress.yaml
+  - backup-prune-cronjob.yaml

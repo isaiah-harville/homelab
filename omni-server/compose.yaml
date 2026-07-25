@@ -66,3 +66,7 @@ services:
       - --initial-users=${OMNI_ADMIN_EMAIL}
       - --eula-accept-name=${EULA_NAME}
       - --eula-accept-email=${EULA_EMAIL}
+      # etcd backups to S3 (seaweedfs). Bucket/creds/schedule are set via the
+      # EtcdBackupS3Configs resource + cluster backupConfiguration (omnictl),
+      # not here — see omni-server/README.md "Backup and restore".
+      - --etcd-backup-s3
