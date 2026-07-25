@@ -1,4 +1,3 @@
-# Secrets
 .env
 .env.*
 .agekey
@@ -6,8 +5,12 @@
 public-cert.pem
 *-secret.yaml
 
-# Misc.
 NOTES.md
+*.log*
 
-# Pre-commit stuff
 node_modules/
+
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan

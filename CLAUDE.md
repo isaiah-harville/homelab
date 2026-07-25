@@ -20,6 +20,7 @@ Omni replaced the old k3s + Ansible + kube-vip + kured + medik8s stack entirely.
 ```
 omni-server/         Self-hosted Omni (docker-compose + runbook) — the management plane
 talos/               Talos image schematic + Omni cluster template + machine-config patches
+terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
 infrastructure/base/ Cluster plumbing: traefik, cert-manager, metallb, longhorn, monitoring, reflector, sources
 apps/base/           Reusable app building blocks (HelmRelease + ingress + kustomization)
@@ -52,6 +53,28 @@ extend the cluster:
 
 The kubeconfig comes from Omni (`omnictl kubeconfig --cluster homelab`), and Flux
 is bootstrapped onto the cluster from this repo.
+
+## Terraform for Omni + self-hosted runner
+
+`terraform/omni/` manages the Omni cluster (cluster, machine sets, node
+assignments, config patches) with the `siderolabs/omni` provider — the GitOps
+path for what `omnictl cluster template sync` does by hand. It **reads the same
+patch files** under `talos/omni/patches/`, so patch content stays single-sourced;
+keep `terraform/omni/locals.tf` and `cluster-template.yaml` topologies in step.
+
+Jobs run on an **in-cluster GitHub Actions self-hosted runner** (ARC,
+`infrastructure/base/actions-runner-controller/`, namespaces `arc-systems` /
+`arc-runners`) so they can reach the **LAN-only** Omni + SeaweedFS. The runner pod
+gets `OMNI_*` and `AWS_*` (S3) creds via `envFrom` from two SOPS secrets, so the
+workflow needs no GitHub secrets. `.github/workflows/terraform.yaml`: plan on PR,
+apply on merge to `main`. **State** lives in SeaweedFS S3 (`tfstate` bucket); Omni
+is the real source of truth, so lost state is re-`import`ed, never catastrophic.
+
+The provider is **alpha** and this is **not activated yet** — ARC + its secrets are
+commented out in `clusters/homelab/infra/kustomization.yaml`, and the live cluster
+must be `terraform import`ed before the first apply. Full runbook + import steps:
+`terraform/omni/README.md`. Until it's stable, `cluster-template.yaml` +
+`omnictl cluster template sync` remain the working path.
 
 ## Flux reconcile order
 

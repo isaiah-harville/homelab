@@ -9,9 +9,8 @@
     "ghcr.io/devcontainers/features/git-lfs:1": {
       "autoPull": "false"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:3": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-    "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers-extra/features/uv:1": {},
     "ghcr.io/devcontainers/features/rust:1": {},
     "ghcr.io/devcontainer-community/devcontainer-features/collection-c-cpp:1": {},
@@ -28,7 +27,8 @@
         "charliermarsh.ruff",
         "astral.ty",
         "ms-python.python",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-dockerw"
       ]
     }
   }
