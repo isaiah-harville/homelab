@@ -28,7 +28,7 @@ def manifests() -> Iterator[tuple[Path, dict[str, Any]]]:
                 raise RuntimeError(f"Unable to parse {relative}") from error
 
 
-def value(document: dict[str, Any], *keys: str, default: str = "—") -> Any:
+def value(document: dict[str, Any], *keys: str, default: Any = "—") -> Any:
     current: Any = document
     for key in keys:
         if not isinstance(current, dict) or key not in current:
@@ -109,7 +109,10 @@ def write_table(
     with mkdocs_gen_files.open(output, "w") as page:
         print(f"# {title}\n", file=page)
         print(f"{introduction}\n", file=page)
-        print("_Generated from repository manifests during the documentation build._\n", file=page)
+        print(
+            "_Generated from repository manifests during the documentation build._\n",
+            file=page,
+        )
         print("| " + " | ".join(headers) + " |", file=page)
         print("| " + " | ".join("---" for _ in headers) + " |", file=page)
         for row in sorted(rows, key=lambda item: tuple(str(part) for part in item[:2])):

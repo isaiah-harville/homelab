@@ -83,6 +83,7 @@ nav:
   - Decisions:
       - Terraform state backend: decisions/terraform-state.md
       - Metrics Server TLS: decisions/metrics-server-tls.md
+      - Omni resource identity: decisions/omni-resource-identity.md
   - Generated reference:
       - About generated docs: reference/index.md
       - Helm releases: reference/helm-releases.md

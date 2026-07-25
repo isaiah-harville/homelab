@@ -6,9 +6,13 @@ name: Documentation
   pull_request:
     paths:
       - "**/*.md"
+      - apps/**/*.yaml
+      - clusters/**/*.yaml
       - docs/**
+      - infrastructure/**/*.yaml
       - mkdocs.yml
       - pyproject.toml
+      - scripts/generate_reference.py
       - uv.lock
       - .github/workflows/docs.yaml
   push:
@@ -16,9 +20,13 @@ name: Documentation
       - main
     paths:
       - "**/*.md"
+      - apps/**/*.yaml
+      - clusters/**/*.yaml
       - docs/**
+      - infrastructure/**/*.yaml
       - mkdocs.yml
       - pyproject.toml
+      - scripts/generate_reference.py
       - uv.lock
       - .github/workflows/docs.yaml
 

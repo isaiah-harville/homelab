@@ -2,8 +2,7 @@
 resource "omni_config_patch" "allow_scheduling" {
   name    = "allow-scheduling"
   cluster = omni_cluster.homelab.name
-  # Cluster-wide patches land at weight 200 in Omni (200-cluster-...); match it
-  # so Terraform adopts the existing patch instead of recreating it.
+  # Weight is identity: ../../docs/decisions/omni-resource-identity.md.
   weight = 200
   data   = file("${local.patch_dir}/allow-scheduling.yaml")
 }

@@ -14,6 +14,10 @@ commands and the full file list.
 Omni also creates interval-based etcd snapshots in object storage. Snapshot
 creation is enabled in the Omni configuration and the cluster template.
 
+The pinned Terraform provider does not expose the cluster backup configuration.
+The S3 backup resource and interval are therefore configured with `omnictl`,
+while Terraform continues to manage the supported cluster fields.
+
 ## Snapshot retention
 
 Omni creates new objects but does not prune older S3 snapshots. The

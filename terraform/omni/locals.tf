@@ -15,10 +15,7 @@ locals {
     "30393137-3436-584d-5135-343430303635", # dl380
   ]
 
-  # Per-machine install patch: file (patch YAML) + name. The name must match the
-  # patch name Omni already stores (cluster-template.yaml uses these), so the
-  # config-patch IDs line up and Terraform adopts them in place instead of
-  # recreating: 400-cm-<uuid>-<name>.
+  # Patch names are identity: ../../docs/decisions/omni-resource-identity.md.
   install_patch = {
     "4c4c4544-0030-5910-805a-c6c04f503133" = { file = "install-type-nvme.yaml", name = "install-nvme" } # 256GB NVMe OS
     "4c4c4544-0039-4210-8046-b8c04f314a33" = { file = "install-le400gb.yaml", name = "install-256" }    # 256GB NVMe OS
