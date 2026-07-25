@@ -3,15 +3,11 @@ resource "omni_cluster" "homelab" {
   talos_version      = local.talos_version
   kubernetes_version = local.k8s_version
 
-  # etcd backups to the seaweedfs "backups" bucket, configured via the
-  # EtcdBackupS3Configs resource (applied out-of-band with omnictl, since the
-  # provider has no resource for it). Requires the omni container to be
-  # started with --etcd-backup-s3 (see omni-server/compose.yaml).
-  # Omni's interval is relative (since last backup), not clock-aligned, so
-  # this lands roughly once a day rather than at a guaranteed time of day.
-  backup_configuration = {
-    interval = "24h"
-  }
+  # etcd backups to S3: the pinned provider (0.1.0-alpha.3) doesn't yet
+  # support `backup_configuration`, so both the EtcdBackupS3Configs resource
+  # AND the cluster's backup interval are applied out-of-band with omnictl
+  # instead (see omni-server/README.md "Backup and restore"). Requires the
+  # omni container to run with --etcd-backup-s3 (omni-server/compose.yaml).
 }
 
 resource "omni_machine_set" "control_plane" {
