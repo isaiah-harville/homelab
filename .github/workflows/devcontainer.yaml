@@ -35,10 +35,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Builds the devcontainer (Microsoft base image + features, no Dockerfile).
-      # Build cache is read from and written to a dedicated registry tag
-      # (:buildcache) via buildx registry cache, so rebuilds only redo what
-      # changed.
       - name: Build and push devcontainer
         uses: devcontainers/ci@v0.3
         with:
