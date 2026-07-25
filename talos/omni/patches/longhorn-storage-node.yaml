@@ -1,9 +1,4 @@
-# Marks this node as a Longhorn storage node. Longhorn is set with
-# createDefaultDiskLabeledNodes: true (infrastructure/base/longhorn/helmrelease.yaml),
-# so it only auto-creates its default disk at /var/mnt/longhorn on nodes carrying
-# this label. Apply ONLY to nodes that also get longhorn-disk.yaml (a real
-# dedicated disk) — single-disk nodes stay unlabeled so they never provision
-# storage on their ephemeral /var.
+# Apply only with longhorn-disk.yaml; unlabeled nodes use no ephemeral storage.
 machine:
   nodeLabels:
     node.longhorn.io/create-default-disk: "true"

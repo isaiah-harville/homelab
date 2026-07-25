@@ -24,11 +24,7 @@ spec:
           env:
             - name: PIGEON_RELAY_ADDR
               value: 0.0.0.0:8080
-          # Opt-in APNs push wake-up config (only the official relay pushes).
-          # All keys — PIGEON_APNS_TEAM_ID/KEY_ID/TOPIC/HOST and the .p8 inline as
-          # PIGEON_APNS_KEY_PEM — come from the SOPS-encrypted pigeon-relay-apns
-          # secret. optional:true so the relay still runs (just without push) if
-          # the secret isn't present yet.
+          # APNs is optional so the relay can run before its SOPS secret exists.
           envFrom:
             - secretRef:
                 name: pigeon-relay-apns

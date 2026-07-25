@@ -24,14 +24,10 @@ spec:
         namespace: flux-system
   values:
     externalURL: https://harbor.harville.dev
-    # registry/jobservice use ReadWriteOnce Longhorn volumes; the default
-    # RollingUpdate starts the new pod before releasing the old one's volume,
-    # which deadlocks on Multi-Attach and times out every upgrade. Recreate kills
-    # the old pod first so the RWO volume frees up.
+    # Recreate releases the ReadWriteOnce volumes before starting replacement pods.
     updateStrategy:
       type: Recreate
-    # Harbor ships its own auth, and `docker login` can't traverse Authelia
-    # forwardauth — so this is exposed publicly with no forwardauth middleware.
+    # `docker login` cannot traverse Authelia forward auth.
     expose:
       type: ingress
       tls:
@@ -51,11 +47,9 @@ spec:
           gethomepage.dev/description: Container registry
           gethomepage.dev/href: https://harbor.harville.dev
           gethomepage.dev/siteMonitor: https://harbor.harville.dev
-    # Admin password from SOPS; all other internal secrets are auto-generated
-    # by the chart and preserved across upgrades.
+    # The admin password comes from SOPS; the chart manages its other secrets.
     existingSecretAdminPassword: harbor-secrets
     existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
-    # Bundled Postgres + Redis (goharbor images, not Bitnami).
     database:
       type: internal
     redis:
@@ -64,8 +58,7 @@ spec:
       enabled: true
     metrics:
       enabled: false
-    # Image layers + chart state on Longhorn (default StorageClass is not set
-    # cluster-wide, so every PVC must name longhorn explicitly).
+    # No cluster-wide default StorageClass is set.
     persistence:
       enabled: true
       imageChartStorage:

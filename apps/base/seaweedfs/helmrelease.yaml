@@ -23,7 +23,6 @@ spec:
         name: seaweedfs
         namespace: flux-system
   values:
-    # Single-node homelab topology; all state on Longhorn so any node can host it.
     master:
       replicas: 1
       data:
@@ -70,18 +69,12 @@ spec:
           memory: 256Mi
         limits:
           memory: 512Mi
-    # Standalone S3 gateway (Service: seaweedfs-s3 on :8333).
-    # Identities/access keys come from the SOPS-managed secret.
     s3:
       enabled: true
       replicas: 1
       port: 8333
       existingConfigSecret: seaweedfs-s3-config
-      # The chart defaults the s3 logs volume to a hostPath, which Talos'
-      # baseline Pod Security admission rejects in the apps namespace (the pod
-      # never gets created → Helm wait times out). Use an ephemeral emptyDir
-      # instead (S3 gateway logs are disposable; emptyDir also avoids the RWO
-      # PVC rolling-update deadlock a Deployment would hit).
+      # Talos rejects the chart's default hostPath; disposable logs use emptyDir.
       logs:
         type: emptyDir
       createBuckets:

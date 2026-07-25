@@ -1,13 +1,5 @@
-# Longhorn storage on Talos, two parts:
-#   1. UserVolumeConfig claims the first non-system disk (machine.disks is
-#      deprecated) and mounts it at /var/mnt/longhorn — matched by Helm's
-#      defaultDataPath (infrastructure/base/longhorn/helmrelease.yaml).
-#   2. kubelet extraMounts binds that path with rshared propagation so Longhorn's
-#      pods can see it. Talos is immutable; without this bind data can't persist.
-#
-# ⚠️ Nodes with no spare disk (single-NVMe laptops) match nothing here. Either
-# carve a partition and select it, or drop this patch for that machine class and
-# point Longhorn at a /var/lib/longhorn directory. Confirm disk inventory at bring-up.
+# Claim the non-system disk and expose it to Longhorn with shared propagation.
+# Apply only to machines with a dedicated spare disk.
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig

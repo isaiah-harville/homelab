@@ -61,11 +61,8 @@ spec:
         namespace: flux-system
   values:
     fullnameOverride: openwebui
-    # Ollama dropped — Open WebUI uses vLLM via the OpenAI API only. These are the
-    # chart's native OpenAI values (NOT postRenderers env, which would duplicate
-    # the chart-set env and break Helm's patch). Points at the vLLM router
-    # (apps/base/vllm-router), which fronts both GPU backends and exposes them
-    # as separate selectable models.
+    # Use the chart's native OpenAI values; injecting the same environment
+    # variables with postRenderers breaks Helm's patch.
     ollama:
       enabled: false
     enableOpenaiApi: true

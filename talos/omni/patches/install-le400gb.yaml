@@ -1,5 +1,4 @@
-# Install target = the smaller (<=400GB) disk. This machine has two NVMe drives
-# (1TB + 256GB); OS goes on the 256GB, the 1TB is reserved for Longhorn.
+# Install on the 256GB NVMe; reserve the 1TB NVMe for Longhorn.
 ---
 machine:
   install:

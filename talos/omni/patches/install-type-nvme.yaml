@@ -1,5 +1,4 @@
-# Install target = the NVMe SSD (this machine also has a rotational HDD reserved
-# for Longhorn). Selecting by type avoids installing onto the 1TB HDD.
+# Install on NVMe and reserve the rotational disk for Longhorn.
 ---
 machine:
   install:

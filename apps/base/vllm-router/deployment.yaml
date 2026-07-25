@@ -1,8 +1,5 @@
 ---
-# Router in front of the vLLM backend on the WSL GPU box (harvi-desktop,
-# 10.1.10.20), which is NOT a cluster node — it runs vLLM standalone. Static
-# service discovery: the router picks a backend by "model" field and gives Open
-# WebUI an OpenAI-compatible endpoint. Add more static-backends here to fan out.
+# OpenAI-compatible router for vLLM running outside the cluster on harvi-desktop.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,8 +27,7 @@ spec:
             - "8001"
             - --service-discovery
             - static
-            # The router's URL validator requires a dotted hostname (or IPv4/
-            # localhost), so use the WSL box's LAN IP directly.
+            # The router rejects hostnames without a dot, so use the LAN IP.
             - --static-backends
             - http://10.1.10.20:8000
             - --static-models

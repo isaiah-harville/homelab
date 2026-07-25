@@ -1,9 +1,8 @@
-# Local-only material — never commit.
 certs/
 secrets/
 data/
 dex.db
 .env
 
-# ...but DO keep the example env (root .gitignore's `.env.*` would swallow it).
+# Override the root .env.* rule.
 !.env.example

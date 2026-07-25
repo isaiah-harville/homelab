@@ -1,12 +1,5 @@
-# Dex config for Omni's OIDC auth.
-#
-# Two identity paths, on purpose:
-#   1. staticPasswords — a break-glass admin that works even when the cluster
-#      (and therefore authelia) is down. This is why Omni does NOT depend on the
-#      cluster it manages. Set the bcrypt hash via `htpasswd -bnBC 10 "" <pw>`.
-#   2. authelia connector — the unified-SSO path. Once the cluster is up and
-#      authelia has an OIDC client registered for Dex, human logins flow
-#      omni → dex → authelia. Uncomment when authelia is live.
+# The local account remains available when the cluster and Authelia are down.
+# Enable the Authelia connector after its Dex client is configured.
 ---
 issuer: https://omni-dex.int.harville.dev:5556
 
@@ -31,7 +24,7 @@ staticClients:
     redirectURIs:
       - https://omni.int.harville.dev/oidc/consume
 
-# --- Break-glass local admin (always available) ---
+# Break-glass local admin
 enablePasswordDB: true
 staticPasswords:
   - email: admin@int.harville.dev
@@ -39,7 +32,7 @@ staticPasswords:
     # htpasswd -bnBC 10 "" 'yourpassword' | tr -d ':\n'
     hash: "$2y$10$REPLACE_WITH_BCRYPT_HASH"
 
-# --- Unified SSO via in-cluster authelia (enable after cluster is up) ---
+# Authelia SSO
 # connectors:
 #   - type: oidc
 #     id: authelia

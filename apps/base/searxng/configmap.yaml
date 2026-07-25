@@ -1,8 +1,5 @@
 ---
-# Minimal internal-only SearXNG config. Only Open WebUI talks to this (via the
-# searxng ClusterIP Service), so the public-facing hardening SearXNG ships
-# with by default (rate limiting, bot detection) is unnecessary and would
-# just get in the way of Open WebUI's own request pattern.
+# Only Open WebUI reaches this service, so public rate limiting is disabled.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,13 +9,11 @@ data:
   settings.yml: |
     use_default_settings: true
     server:
-      # Only signs UI cache-busting cookies — not an auth secret. Fine to
-      # commit in plain text.
+      # This signs cache-busting cookies, not authentication data.
       secret_key: "f15abf08ab8654ec5f8f7e05fe87eb8e19bc7985ddc12bd838f26278c2e04887"
       limiter: false
       image_proxy: false
     search:
-      # Open WebUI queries the JSON API, not the HTML UI.
       formats:
         - html
         - json

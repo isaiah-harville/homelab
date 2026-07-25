@@ -1,24 +1,10 @@
-# Omni cluster template for the homelab cluster.
-#
 # Apply with:  omnictl cluster template sync -f cluster-template.yaml
 # Validate:    omnictl cluster template validate -f cluster-template.yaml
-#
-# Topology mirrors the old k3s layout:
-#   control plane / etcd → the 3 Dell laptops
-#   workers              → thinkcentre-01 (Lenovo mini) + dl380
-# GPU boxes (harvi-desktop WSL, spark-a97a DGX) are NOT cluster members.
-#
-# Disk layouts are heterogeneous, so install-disk + Longhorn are set PER MACHINE
-# (see the kind: Machine docs below) rather than with one blanket patch:
-#   4c4c4544-0030… 256GB NVMe (OS) + 1TB HDD  (Longhorn)      storage node
-#   4c4c4544-0039… 256GB NVMe (OS) + 1TB NVMe (Longhorn)      storage node
-#   4c4c4544-0052… 512GB NVMe only  (OS; no dedicated Longhorn disk)
-#   9ba21500-a881… 256GB SSD (OS)   (Lenovo mini; 15GB USB ignored)
-#   30393137-…     2× 1TB HP RAID   (OS on sda, Longhorn sdb) storage node
+# Disk and Longhorn patches are assigned per machine because layouts differ.
 ---
 kind: Cluster
 name: homelab
-# Pin both versions; bump deliberately via Omni (rolling, one node at a time).
+# Upgrade these versions deliberately through Omni.
 kubernetes:
   version: v1.33.3
 talos:
@@ -41,9 +27,7 @@ machines:
   - 9ba21500-a881-11e5-ae5a-d524518f0c00
   - 30393137-3436-584d-5135-343430303635
 ---
-# ---- Per-machine disk config ----
-# Storage nodes get BOTH longhorn-disk (dedicate the spare disk) and
-# longhorn-storage-node (label so Longhorn auto-creates its default disk there).
+# Storage nodes need both the disk and label patches.
 # Dell laptop: OS on the NVMe, Longhorn on the 1TB HDD.
 kind: Machine
 name: 4c4c4544-0030-5910-805a-c6c04f503133
@@ -66,15 +50,14 @@ patches:
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
 ---
-# Dell laptop: single 512GB NVMe — OS only, no dedicated Longhorn disk.
+# Dell laptop: single 512GB NVMe.
 kind: Machine
 name: 4c4c4544-0052-3610-8039-cac04f484733
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
 ---
-# Lenovo mini (thinkcentre-01): OS on the 256GB SSD, ignore the 15GB USB.
-# Single disk → no longhorn-disk/storage-node patch (not a storage node).
+# Lenovo mini: use the 256GB SSD and ignore the 15GB USB.
 kind: Machine
 name: 9ba21500-a881-11e5-ae5a-d524518f0c00
 patches:

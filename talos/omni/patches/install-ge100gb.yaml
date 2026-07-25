@@ -1,5 +1,4 @@
-# Install target = the single fixed disk >=100GB (excludes small USB media).
-# For single-disk machines with no dedicated Longhorn spare.
+# Exclude small USB media from single-disk machines.
 ---
 machine:
   install:

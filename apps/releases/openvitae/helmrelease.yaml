@@ -23,8 +23,7 @@ spec:
         name: openvitae
         namespace: flux-system
       interval: 10m
-  # Sensitive values come from the SOPS-decrypted Secret, so nothing secret
-  # sits in plaintext git. Everything else is non-secret values below.
+  # Flux decrypts these values from the SOPS secret.
   valuesFrom:
     - kind: Secret
       name: openvitae-secrets
@@ -43,7 +42,6 @@ spec:
       valuesKey: minioRootPassword
       targetPath: minio.auth.rootPassword
   values:
-    # Track the moving `latest` images published from main.
     api:
       image:
         tag: latest
@@ -55,19 +53,13 @@ spec:
     auth:
       admin:
         email: isaiah@harville.dev
-      # Delegate admin auth to Authelia (forward-auth). The chart guards
-      # /admin + /api with the middleware below; the API trusts the Remote-*
-      # headers Authelia injects. Public CV + S3 host stay anonymous.
+      # Authelia protects /admin and /api; the public CV and S3 host stay anonymous.
       mode: proxy
-    # Bundled Postgres + MinIO on Longhorn (default StorageClass).
     minio:
       auth:
         rootUser: openvitae
       bucket: openvitae
-    # The chart renders its own Ingress, so the cluster's repo-wide Ingress
-    # patches do NOT apply — set class / TLS / entrypoint here. The site is
-    # public, and object storage gets its own public host so presigned
-    # headshot/PDF URLs resolve for outside visitors.
+    # This chart renders its own Ingress, outside the repo-wide Ingress patches.
     ingress:
       enabled: true
       className: traefik-public
@@ -76,9 +68,7 @@ spec:
       tls:
         enabled: true
         secretName: harville-wildcard-shared-tls
-      # Forward-auth only the admin surface (/admin + /api). The chart renders a
-      # second Ingress carrying this middleware; the public CV and the S3 host
-      # stay anonymous. Authelia access_control restricts it to user:isaiah.
+      # The chart applies this middleware only to /admin and /api.
       protectedAnnotations:
         traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
       annotations:

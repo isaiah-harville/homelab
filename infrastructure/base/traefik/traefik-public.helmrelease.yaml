@@ -51,7 +51,6 @@ spec:
     service:
       annotations:
         metallb.io/address-pool: lab-lb-pool
-        # Pin the LB IP via the MetalLB annotation (the deprecated Service
-        # `loadBalancerIP` field is not honored — see traefik-internal).
+        # Pin the public address instead of relying on MetalLB pool order.
         metallb.io/loadBalancerIPs: 10.1.10.252
       type: LoadBalancer
