@@ -15,6 +15,7 @@
     "ghcr.io/devcontainers-extra/features/uv:1": {},
     "ghcr.io/devcontainers/features/rust:1": {},
     "ghcr.io/devcontainer-community/devcontainer-features/collection-c-cpp:1": {},
+    "ghcr.io/devcontainers-extra/features/talosctl:1" : {},
     "ghcr.io/devcontainers/features/node:2": {
       "version": "24",
       "pnpmVersion": "latest"
