@@ -1,0 +1,7 @@
+# dl380 has two identical 1TB HP RAID logical volumes, so size/model/type can't
+# disambiguate. Pin the OS install to /dev/sda by wwid; the other (/dev/sdb) is
+# the Longhorn disk (claimed by longhorn-disk.yaml's !system_disk selector).
+machine:
+  install:
+    diskSelector:
+      wwid: naa.600508b1001cc4a32cd8e93d0af5a2cb

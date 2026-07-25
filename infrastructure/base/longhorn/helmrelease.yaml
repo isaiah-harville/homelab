@@ -24,6 +24,13 @@ spec:
         namespace: flux-system
   values:
     defaultSettings:
+      # Only auto-create the default disk on nodes labeled
+      # node.longhorn.io/create-default-disk (set by the longhorn-storage-node
+      # Talos patch). Without this, Longhorn makes a disk on EVERY node's
+      # ephemeral /var — including single-disk nodes with no dedicated Longhorn
+      # disk, which is wiped on any Talos reset. Storage nodes = the ones that
+      # also get longhorn-disk.yaml (a real dedicated disk).
+      createDefaultDiskLabeledNodes: true
       # Auto-created default disk per node. On Talos this is the UserVolume mount
       # from talos/omni/patches/longhorn-disk.yaml (dedicated disk → /var/mnt/longhorn).
       defaultDataPath: /var/mnt/longhorn
