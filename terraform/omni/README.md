@@ -10,7 +10,7 @@ merge to `main`.
 > The provider is **alpha** (`0.1.0-alpha.3`). `talos/omni/cluster-template.yaml`
 > stays as the proven fallback — and Terraform **reads the same patch files**
 > under `talos/omni/patches/`, so patch content has a single source of truth.
-> Don't let the two topologies drift.
+> Keep the two cluster definitions aligned.
 
 ## Layout
 
@@ -18,7 +18,7 @@ merge to `main`.
 |------|------|
 | `versions.tf`  | Provider pin + **Kubernetes state backend** (state Secret in-cluster) |
 | `providers.tf` | `omni` provider (endpoint + SA key from env) |
-| `locals.tf`    | Topology: node UUIDs, versions, per-machine patch map |
+| `locals.tf`    | Machine assignments, versions, and per-machine patch map |
 | `cluster.tf`   | `omni_cluster`, control-plane + workers machine sets, node assignments |
 | `patches.tf`   | `omni_config_patch` per the template (reads `../../talos/omni/patches/*.yaml`) |
 
@@ -108,14 +108,11 @@ terraform fmt -check -recursive
 terraform validate
 
 terraform import omni_cluster.homelab homelab
-terraform import omni_machine_set.control_plane homelab-control-planes
-terraform import omni_machine_set.workers       homelab-workers
-# machine-set nodes: import ID is the bare machine UUID
-terraform import 'omni_machine_set_node.control_plane["4c4c4544-0030-5910-805a-c6c04f503133"]' 4c4c4544-0030-5910-805a-c6c04f503133
-# …repeat for each control-plane + worker node…
-# config patches: import ID is the Omni ConfigPatch id (weight-scope-name),
-# e.g. 200-cluster-homelab-allow-scheduling, 400-cm-<uuid>-install-nvme,
-# 401-cm-<uuid>-longhorn-disk — list them with `omnictl get configpatches`.
+# Discover machine-set, machine, and config-patch IDs with omnictl, then import
+# each resource at the matching Terraform address.
+omnictl get machinesets
+omnictl get machinesetnodes
+omnictl get configpatches
 ```
 
 Then `terraform plan` until it reports **no changes** (adjust HCL to match reality,
@@ -128,13 +125,9 @@ never the other way around). Only once plan is clean is it safe to let CI `apply
 The Kubernetes backend locks via a Lease; the workflow concurrency group also
 serializes CI runs. Don't run a local apply while CI is applying.
 
-> Machine-set and config-patch IDs come from Omni: `omnictl get machinesets`,
-> `omnictl get machinesetnodes`, `omnictl get configpatches`. The control-plane set
-> id is `homelab-control-planes`, workers `homelab-workers`.
-
 ## Day-2
 
-Change topology/versions/patches → open a PR → review the `plan` → merge → CI
+Change machine assignments, versions, or patches → open a PR → review the `plan` → merge → CI
 applies. Keep `cluster-template.yaml` in step until the provider is stable enough
 to retire it.
 

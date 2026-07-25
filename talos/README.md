@@ -1,30 +1,20 @@
 # Talos cluster (via Omni)
 
-Machine image + Omni cluster template for the homelab cluster. Replaces the old
-`ansible/` provisioning entirely. The management plane (Omni) is set up first —
-see [`../omni-server/`](../omni-server/).
+Machine image + Omni cluster template for the homelab cluster. The management
+plane (Omni) is set up first — see [`../omni-server/`](../omni-server/).
 
 ## Layout
 
 ```
 image/schematic.yaml        Image Factory schematic (Longhorn extensions)
-omni/cluster-template.yaml   Omni cluster template (topology + version pins)
+omni/cluster-template.yaml   Omni cluster definition + version pins
 omni/patches/                Talos machine-config patches
   install-*.yaml               per-machine OS disk selectors
   allow-scheduling.yaml        run workloads on control-plane nodes
-  controlplane-vip.yaml        floating API VIP 10.1.10.9 (replaces kube-vip)
+  controlplane-vip.yaml        floating Kubernetes API VIP
   longhorn-disk.yaml           dedicated Longhorn disk (UserVolumeConfig) + mount
   longhorn-storage-node.yaml   label nodes eligible for Longhorn disk creation
 ```
-
-## Nodes
-
-| Role          | Machines                                  |
-|---------------|-------------------------------------------|
-| Control plane | precision-1, precision-2, latitude-01     |
-| Workers       | dl380, thinkcentre-01                     |
-
-GPU boxes (`harvi-desktop` WSL, `spark-a97a` DGX) are **not** cluster members.
 
 ## Bring-up
 
@@ -42,14 +32,14 @@ so Talos upgrades keep them.
 
 ### 2. Boot each node → it enrolls in Omni
 
-Boot all 5 nodes off the image (USB/ISO/PXE). With SideroLink configured
+Boot each node from the image (USB/ISO/PXE). With SideroLink configured
 (`../omni-server`), each dials home over WireGuard and appears in Omni.
 
 ```bash
 omnictl get machines        # copy the UUIDs
 ```
 
-### 3. Confirm topology and disks
+### 3. Confirm machine assignments and disks
 
 - Confirm the enrolled UUIDs match `omni/cluster-template.yaml`.
 - Inspect each machine's disks in Omni or with `talosctl get disks`.
@@ -65,17 +55,17 @@ omnictl cluster template validate -f omni/cluster-template.yaml
 omnictl cluster template sync     -f omni/cluster-template.yaml
 ```
 
-Omni provisions etcd on the 3 laptops, brings up the VIP `10.1.10.9`, and k8s.
-The template is the manual fallback for `terraform/omni/`; do not make topology
-changes through both paths independently.
+Omni provisions etcd, brings up the Kubernetes API VIP, and starts Kubernetes.
+The template is the manual fallback for `terraform/omni/`; do not make machine
+assignment changes through both paths independently.
 
 ### 5. Pull kubeconfig + sanity-check
 
 ```bash
 omnictl kubeconfig --cluster homelab
-kubectl get nodes                       # all 5 Ready
+kubectl get nodes                       # all expected nodes Ready
 kubectl get pods -A                      # core components healthy
-curl -k https://10.1.10.9:6443/version   # VIP responds
+kubectl cluster-info                     # API responds
 ```
 
 ### 6. Bootstrap Flux and restore SOPS
@@ -105,7 +95,7 @@ flux get kustomizations -A
 
 ## Day-2
 
-Talos + k8s upgrades are driven from Omni (rolling, one node at a time). No
-`talosctl upgrade` by hand, no kured, no medik8s — Omni owns node lifecycle and
-health. To add a node: boot it off the image, add its UUID to the template,
-update `terraform/omni/locals.tf`, and apply through the chosen control path.
+Talos + k8s upgrades are driven from Omni (rolling, one node at a time), which
+owns node lifecycle and health. To add a node: boot it off the image, add its
+UUID to the template, update `terraform/omni/locals.tf`, and apply through the
+chosen control path.

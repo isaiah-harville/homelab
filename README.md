@@ -15,11 +15,9 @@ apps/             — In-repo workloads and external-repository releases
 .github/workflows/ — Validation, devcontainer publishing, and Terraform automation
 ```
 
-See [`CLAUDE.md`](CLAUDE.md) for operational detail.
-
 ## Cluster
 
-Flux reconciles from `clusters/homelab/`; provisioning is Talos + Omni (no ansible).
+Flux reconciles from `clusters/homelab/`; Talos and Omni manage provisioning.
 
 ```bash
 # k8s layer (Flux)

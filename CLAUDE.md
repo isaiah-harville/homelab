@@ -12,8 +12,7 @@ stick; edit the repo.
 
 The machine/OS layer is **Talos** (immutable and API-driven; no SSH or mutable
 host configuration). Omni applies the lifecycle operations, while
-`terraform/omni/` declares the cluster topology and shared Talos patches. Talos +
-Omni replaced the old k3s + Ansible + kube-vip + kured + medik8s stack entirely.
+`terraform/omni/` declares the cluster topology and shared Talos patches.
 
 ## Layout
 
@@ -27,10 +26,10 @@ apps/base/           Reusable app building blocks (HelmRelease + ingress + kusto
 apps/releases/       Apps deployed from their OWN external git repos (see below)
 ```
 
-## Provisioning: Talos + Omni (replaces ansible)
+## Provisioning: Talos + Omni
 
-There is **no ansible** or mutable per-node host configuration. Talos patches
-under `talos/omni/patches/` provide the declarative machine configuration.
+Talos patches under `talos/omni/patches/` provide the declarative machine
+configuration.
 
 1. **Omni** (`omni-server/`) is the management plane. It runs in Docker *outside*
    the cluster (must survive a node wipe), fronts auth via **Dex → authelia**
@@ -41,7 +40,7 @@ under `talos/omni/patches/` provide the declarative machine configuration.
 3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
    (3 laptops control-plane/etcd, dl380 + thinkcentre-01 workers) and pins the
    Talos + k8s versions. Machine-config **patches** live in `talos/omni/patches/`:
-   - `controlplane-vip.yaml` — floating API VIP **10.1.10.9** (replaces kube-vip).
+   - `controlplane-vip.yaml` — floating API VIP **10.1.10.9**.
    - `allow-scheduling.yaml` — run workloads on control-plane nodes (needed for
      Longhorn's 3-replica anti-affinity with only 2 dedicated workers).
    - `install-*.yaml` — per-machine OS disk selectors.
@@ -51,7 +50,7 @@ under `talos/omni/patches/` provide the declarative machine configuration.
    Full bring-up runbook: `talos/README.md`. When topology changes, update both
    `talos/omni/cluster-template.yaml` and `terraform/omni/locals.tf`.
 4. **Upgrades / node health / reboots** are driven from Omni (rolling, one node at
-   a time). No `talosctl upgrade` by hand, no kured, no medik8s.
+   a time).
 
 The kubeconfig comes from Omni (`omnictl kubeconfig --cluster homelab`), and Flux
 is bootstrapped onto the cluster from this repo.
@@ -73,9 +72,8 @@ PAT in `github-config`), so the workflow needs no GitHub secrets.
 **State** lives in a **Kubernetes Secret** (`tfstate-default-omni-homelab` in
 `arc-runners`) via the Terraform `kubernetes` backend — the runner reaches it with
 the `terraform` ServiceAccount (`terraform-rbac.yaml`) + `KUBE_IN_CLUSTER_CONFIG`.
-(The S3 backend was dropped: Terraform's AWS SDK v2 writes state with a chunked
-trailer upload SeaweedFS rejects.) Omni is the real source of truth, so lost state
-is re-`import`ed, never catastrophic.
+Omni is the real source of truth, so lost state is re-`import`ed, never
+catastrophic.
 
 The provider is **alpha**. ARC and its SOPS secrets are enabled in
 `clusters/homelab/infra/kustomization.yaml`, the live cluster has been imported,
@@ -251,11 +249,6 @@ Inside the cluster, `apps/base/vllm-router` (the vLLM Production Stack router) p
 at that box as a **static external backend** and exposes it at `vllm.int.harville.dev`
 (so Open WebUI sees the model). Today it fronts a single backend (`qwen3-8b`); add
 more `--static-backends` entries to fan out to additional external endpoints.
-
-> History: this used to run in-cluster on two GPU nodes (a WSL box + a DGX Spark)
-> with `nvidia-device-plugin`, hostNetwork, and per-node taints. The DGX was retired
-> and the WSL box moved out of the cluster during the Talos rebuild, so all of that
-> (device plugin, RuntimeClass, `dedicated=gpu` taint, `scripts/gpu.sh`) is gone.
 
 ## Ops cheatsheet
 
