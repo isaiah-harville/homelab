@@ -7,9 +7,18 @@ resource "omni_cluster" "homelab" {
 resource "omni_machine_set" "control_plane" {
   cluster = omni_cluster.homelab.name
   role    = "controlplane"
-  # Strategies left unset to match the omnictl template (and the live cluster) —
-  # Omni's default rolling behavior applies. Setting them here would diverge from
-  # the imported state.
+
+  # Roll config changes and Talos/k8s upgrades ONE control-plane node at a time so
+  # etcd keeps quorum throughout. Applying these is a safe in-place update (Omni
+  # just records the strategy — no node churn).
+  update_strategy = {
+    type            = "Rolling"
+    max_parallelism = 1
+  }
+  upgrade_strategy = {
+    type            = "Rolling"
+    max_parallelism = 1
+  }
 }
 
 resource "omni_machine_set_node" "control_plane" {
@@ -26,6 +35,15 @@ resource "omni_machine_set" "workers" {
   # (homelab-workers), same as the unnamed control-plane set. Setting a short
   # "workers" name diverges from that ID and forces a destructive replace.
   role = "workers"
+
+  update_strategy = {
+    type            = "Rolling"
+    max_parallelism = 1
+  }
+  upgrade_strategy = {
+    type            = "Rolling"
+    max_parallelism = 1
+  }
 }
 
 resource "omni_machine_set_node" "workers" {
