@@ -1,4 +1,5 @@
 # Select the OS disk by WWID because both RAID volumes are otherwise identical.
+---
 machine:
   install:
     diskSelector:

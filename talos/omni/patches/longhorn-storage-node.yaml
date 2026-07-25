@@ -1,4 +1,5 @@
 # Apply only with longhorn-disk.yaml; unlabeled nodes use no ephemeral storage.
+---
 machine:
   nodeLabels:
     node.longhorn.io/create-default-disk: "true"
