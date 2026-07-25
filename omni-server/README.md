@@ -4,22 +4,25 @@ The Talos management plane for the homelab cluster. Runs **outside** the cluster
 it manages (Docker host on the LAN) so it survives a full node wipe — this is
 what replaces Ansible + kube-vip for provisioning and control-plane lifecycle.
 
-> **Where to run it (for now): dl380, `10.1.10.10`.** Omni must stay up while the
-> nodes are re-imaged, so it can't live on a node being enrolled. dl380 is a
-> planned *worker*, so run Omni there first, enroll dl380 **last**, and migrate
-> Omni off it (to another always-on Docker host) before wiping dl380 — Omni's
-> state is `data/etcd/`, so migration = copy that dir + the `certs/`/`secrets/`.
+> **Where it runs: a dedicated Ubuntu Server box, `10.1.10.88`** (hostname `omni`) —
+> deliberately **not** a cluster node, so it survives a full cluster wipe. Omni was
+> first stood up on dl380 during the rebuild, then migrated here (copy the whole
+> `~/omni-server` — `data/` holds the etcd+sqlite state; `member/` under it is
+> root-owned, so `tar` it with sudo) so dl380 could itself be enrolled as a Talos
+> worker. The host also auto-renews its cert (see the lego systemd timer below).
 >
 > **DNS (split-horizon gotcha):** the LAN resolver (`10.1.1.1`) wildcards
 > `*.int.harville.dev` → `10.1.10.251` (the traefik LB), and the Omni box itself
 > resolves `*.int` out to Cloudflare's proxied edge — **neither points at Omni.**
 > So two overrides are needed:
 > - **LAN resolver (`10.1.1.1`):** add explicit host overrides
->   `omni.int.harville.dev` → `10.1.10.10` and `dex.int.harville.dev` → `10.1.10.10`
+>   `omni.int.harville.dev` → `10.1.10.88` and `omni-dex.int.harville.dev` → `10.1.10.88`
 >   so browsers (and later the nodes) reach Omni. (To test before touching LAN DNS,
->   add the same two lines to your workstation's `/etc/hosts`.)
+>   add the same two lines to your workstation's `/etc/hosts`.) **Note the Dex host is
+>   `omni-dex.int`, not `dex.int`** — Omni's Dex is scoped so it never contends with the
+>   generic `dex.int` name (nothing else uses it today, but don't squat it).
 > - **On the Omni host:** `/etc/hosts` needs
->   `10.1.10.10 omni.int.harville.dev dex.int.harville.dev` so the host-networked
+>   `10.1.10.88 omni.int.harville.dev omni-dex.int.harville.dev` so the host-networked
 >   Omni container resolves Dex (and its own advertised URL) to itself, not Cloudflare.
 
 ## Ports
@@ -54,7 +57,7 @@ chmod 600 secrets/omni.asc
 
 ### 2. TLS cert via lego (Cloudflare DNS-01)
 
-The `*.int.harville.dev` wildcard covers both `omni.` and `dex.` hostnames. Mint
+The `*.int.harville.dev` wildcard covers both `omni.` and `omni-dex.` hostnames. Mint
 it independently of the cluster (Omni is external) using the **same Cloudflare
 token** the cluster's cert-manager uses. You can pull that token straight from the
 running cluster instead of hunting for it:
@@ -77,8 +80,11 @@ cp /etc/ssl/certs/ca-certificates.crt          certs/ca.pem
 chmod 644 certs/*.pem
 ```
 
-Set up a renewal cron (`lego ... renew`) that re-copies the files and
-`docker compose restart`.
+**Auto-renewal** is a systemd timer on this host: `omni-cert-renew.timer` runs
+`/usr/local/bin/omni-cert-renew.sh` weekly, which re-runs `lego run --renew-days 30
+--reuse-key` (lego v5 has no `renew` subcommand) and, via `--deploy-hook`, re-copies
+the cert into `certs/` and `docker compose restart`s. The Cloudflare token lives in
+`~/omni-server/.lego-cf.env` (mode 600).
 
 ### 3. Dex break-glass admin password
 
@@ -115,7 +121,7 @@ omnictl get machines        # empty until machines join (see ../talos/README.md)
 Once the cluster is up and authelia is running:
 
 1. Register an OIDC client `dex` in authelia (redirect
-   `https://dex.int.harville.dev:5556/callback`).
+   `https://omni-dex.int.harville.dev:5556/callback`).
 2. Uncomment the `authelia` connector in `dex.yaml`, fill the client secret,
    `docker compose restart dex`.
 3. Human logins now flow **omni → dex → authelia**. Keep the static admin as

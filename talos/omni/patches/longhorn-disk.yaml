@@ -1,23 +1,13 @@
-# Longhorn storage on Talos. Two parts:
+# Longhorn storage on Talos, two parts:
+#   1. UserVolumeConfig claims the first non-system disk (machine.disks is
+#      deprecated) and mounts it at /var/mnt/longhorn — matched by Helm's
+#      defaultDataPath (infrastructure/base/longhorn/helmrelease.yaml).
+#   2. kubelet extraMounts binds that path with rshared propagation so Longhorn's
+#      pods can see it. Talos is immutable; without this bind data can't persist.
 #
-#   1. UserVolumeConfig — the modern way to dedicate a disk (machine.disks is
-#      DEPRECATED). Claims the first NON-system disk (the laptops' unused ~1TB
-#      drive; OS stays on the NVMe) and mounts it at /var/mnt/longhorn
-#      (UserVolumes always mount under /var/mnt/<name>).
-#   2. kubelet extraMounts — bind /var/mnt/longhorn into the kubelet mount
-#      namespace with rshared propagation, so Longhorn's manager/engine pods can
-#      see the volume. Talos is immutable; without this Longhorn can't persist.
-#
-# Longhorn's Helm defaultDataPath is set to /var/mnt/longhorn to match
-# (infrastructure/base/longhorn/helmrelease.yaml).
-#
-# ⚠️ NODES WITHOUT A SPARE DISK (single-NVMe laptops): the diskSelector below
-# matches nothing, so UserVolumeConfig won't provision. Options for those nodes:
-#   - carve a partition off the system disk and select it here, OR
-#   - drop this UserVolumeConfig for that machine class and let Longhorn use a
-#     directory on the ephemeral system disk (still needs the extraMounts bind,
-#     but pointed at /var/lib/longhorn and Helm defaultDataPath adjusted).
-# Confirm per-node disk inventory at bring-up and split machine classes.
+# ⚠️ Nodes with no spare disk (single-NVMe laptops) match nothing here. Either
+# carve a partition and select it, or drop this patch for that machine class and
+# point Longhorn at a /var/lib/longhorn directory. Confirm disk inventory at bring-up.
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig

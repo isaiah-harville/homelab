@@ -24,21 +24,16 @@ spec:
         namespace: flux-system
   values:
     defaultSettings:
-      # Longhorn auto-creates a default disk at this path on every node and
-      # applies the reserve below. On Talos this is the UserVolume mount from
-      # talos/omni/patches/longhorn-disk.yaml (a dedicated disk mounts at
-      # /var/mnt/longhorn); the kubelet extraMounts bind makes it visible to
-      # Longhorn's pods. Enroll a node with that patch and its storage appears.
+      # Auto-created default disk per node. On Talos this is the UserVolume mount
+      # from talos/omni/patches/longhorn-disk.yaml (dedicated disk → /var/mnt/longhorn).
       defaultDataPath: /var/mnt/longhorn
       storageReservedPercentageForDefaultDisk: 30
-      # 3 storage nodes, 3 replicas (one per node) → a single node can fail
-      # with zero data loss, and the volume stays redundant during the outage.
+      # 3 replicas (one per node via strict anti-affinity below) → any single node
+      # can fail with no data loss and the volume stays redundant.
       defaultReplicaCount: 3
-      # Keep new volumes fully redundant: don't create them unless all replicas
-      # can be scheduled across distinct nodes.
+      # Don't create a volume unless all replicas can land on distinct nodes.
       allowVolumeCreationWithDegradedAvailability: false
       replicaAutoBalance: least-effort
-      # Strict anti-affinity: replicas of a volume must land on different nodes.
       replicaSoftAntiAffinity: false
     persistence:
       defaultClassReplicaCount: 3

@@ -5,7 +5,7 @@
 #   dex  — OIDC identity layer. Ships a static break-glass admin (always works,
 #          even with the cluster down) AND proxies to in-cluster authelia so
 #          day-2 human logins use the same SSO as everything else (see dex.yaml).
-#   omni — Omni itself, embedded etcd, SideloLink/WireGuard for machine join.
+#   omni — Omni itself, embedded etcd, SideroLink/WireGuard for machine join.
 #
 # TLS: the *.int.harville.dev wildcard covers both hostnames below. Because Omni
 # is external, its cert is minted independently with lego (Cloudflare DNS-01) —

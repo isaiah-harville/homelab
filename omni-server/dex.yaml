@@ -8,7 +8,7 @@
 #      authelia has an OIDC client registered for Dex, human logins flow
 #      omni → dex → authelia. Uncomment when authelia is live.
 ---
-issuer: https://dex.int.harville.dev:5556
+issuer: https://omni-dex.int.harville.dev:5556
 
 storage:
   type: sqlite3
@@ -48,7 +48,7 @@ staticPasswords:
 #       issuer: https://auth.int.harville.dev
 #       clientID: dex
 #       clientSecret: <authelia-oidc-client-secret-for-dex>
-#       redirectURI: https://dex.int.harville.dev:5556/callback
+#       redirectURI: https://omni-dex.int.harville.dev:5556/callback
 #       scopes:
 #         - openid
 #         - profile
