@@ -13,3 +13,4 @@ resources:
   - open-webui.helmrepository.yaml
   - seaweedfs.helmrepository.yaml
   - harbor.helmrepository.yaml
+  - metrics-server.helmrepository.yaml

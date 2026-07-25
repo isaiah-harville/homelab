@@ -2,17 +2,21 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Namespaces
   - ../../../infrastructure/base/namespaces
-  # Helm
   - ../../../infrastructure/base/traefik
   - ../../../infrastructure/base/cert-manager
   - ../../../infrastructure/base/metallb
   - ../../../infrastructure/base/reflector
   - ../../../infrastructure/base/longhorn
   - ../../../infrastructure/base/monitoring
+  - ../../../infrastructure/base/metrics-server
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
+  # Enable after filling and encrypting the runner secrets below.
+  # - ../../../infrastructure/base/actions-runner-controller
+  # - ./secrets/actions-runner-controller/github-config.yaml
+  # - ./secrets/actions-runner-controller/omni-terraform.yaml
+  # - ./secrets/actions-runner-controller/tfstate-s3.yaml
 patches:
   - target:
       kind: Ingress
