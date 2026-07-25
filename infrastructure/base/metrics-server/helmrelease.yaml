@@ -24,9 +24,5 @@ spec:
         namespace: flux-system
   values:
     args:
-      # Talos kubelets serve a self-signed cert that isn't signed by the
-      # cluster CA, so metrics-server can't verify it over TLS. Skip
-      # verification (the standard Talos setting) — the scrape traffic stays
-      # on the internal node network. This is what makes `kubectl top` and
-      # Headlamp's CPU/memory usage graphs work.
+      # Rationale: docs/decisions/metrics-server-tls.md.
       - --kubelet-insecure-tls

@@ -64,12 +64,21 @@ patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
 ---
-# Lenovo mini: use the 256GB SSD and ignore the 15GB USB.
+# thinkcentre-01: use the 256GB SSD.
+# Single disk, so Longhorn shares it with the OS instead of a dedicated
+# volume.
+# label patch is what actually matters, telling Longhorn to use its default
+# data path on the root filesystem. Formalizes a 4th storage node so dl380
+# isn't a mandatory replica member of every volume.
 kind: Machine
 name: 9ba21500-a881-11e5-ae5a-d524518f0c00
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
+  - name: longhorn-disk
+    file: patches/longhorn-disk.yaml
+  - name: longhorn-storage-node
+    file: patches/longhorn-storage-node.yaml
 ---
 # dl380: two 1TB HP RAID logical volumes — OS on sda (by wwid), Longhorn on sdb.
 kind: Machine

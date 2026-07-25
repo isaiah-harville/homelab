@@ -1,5 +1,5 @@
 ---
-# OpenAI-compatible router for vLLM running outside the cluster on harvi-desktop.
+# Operations: docs/operations/external-inference.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +27,6 @@ spec:
             - "8001"
             - --service-discovery
             - static
-            # The router rejects hostnames without a dot, so use the LAN IP.
             - --static-backends
             - http://10.1.10.20:8000
             - --static-models

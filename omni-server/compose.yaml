@@ -1,5 +1,3 @@
-# Omni runs outside the cluster so it survives a full cluster outage.
-# TLS certificates are managed with lego, not the in-cluster cert-manager.
 ---
 services:
   dex:
@@ -66,7 +64,5 @@ services:
       - --initial-users=${OMNI_ADMIN_EMAIL}
       - --eula-accept-name=${EULA_NAME}
       - --eula-accept-email=${EULA_EMAIL}
-      # etcd backups to S3 (seaweedfs). Bucket/creds/schedule are set via the
-      # EtcdBackupS3Configs resource + cluster backupConfiguration (omnictl),
-      # not here — see omni-server/README.md "Backup and restore".
+      # Configuration and retention: docs/operations/backups.md.
       - --etcd-backup-s3

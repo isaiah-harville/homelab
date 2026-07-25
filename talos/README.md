@@ -1,7 +1,8 @@
 # Talos cluster (via Omni)
 
 Machine image + Omni cluster template for the homelab cluster. The management
-plane (Omni) is set up first — see [`../omni-server/`](../omni-server/).
+plane (Omni) is set up first — see
+[`../omni-server/README.md`](../omni-server/README.md).
 
 ## Layout
 

@@ -55,10 +55,8 @@ namespace, with a Lease (`lock-omni-homelab`) for locking. Both are created
 automatically. The runner reaches them via the `terraform` ServiceAccount
 (`terraform-rbac.yaml`); nothing to create by hand.
 
-> Why not SeaweedFS S3: Terraform's S3 backend (AWS SDK v2) writes state with a
-> chunked `STREAMING-UNSIGNED-PAYLOAD-TRAILER` upload that SeaweedFS rejects
-> (403 `InvalidAccessKeyId`) — reads work, writes don't, with no client knob to
-> disable it. The Kubernetes backend sidesteps that and suits the in-cluster runner.
+The backend choice and evaluated alternatives are recorded in the
+[Terraform state decision](../../docs/decisions/terraform-state.md).
 
 ### 2. Maintain the runner secrets
 

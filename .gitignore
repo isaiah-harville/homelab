@@ -9,6 +9,8 @@ NOTES.md
 *.log*
 
 node_modules/
+.venv/
+site/
 
 **/.terraform/*
 *.tfstate

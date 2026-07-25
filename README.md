@@ -32,6 +32,16 @@ omnictl get machines                     # machine inventory
 Bring-up runbooks: [`omni-server/README.md`](omni-server/README.md) (management
 plane) then [`talos/README.md`](talos/README.md) (cluster).
 
+## Documentation
+
+The project documentation is built with MkDocs and includes the repository
+READMEs as its runbooks and component guides:
+
+```bash
+uv sync
+uv run mkdocs serve
+```
+
 ## Storage (Longhorn)
 
 Distributed block storage across the nodes, configured via Helm values in

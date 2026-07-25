@@ -1,0 +1,18 @@
+[project]
+name = "homelab"
+version = "0.1.0"
+description = "Documentation tooling for the homelab repository"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+  "mkdocs<2",
+  "mkdocs-gen-files",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-material",
+  "pyyaml",
+]
+
+[dependency-groups]
+dev = ["ruff", "ty"]
+
+[tool.uv]
+package = false
