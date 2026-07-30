@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: runway
+  namespace: apps
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Runway
+    gethomepage.dev/description: Travel rewards value calculator
+    gethomepage.dev/href: https://runway.harville.dev
+    gethomepage.dev/siteMonitor: https://runway.harville.dev
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [runway.harville.dev]
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: runway.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: runway
+                port:
+                  number: 80
