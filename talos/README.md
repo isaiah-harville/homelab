@@ -14,6 +14,7 @@ omni/patches/                Talos machine-config patches
   allow-scheduling.yaml        run workloads on control-plane nodes
   controlplane-vip.yaml        floating Kubernetes API VIP
   longhorn-disk.yaml           dedicated Longhorn disk (UserVolumeConfig) + mount
+  longhorn-root-disk.yaml      mount Longhorn path on a shared system disk
   longhorn-storage-node.yaml   label nodes eligible for Longhorn disk creation
 ```
 
@@ -47,6 +48,9 @@ omnictl get machines        # copy the UUIDs
 - Verify its selected `install-*.yaml` patch targets the intended OS disk.
 - Apply both `longhorn-disk.yaml` and `longhorn-storage-node.yaml` only to machines
   with a dedicated spare disk.
+- On an intentionally selected single-disk storage node, apply
+  `longhorn-root-disk.yaml` and `longhorn-storage-node.yaml` instead. Longhorn's
+  reserved-space setting protects capacity needed by Talos and workloads.
 - Keep the same UUIDs and patch mapping in `../terraform/omni/locals.tf`.
 
 ### 4. Create or update the cluster

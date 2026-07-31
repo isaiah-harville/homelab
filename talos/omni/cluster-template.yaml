@@ -57,12 +57,17 @@ patches:
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
 ---
-# Dell laptop: single 512GB NVMe.
+# Dell laptop: single 512GB NVMe. Share the system disk with Longhorn while
+# reserving 30% through Longhorn's default disk setting.
 kind: Machine
 name: 4c4c4544-0052-3610-8039-cac04f484733
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
+  - name: longhorn-root-disk
+    file: patches/longhorn-root-disk.yaml
+  - name: longhorn-storage-node
+    file: patches/longhorn-storage-node.yaml
 ---
 # thinkcentre-01: use the 256GB SSD.
 # Single disk, so Longhorn shares it with the OS instead of a dedicated
@@ -75,8 +80,8 @@ name: 9ba21500-a881-11e5-ae5a-d524518f0c00
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
-  - name: longhorn-disk
-    file: patches/longhorn-disk.yaml
+  - name: longhorn-root-disk
+    file: patches/longhorn-root-disk.yaml
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
 ---

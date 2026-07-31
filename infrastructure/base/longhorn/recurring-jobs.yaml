@@ -1,0 +1,29 @@
+# Local snapshots are fast recovery points, not disaster-recovery backups.
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-snapshot
+  namespace: longhorn-system
+spec:
+  cron: "15 2 * * *"
+  task: snapshot
+  groups:
+    - default
+  retain: 7
+  concurrency: 2
+  labels:
+    schedule: daily
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: weekly-filesystem-trim
+  namespace: longhorn-system
+spec:
+  cron: "15 4 * * 0"
+  task: filesystem-trim
+  groups:
+    - default
+  retain: 1
+  concurrency: 2

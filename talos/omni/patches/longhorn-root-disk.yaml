@@ -1,0 +1,13 @@
+# Expose a directory on Talos's persistent EPHEMERAL partition to Longhorn.
+# Use on intentionally selected single-disk nodes only.
+---
+machine:
+  kubelet:
+    extraMounts:
+      - destination: /var/mnt/longhorn
+        type: bind
+        source: /var/mnt/longhorn
+        options:
+          - bind
+          - rshared
+          - rw

@@ -30,7 +30,7 @@ resource "omni_config_patch" "install" {
 }
 
 resource "omni_config_patch" "longhorn_disk" {
-  for_each = toset(local.storage_nodes)
+  for_each = toset(local.dedicated_storage_nodes)
 
   name    = "longhorn-disk"
   cluster = omni_cluster.homelab.name
@@ -39,6 +39,18 @@ resource "omni_config_patch" "longhorn_disk" {
     cluster_machine = each.value
   }
   data = file("${local.patch_dir}/longhorn-disk.yaml")
+}
+
+resource "omni_config_patch" "longhorn_root_disk" {
+  for_each = toset(local.root_storage_nodes)
+
+  name    = "longhorn-root-disk"
+  cluster = omni_cluster.homelab.name
+  weight  = 401
+  selector = {
+    cluster_machine = each.value
+  }
+  data = file("${local.patch_dir}/longhorn-root-disk.yaml")
 }
 
 resource "omni_config_patch" "longhorn_storage_node" {
