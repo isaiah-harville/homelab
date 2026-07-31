@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,7 +16,7 @@ spec:
       serviceAccountName: homepage
       containers:
         - name: homepage
-          image: ghcr.io/gethomepage/homepage:v1.11.0 # {"$imagepolicy": "flux-system:homepage"}
+          image: ghcr.io/gethomepage/homepage:v1.13.2 # {"$imagepolicy": "flux-system:homepage"}
           imagePullPolicy: IfNotPresent
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
