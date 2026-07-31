@@ -9,7 +9,9 @@ spec:
   path: ./clusters/homelab/apps
   prune: true
   wait: true
-  timeout: 10m
+  # Allow first-time stateful bootstraps (including the Authelia database
+  # migration) to complete without racing the Kustomization timeout.
+  timeout: 20m
   sourceRef:
     kind: GitRepository
     name: flux-system

@@ -59,6 +59,11 @@ kind: Namespace
 metadata:
   name: apps
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+---
 # node-exporter requires hostNetwork and hostPath.
 apiVersion: v1
 kind: Namespace

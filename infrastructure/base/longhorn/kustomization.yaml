@@ -6,5 +6,6 @@ resources:
   - helmrelease.yaml
   - local-path-storageclass.yaml
   - longhorn-retain.storageclass.yaml
+  - longhorn-database.storageclass.yaml
   - recurring-jobs.yaml
   - ingress.yaml

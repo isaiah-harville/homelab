@@ -11,6 +11,7 @@ resources:
   - ../../../infrastructure/base/monitoring
   - ../../../infrastructure/base/metrics-server
   - ../../../infrastructure/base/flux-operator
+  - ../../../infrastructure/base/cloudnative-pg
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
   # actions-runner-controller — self-hosted runner for the Terraform jobs.

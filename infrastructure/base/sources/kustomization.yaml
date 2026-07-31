@@ -9,6 +9,7 @@ resources:
   - prometheus-community.helmrepository.yaml
   - traefik.helmrepository.yaml
   - authelia.helmrepository.yaml
+  - cloudnative-pg.helmrepository.yaml
   - headlamp.helmrepository.yaml
   - open-webui.helmrepository.yaml
   - seaweedfs.helmrepository.yaml

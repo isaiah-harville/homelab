@@ -6,6 +6,7 @@ Examples:
 - `traefik/`, `metallb/`, `cert-manager/`, `reflector/`: core cluster services
 - `issuers/`, `certificates/`: shared TLS plumbing
 - `monitoring/`, `metrics-server/`, `longhorn/`: shared operational services
+- `cloudnative-pg/`: PostgreSQL operator, metrics, and Grafana dashboard
 - `flux-operator/`: Flux status UI and read-only in-cluster MCP server
 - `actions-runner-controller/`: in-cluster GitHub Actions runner
 - `sources/`: Flux source objects consumed by releases elsewhere in the repo

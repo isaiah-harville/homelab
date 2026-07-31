@@ -24,16 +24,29 @@ reach the internal URL shared cluster-admin access.
 
 ## Authelia availability
 
-Authelia currently uses SQLite, so it runs as a single-writer StatefulSet. Its
-2 GiB PVC is a healthy three-replica Longhorn volume and receives the default
-daily Longhorn snapshots. Startup, readiness, and liveness probes provide fast
-failure detection; a critical priority class and explicit resource requests
-make rescheduling more reliable.
+Authelia stores durable application state in a three-instance CloudNativePG
+cluster. PostgreSQL uses quorum synchronous replication (`ANY 1`) and required
+hostname anti-affinity, so an acknowledged write exists on the primary and at
+least one standby and the instances are spread across nodes. CloudNativePG's
+operator-managed disruption budgets protect the primary and replica quorum
+during voluntary disruption.
 
-A PodDisruptionBudget is intentionally omitted. With one replica and a
-ReadWriteOnce volume, `minAvailable: 1` would block voluntary node drains rather
-than create availability. True active-active Authelia requires a deliberate
-migration from SQLite to an external highly available PostgreSQL or MySQL
-database, followed by at least two Authelia replicas. Longhorn snapshots are
-local recovery points, not a substitute for the off-cluster backup target
-described in the backup runbook.
+Each instance has a retained 5 GiB Longhorn volume using the
+`longhorn-database` StorageClass. That class deliberately uses one block replica:
+PostgreSQL already maintains three independent copies, so Longhorn replication
+would otherwise amplify them to nine. The PVCs inherit Longhorn's default daily
+snapshot job. Those snapshots are local recovery points, not off-cluster disaster
+recovery backups.
+
+On first rollout, an idempotent init container creates the PostgreSQL schema and
+uses Authelia's supported storage commands to copy stable user identifiers, TOTP
+configurations, and WebAuthn credentials from the old SQLite database. The old
+PVC and a marker file make retries safe; remove the migration container only
+after the PostgreSQL-backed deployment has been verified.
+
+Authelia remains one replica for now. Its in-memory session provider and
+filesystem notifier are not safe for active-active operation. Scale it only
+after moving sessions to a supported Redis Sentinel deployment and notifications
+to a network provider; simply increasing `replicas` would cause intermittent
+logouts and inconsistent reset notifications. The existing single pod keeps its
+critical priority, resource request, and health probes for reliable rescheduling.

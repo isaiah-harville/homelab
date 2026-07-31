@@ -1,0 +1,23 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-database
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  backupTargetName: default
+  dataEngine: v1
+  dataLocality: best-effort
+  disableRevisionCounter: "true"
+  fromBackup: ""
+  fsType: ext4
+  # PostgreSQL already keeps three synchronous copies on separate nodes. A
+  # second three-way copy at the block layer would turn that into nine copies.
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  unmapMarkSnapChainRemoved: ignored
