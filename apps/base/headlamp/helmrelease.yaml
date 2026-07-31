@@ -31,7 +31,7 @@ spec:
         secret:
           create: false
         clientID: headlamp
-        issuerURL: https://auth.harville.dev
+        issuerURL: https://auth.harville.dev/application/o/headlamp/
         scopes: openid,profile,email,groups
         callbackURL: https://headlamp.int.harville.dev/oidc-callback
         usePKCE: true

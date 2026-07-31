@@ -17,7 +17,7 @@ resource "omni_config_patch" "controlplane_vip" {
   data = file("${local.patch_dir}/controlplane-vip.yaml")
 }
 
-# Trust Authelia-issued ID tokens for browser and kubelogin access to the
+# Trust Authentik-issued ID tokens for browser and kubelogin access to the
 # Kubernetes API. RBAC remains the authorization boundary.
 resource "omni_config_patch" "kubernetes_oidc" {
   name    = "kubernetes-oidc"
