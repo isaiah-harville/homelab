@@ -5,6 +5,7 @@ resources:
   - ./secrets/ghcr-pull.yaml
   - ./secrets/authentik-core.yaml
   - ./secrets/authentik-postgres.yaml
+  - ./secrets/authentik-social.yaml
   - ./secrets/swing-thoughts-auth.yaml
   - ./secrets/seaweedfs-s3-config.yaml
   - ./secrets/omni-backup-s3-creds.yaml
@@ -59,3 +60,26 @@ replacements:
           - spec.values.global.podAnnotations.authentik-core-mac
         options:
           create: true
+  - source:
+      kind: Secret
+      name: authentik-social
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.authentik-social-mac
+        options:
+          create: true
+      - select:
+          kind: ConfigMap
+          name: authentik-customization
+          namespace: apps
+        fieldPaths:
+          - data.homelab-customization\.yaml
+        options:
+          delimiter: '# authentik-social-mac: '
+          index: 1

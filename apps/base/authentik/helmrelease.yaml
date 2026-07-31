@@ -35,6 +35,9 @@ spec:
       create: false
     global:
       priorityClassName: system-cluster-critical
+      envFrom:
+        - secretRef:
+            name: authentik-social
       env:
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local
@@ -64,8 +67,18 @@ spec:
     blueprints:
       configMaps:
         - authentik-blueprint
+        - authentik-customization
     server:
       replicas: 2
+      volumes:
+        - name: branding-assets
+          configMap:
+            name: authentik-branding-assets
+      volumeMounts:
+        - name: branding-assets
+          mountPath: /web/dist/assets/images/homelab-login-background.jpg
+          subPath: homelab-login-background.jpg
+          readOnly: true
       pdb:
         enabled: true
         minAvailable: 1

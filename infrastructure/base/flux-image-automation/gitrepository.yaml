@@ -1,0 +1,14 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: homelab-image-automation
+  namespace: flux-system
+spec:
+  interval: 5m
+  timeout: 60s
+  url: ssh://git@github.com/isaiah-harville/homelab
+  ref:
+    branch: main
+  secretRef:
+    name: flux-image-automation-git

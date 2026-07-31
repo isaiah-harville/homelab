@@ -9,3 +9,14 @@ resources:
   - middleware.yaml
   - callback-ingresses.yaml
   - blueprint.yaml
+configMapGenerator:
+  - name: authentik-branding-assets
+    files:
+      - homelab-login-background.jpg=assets/homelab-login-background.jpg
+  - name: authentik-customization
+    files:
+      - homelab-customization.yaml=customization-blueprint.yaml.tpl
+generatorOptions:
+  disableNameSuffixHash: false
+configurations:
+  - kustomizeconfig.yaml

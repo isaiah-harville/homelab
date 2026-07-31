@@ -1,0 +1,9 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gitrepository.yaml
+  - homepage.yaml
+  - lmstack-router.yaml
+  - nginx.yaml
+  - automation.yaml

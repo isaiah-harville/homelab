@@ -10,6 +10,34 @@ data:
     metadata:
       name: Homelab
     entries:
+      - model: authentik_core.group
+        id: open-webui-users
+        identifiers:
+          name: Open WebUI Users
+      - model: authentik_core.group
+        id: seaweedfs-admins
+        identifiers:
+          name: SeaweedFS Admins
+      - model: authentik_core.group
+        id: openvitae-admins
+        identifiers:
+          name: OpenVitae Admins
+      - model: authentik_core.group
+        id: flux-admins
+        identifiers:
+          name: Flux Admins
+      - model: authentik_core.group
+        id: longhorn-admins
+        identifiers:
+          name: Longhorn Admins
+      - model: authentik_core.group
+        id: grafana-users
+        identifiers:
+          name: Grafana Users
+      - model: authentik_core.group
+        id: headlamp-users
+        identifiers:
+          name: Headlamp Users
       - model: authentik_providers_proxy.proxyprovider
         id: webui-provider
         identifiers:
@@ -27,7 +55,19 @@ data:
           name: Open WebUI
           provider: !KeyOf webui-provider
           meta_launch_url: https://webui.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, open-webui]]
+          order: 0
+        attrs:
+          group: !KeyOf open-webui-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, open-webui]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: seaweedfs-provider
         identifiers:
@@ -45,7 +85,19 @@ data:
           name: SeaweedFS Admin
           provider: !KeyOf seaweedfs-provider
           meta_launch_url: https://seaweedfs.int.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seaweedfs-admin]]
+          order: 0
+        attrs:
+          group: !KeyOf seaweedfs-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seaweedfs-admin]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: openvitae-provider
         identifiers:
@@ -63,7 +115,19 @@ data:
           name: OpenVitae Admin
           provider: !KeyOf openvitae-provider
           meta_launch_url: https://isaiah.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, openvitae-admin]]
+          order: 0
+        attrs:
+          group: !KeyOf openvitae-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, openvitae-admin]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: flux-provider
         identifiers:
@@ -81,7 +145,19 @@ data:
           name: Flux
           provider: !KeyOf flux-provider
           meta_launch_url: https://flux.int.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, flux]]
+          order: 0
+        attrs:
+          group: !KeyOf flux-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, flux]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: longhorn-provider
         identifiers:
@@ -99,7 +175,19 @@ data:
           name: Longhorn
           provider: !KeyOf longhorn-provider
           meta_launch_url: https://longhorn.int.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, longhorn]]
+          order: 0
+        attrs:
+          group: !KeyOf longhorn-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, longhorn]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: grafana-provider
         identifiers:
@@ -117,7 +205,19 @@ data:
           name: Grafana
           provider: !KeyOf grafana-provider
           meta_launch_url: https://grafana.int.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, grafana]]
+          order: 0
+        attrs:
+          group: !KeyOf grafana-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, grafana]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_oauth2.scopemapping
         id: groups-scope
         identifiers:
@@ -159,7 +259,19 @@ data:
           name: Headlamp
           provider: !KeyOf headlamp-provider
           meta_launch_url: https://headlamp.int.harville.dev
-          policy_engine_mode: all
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, headlamp]]
+          order: 0
+        attrs:
+          group: !KeyOf headlamp-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, headlamp]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost

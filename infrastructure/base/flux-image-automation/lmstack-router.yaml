@@ -1,0 +1,24 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: lmstack-router
+  namespace: flux-system
+spec:
+  image: docker.io/lmcache/lmstack-router
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: lmstack-router
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: lmstack-router
+  filterTags:
+    pattern: '^v(?P<version>0\.1\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '>=0.1.11 <0.2.0'

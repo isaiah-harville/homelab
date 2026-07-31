@@ -5,6 +5,7 @@ resources:
   - flux-instance.yaml
   - sources.kustomization.yaml
   - infra.kustomization.yaml
+  - image-automation.kustomization.yaml
   - issuers.kustomization.yaml
   - certificates.kustomization.yaml
   - metallb-config.kustomization.yaml

@@ -1,0 +1,33 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: homelab
+  namespace: flux-system
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: homelab-image-automation
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: Flux Image Automation
+        email: flux-image-automation@users.noreply.github.com
+      messageTemplate: |
+        chore(images): update container images
+
+        {{- range $resource, $changes := .Changed.Objects }}
+        - {{ $resource.Kind }} {{ $resource.Name }}
+          {{- range $_, $change := $changes }}
+          - {{ $change.OldValue }} -> {{ $change.NewValue }}
+          {{- end }}
+        {{- end }}
+    push:
+      branch: main
+  update:
+    path: ./apps/base
+    strategy: Setters
