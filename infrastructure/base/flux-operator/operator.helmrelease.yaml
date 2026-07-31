@@ -1,0 +1,57 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flux-operator
+  namespace: flux-system
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chartRef:
+    kind: OCIRepository
+    name: flux-operator
+    namespace: flux-system
+  values:
+    priorityClassName: system-cluster-critical
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    serviceMonitor:
+      create: true
+      labels:
+        release: kube-prometheus-stack
+    web:
+      enabled: true
+      ingress:
+        enabled: true
+        className: traefik-internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Cluster
+          gethomepage.dev/name: Flux
+          gethomepage.dev/description: GitOps delivery dashboard
+          gethomepage.dev/href: https://flux.int.harville.dev
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+        hosts:
+          - host: flux.int.harville.dev
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - flux.int.harville.dev
+            secretName: harville-wildcard-shared-tls

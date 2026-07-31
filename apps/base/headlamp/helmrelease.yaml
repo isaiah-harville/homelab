@@ -7,9 +7,11 @@ metadata:
 spec:
   interval: 30m
   install:
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     remediation:
       retries: 1
       remediateLastFailure: true
@@ -17,12 +19,14 @@ spec:
   chart:
     spec:
       chart: headlamp
-      version: "*"
+      version: ">=0.44.0 <0.45.0"
       sourceRef:
         kind: HelmRepository
         name: headlamp
         namespace: flux-system
   values:
+    config:
+      watchPlugins: true
     pluginsManager:
       enabled: true
       version: 0.1.1
@@ -30,4 +34,4 @@ spec:
         plugins:
           - name: flux
             source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux
-            version: 0.5.0
+            version: 0.6.0

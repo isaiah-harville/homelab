@@ -1,0 +1,8 @@
+[mcp_servers.flux-operator-mcp]
+command = "flux-operator-mcp"
+args = ["serve"]
+enabled = true
+required = false
+default_tools_approval_mode = "writes"
+startup_timeout_sec = 15
+tool_timeout_sec = 90

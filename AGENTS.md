@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Operational knowledge for working in this repo. Read this before making changes.
 
@@ -46,6 +46,8 @@ configuration.
    - `install-*.yaml` — per-machine OS disk selectors.
    - `longhorn-disk.yaml` + `longhorn-storage-node.yaml` — claim and label
      dedicated Longhorn disks.
+   - `longhorn-root-disk.yaml` + `longhorn-storage-node.yaml` — expose and label
+     the intentionally selected single-disk storage nodes.
 
    Full bring-up runbook: `talos/README.md`. When topology changes, update both
    `talos/omni/cluster-template.yaml` and `terraform/omni/locals.tf`.
@@ -98,11 +100,34 @@ Kustomizations set `decryption.provider: sops` (secretRef `sops-age`) — the ot
 carry no encrypted resources. `infra` has `healthChecks` on the core HelmReleases;
 `issuers`/`certificates` use `healthCheckExprs` on the cert-manager CRs.
 
+Flux Operator runs alongside the CLI-bootstrapped controllers for status
+reporting and its web UI at `https://flux.int.harville.dev`. It does not own a
+`FluxInstance`, so the checked-in `gotk-components.yaml` remains the controller
+source of truth. The in-cluster `flux-operator-mcp` service is read-only. Codex
+uses `.codex/config.toml` and the local `flux-operator-mcp` binary with the
+user's kubeconfig; prefer its reporting and reconcile tools for Flux operations,
+but keep persistent resource changes in Git.
+
+Migrating controller ownership to Flux Operator is desirable, but it is a
+staged operation: first reconcile a `FluxInstance` matching the current
+CLI-bootstrap configuration and verify it is Ready; only in a later commit
+remove `gotk-components.yaml` and `gotk-sync.yaml`. Never combine those stages,
+because pruning the bootstrap resources before the operator takes ownership can
+remove the controllers that are performing the migration.
+
 ## Adding an app (the common task)
 
 1. Create `apps/base/<name>/` with:
    - `helmrelease.yaml` — `HelmRelease` in namespace `apps`, with the standard
      `install`/`upgrade` remediation block (copy from `apps/base/openwebui/helmrelease.yaml`).
+     Every HelmRelease sets both `install.crds` and `upgrade.crds` to
+     `CreateReplace`; this lets Flux update CRDs shipped in a chart's `crds/`
+     directory instead of Helm's default upgrade behavior silently skipping
+     them.
+     Use a semver range that admits compatible updates but stops before the
+     chart's next breaking version. Avoid `*` and exact patch pins. Stateful
+     systems and `0.x` charts may deliberately use a narrower minor-version
+     boundary when their upstream upgrade process requires review.
    - `kustomization.yaml` — `namespace: apps`, lists the resources.
    - `ingress.yaml` (optional) — standalone Ingress (see conventions below).
 2. If the chart is from a new Helm repo, add a `HelmRepository` under
@@ -148,6 +173,8 @@ external deployment.
   Don't put forwardauth in front of services that authenticate themselves via API
   (S3 access keys, `docker login`) — clients can't traverse it.
 - **Homepage** dashboard discovery: `gethomepage.dev/*` annotations on the Ingress.
+- Open WebUI only has the authenticated public route `webui.harville.dev`; do
+  not recreate the redundant `webui.int.harville.dev` route.
 
 ## TLS / certificates
 
@@ -158,7 +185,7 @@ external deployment.
   `*.pigeonwire.app`.
 - Secret `harville-wildcard-shared-tls` is **reflected** (emberstack reflector) into the
   namespaces listed in the Certificate's `reflector.*` annotations (currently
-  `apps,monitoring,longhorn-system`). **If you add an app in a new namespace, add that
+  `apps,flux-system,monitoring,longhorn-system`). **If you add an app in a new namespace, add that
   namespace to those annotations** or the cert won't be there.
 - **Omni is external and can't use this in-cluster cert.** Its host mints its own
   `*.int.harville.dev` cert with **lego (Cloudflare DNS-01)**, same token, independent
@@ -171,14 +198,23 @@ external deployment.
 - **Data path is `/var/mnt/longhorn`** (Helm `defaultDataPath`). On Talos that's a
   **dedicated disk** mounted via `UserVolumeConfig` (NOT the deprecated
   `machine.disks`), made visible to Longhorn's pods by a kubelet `extraMounts` bind —
-  both in `talos/omni/patches/longhorn-disk.yaml`. The node also needs
-  `longhorn-storage-node.yaml`, because Longhorn only creates disks on labeled
-  nodes. Longhorn needs the `iscsi-tools` + `util-linux-tools` system extensions
-  from `talos/image/schematic.yaml`.
-  > **Single-disk nodes:** do not apply either Longhorn storage patch; the current
-  > configuration only uses dedicated spare disks.
+  both in `talos/omni/patches/longhorn-disk.yaml`. Intentionally selected
+  single-disk nodes use `longhorn-root-disk.yaml`, which exposes a directory on
+  Talos's persistent EPHEMERAL partition without claiming another disk. Every
+  storage node also needs `longhorn-storage-node.yaml`, because Longhorn only
+  creates disks on labeled nodes. Longhorn needs the `iscsi-tools` +
+  `util-linux-tools` system extensions from `talos/image/schematic.yaml`.
 - `defaultReplicaCount: 3` + strict anti-affinity → one replica per node, any single
   node can fail with no data loss. Disks auto-create per node (30% reserved).
+- The default recurring-job group retains seven daily snapshots and runs weekly
+  filesystem trim. These snapshots are local recovery points, not off-cluster
+  backups.
+- `longhorn-retain` is available for new critical PVCs that should survive an
+  accidental claim deletion and uses best-effort data locality. Existing PVCs
+  cannot change StorageClass in place.
+- Longhorn has no useful disaster-recovery backup until an external S3-compatible
+  or NFS target is configured. Do not use the in-cluster, Longhorn-backed SeaweedFS
+  service as the only backup target; that is a circular dependency.
 - Consequence: data on Longhorn is ~3x amplified. For an app that does its **own**
   replication (e.g. SeaweedFS), run it **single-replica** and let Longhorn provide
   redundancy — don't stack app-level replication on top of Longhorn-level replication.
@@ -226,6 +262,9 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **cert-manager** + **letsencrypt-dns** ClusterIssuer (Cloudflare DNS-01).
 - **reflector** (emberstack) — copies the wildcard TLS secret across namespaces.
 - **longhorn** — distributed block storage / default SC.
+- **flux-operator** — Flux status reporting and UI at `flux.int.harville.dev`.
+- **flux-operator-mcp** — read-only in-cluster Flux MCP service; Codex uses the
+  project-configured local MCP binary.
 - **authelia** — SSO / forwardauth provider. Also fronts Omni's login (via Dex).
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
 - **searxng** — self-hosted metasearch; backs Open WebUI's web-search

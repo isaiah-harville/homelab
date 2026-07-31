@@ -30,6 +30,12 @@ Flux watches this repository and reconciles the Kubernetes resources rooted at
 `clusters/homelab/`. Base infrastructure and applications remain reusable;
 the cluster directory chooses which pieces are active.
 
+Flux Operator observes the CLI-bootstrapped Flux installation and provides its
+status UI and reporting APIs. The checked-in Flux controller manifests remain
+the source of truth; there is no operator-managed `FluxInstance`. Operator
+ownership is the preferred eventual state, but migration must be staged so the
+existing reconciler is not pruned before the operator has taken control.
+
 This layer is responsible for:
 
 - controllers and shared platform services

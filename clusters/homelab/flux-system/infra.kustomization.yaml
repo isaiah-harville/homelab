@@ -40,3 +40,11 @@ spec:
       kind: HelmRelease
       name: reflector
       namespace: reflector
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: flux-operator
+      namespace: flux-system
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: flux-operator-mcp
+      namespace: flux-system
