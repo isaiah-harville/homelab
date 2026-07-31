@@ -1,0 +1,3 @@
+# Flux source-controller excludes image extensions by default. This file is a
+# Kustomize input for the Authentik branding ConfigMap and must be in artifacts.
+!apps/base/authentik/assets/homelab-login-background.jpg
