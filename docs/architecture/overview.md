@@ -30,11 +30,12 @@ Flux watches this repository and reconciles the Kubernetes resources rooted at
 `clusters/homelab/`. Base infrastructure and applications remain reusable;
 the cluster directory chooses which pieces are active.
 
-Flux Operator observes the CLI-bootstrapped Flux installation and provides its
-status UI and reporting APIs. The checked-in Flux controller manifests remain
-the source of truth; there is no operator-managed `FluxInstance`. Operator
-ownership is the preferred eventual state, but migration must be staged so the
-existing reconciler is not pruned before the operator has taken control.
+Flux Operator manages controller lifecycle and provides the status UI and
+reporting APIs. During the zero-downtime ownership migration, the declared
+`FluxInstance` uses the supported `2.8.x` distribution and matches the CLI
+bootstrap's components and sync settings; both sets of manifests remain in Git.
+The generated bootstrap manifests are removed only after the instance is Ready
+and the root Kustomization is no longer reported as Flux-managed.
 
 This layer is responsible for:
 

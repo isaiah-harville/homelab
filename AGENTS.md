@@ -41,6 +41,8 @@ configuration.
    (3 laptops control-plane/etcd, dl380 + thinkcentre-01 workers) and pins the
    Talos + k8s versions. Machine-config **patches** live in `talos/omni/patches/`:
    - `controlplane-vip.yaml` — floating API VIP **10.1.10.9**.
+   - `kubernetes-oidc.yaml` — trust Authelia ID tokens and map its groups with
+     the `oidc:` prefix; Kubernetes RBAC remains the authorization boundary.
    - `allow-scheduling.yaml` — run workloads on control-plane nodes (needed for
      Longhorn's 3-replica anti-affinity with only 2 dedicated workers).
    - `install-*.yaml` — per-machine OS disk selectors.
@@ -100,20 +102,22 @@ Kustomizations set `decryption.provider: sops` (secretRef `sops-age`) — the ot
 carry no encrypted resources. `infra` has `healthChecks` on the core HelmReleases;
 `issuers`/`certificates` use `healthCheckExprs` on the cert-manager CRs.
 
-Flux Operator runs alongside the CLI-bootstrapped controllers for status
-reporting and its web UI at `https://flux.int.harville.dev`. It does not own a
-`FluxInstance`, so the checked-in `gotk-components.yaml` remains the controller
-source of truth. The in-cluster `flux-operator-mcp` service is read-only. Codex
-uses `.codex/config.toml` and the local `flux-operator-mcp` binary with the
-user's kubeconfig; prefer its reporting and reconcile tools for Flux operations,
-but keep persistent resource changes in Git.
+Flux Operator provides controller lifecycle management, status reporting, and
+its web UI at `https://flux.int.harville.dev`. The in-cluster
+`flux-operator-mcp` service is read-only. Codex uses `.codex/config.toml` and the
+local `flux-operator-mcp` binary with the user's kubeconfig; prefer its reporting
+and reconcile tools for Flux operations, but keep persistent resource changes in
+Git.
 
-Migrating controller ownership to Flux Operator is desirable, but it is a
-staged operation: first reconcile a `FluxInstance` matching the current
-CLI-bootstrap configuration and verify it is Ready; only in a later commit
-remove `gotk-components.yaml` and `gotk-sync.yaml`. Never combine those stages,
-because pruning the bootstrap resources before the operator takes ownership can
-remove the controllers that are performing the migration.
+The operator ownership migration is in its first, zero-downtime stage:
+`flux-instance.yaml` declares the current supported `2.8.x` distribution and
+the same components and sync configuration as the CLI bootstrap, while
+`gotk-components.yaml` and `gotk-sync.yaml` remain checked in. After that commit
+is deployed, require `FluxInstance/flux` to be Ready and `flux trace
+kustomization flux-system` to report "Not managed by Flux" before removing the
+bootstrap manifests in a later commit. Never combine those stages, because
+pruning bootstrap resources before the operator takes ownership can remove the
+controllers performing the migration.
 
 ## Adding an app (the common task)
 
@@ -172,6 +176,10 @@ external deployment.
   `traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd`.
   Don't put forwardauth in front of services that authenticate themselves via API
   (S3 access keys, `docker login`) — clients can't traverse it.
+- Headlamp is the deliberate exception: its internal Ingress has no ForwardAuth
+  middleware so the UI and short-lived token login remain reachable during an
+  Authelia outage. Normal access still uses Headlamp's native Authelia OIDC flow
+  and per-user Kubernetes RBAC; see `docs/operations/authentication.md`.
 - **Homepage** dashboard discovery: `gethomepage.dev/*` annotations on the Ingress.
 - Open WebUI only has the authenticated public route `webui.harville.dev`; do
   not recreate the redundant `webui.int.harville.dev` route.
