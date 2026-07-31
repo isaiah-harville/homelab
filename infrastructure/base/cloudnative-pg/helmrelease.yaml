@@ -20,16 +20,13 @@ spec:
   chart:
     spec:
       chart: cloudnative-pg
-      # CNPG 1.29 is the newest line that supports Kubernetes 1.33.
-      version: ">=0.28.3 <0.29.0"
+      # Chart 0.29 tracks CNPG 1.30, the recommended line for Kubernetes 1.36.
+      version: ">=0.29.0 <0.30.0"
       sourceRef:
         kind: HelmRepository
         name: cloudnative-pg
         namespace: flux-system
   values:
-    # Chart 0.28.3 packages 1.29.1; use the current security/bugfix patch.
-    image:
-      tag: 1.29.2
     replicaCount: 2
     priorityClassName: system-cluster-critical
     topologySpreadConstraints:

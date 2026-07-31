@@ -2,7 +2,7 @@
 locals {
   cluster_name  = "homelab"
   talos_version = "1.13.5"
-  k8s_version   = "1.33.3"
+  k8s_version   = "1.36.3"
 
   patch_dir = "${path.module}/../../talos/omni/patches"
   control_plane_nodes = [
