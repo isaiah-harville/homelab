@@ -55,7 +55,7 @@ spec:
     auth:
       admin:
         email: isaiah@harville.dev
-      # Authelia protects /admin and /api; the public CV and S3 host stay anonymous.
+      # Authentik protects /admin and /api; the public CV and S3 host stay anonymous.
       mode: proxy
     minio:
       auth:
@@ -72,7 +72,7 @@ spec:
         secretName: harville-wildcard-shared-tls
       # The chart applies this middleware only to /admin and /api.
       protectedAnnotations:
-        traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
       annotations:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         gethomepage.dev/enabled: "true"

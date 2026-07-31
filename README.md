@@ -64,7 +64,7 @@ Distributed block storage across the nodes, configured via Helm values in
 The kube-prometheus-stack deployment keeps Prometheus data for 30 days on a
 25 GiB `longhorn-retain` volume and Alertmanager state on a 5 GiB retained
 volume. Grafana retains its database on the existing 10 GiB Longhorn claim,
-uses Authelia proxy identity instead of a separate password, and declaratively
+uses Authentik proxy identity instead of a separate password, and declaratively
 provisions Kubernetes, node, pod, Longhorn, and Traefik dashboards. Operational
 details are in the monitoring runbook under `docs/operations/`.
 

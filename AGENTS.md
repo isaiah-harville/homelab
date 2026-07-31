@@ -32,16 +32,17 @@ Talos patches under `talos/omni/patches/` provide the declarative machine
 configuration.
 
 1. **Omni** (`omni-server/`) is the management plane. It runs in Docker *outside*
-   the cluster (must survive a node wipe), fronts auth via **Dex → authelia**
-   (with a static break-glass admin), and terminates the SideroLink WireGuard
-   tunnel machines join through. See `omni-server/README.md`.
+   the cluster (must survive a node wipe), retains its independent Dex static
+   break-glass login, and terminates the SideroLink WireGuard tunnel machines
+   join through. The in-cluster Authentik deployment does not manage Omni/Dex.
+   See `omni-server/README.md`.
 2. **Talos image** (`talos/image/schematic.yaml`) is an Image Factory schematic
    pinning the system extensions Longhorn needs (`iscsi-tools`, `util-linux-tools`).
 3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
    (3 laptops control-plane/etcd, dl380 + thinkcentre-01 workers) and pins the
    Talos + k8s versions. Machine-config **patches** live in `talos/omni/patches/`:
    - `controlplane-vip.yaml` — floating API VIP **10.1.10.9**.
-   - `kubernetes-oidc.yaml` — trust Authelia ID tokens and map its groups with
+   - `kubernetes-oidc.yaml` — trust Authentik ID tokens and map its groups with
      the `oidc:` prefix; Kubernetes RBAC remains the authorization boundary.
    - `allow-scheduling.yaml` — run workloads on control-plane nodes (needed for
      Longhorn's 3-replica anti-affinity with only 2 dedicated workers).
@@ -170,13 +171,13 @@ external deployment.
   > **Important:** these patches only touch Ingress manifests *in the repo*. They do
   > **not** affect Ingresses rendered by a HelmRelease at runtime (e.g. Harbor) — for
   > those, set ingress class / TLS secret / entrypoint annotation **in the chart values**.
-- **Authelia SSO** on an internal app: annotation
-  `traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd`.
+- **Authentik SSO** on an internal app: annotation
+  `traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd`.
   Don't put forwardauth in front of services that authenticate themselves via API
   (S3 access keys, `docker login`) — clients can't traverse it.
 - Headlamp is the deliberate exception: its internal Ingress has no ForwardAuth
   middleware so the UI and short-lived token login remain reachable during an
-  Authelia outage. Normal access still uses Headlamp's native Authelia OIDC flow
+  Authentik outage. Normal access still uses Headlamp's native Authentik OIDC flow
   and per-user Kubernetes RBAC; see `docs/operations/authentication.md`.
 - **Homepage** dashboard discovery: `gethomepage.dev/*` annotations on the Ingress.
 - Open WebUI only has the authenticated public route `webui.harville.dev`; do
@@ -247,11 +248,10 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - During a cluster rebuild, restore the `sops-age` Secret in `flux-system` before
   reconciling `infra` or `apps`; both Kustomizations require it for decryption.
 - **Rollout-on-secret-change:** `clusters/homelab/apps/kustomization.yaml` has a
-  `replacements` block that copies each authelia secret's `sops.mac` into a pod
-  annotation on the authelia HelmRelease. Because the MAC changes whenever the
-  secret content changes, editing an authelia secret changes the annotation, which
-  rolls the pods — otherwise a plain Secret update wouldn't restart them. Reuse this
-  pattern for any app that reads secrets only at startup.
+  `replacements` block that copies the `authentik-core` Secret's `sops.mac` into
+  a pod annotation on the Authentik HelmRelease. Because the MAC changes whenever
+  the secret content changes, editing the secret rolls both server and worker
+  pods. Reuse this pattern for any app that reads secrets only at startup.
 
 ## Networking (MetalLB)
 
@@ -271,7 +271,8 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **flux-operator** — Flux status reporting and UI at `flux.int.harville.dev`.
 - **flux-operator-mcp** — read-only in-cluster Flux MCP service; Codex uses the
   project-configured local MCP binary.
-- **authelia** — SSO / forwardauth provider. Also fronts Omni's login (via Dex).
+- **authentik** — HA SSO/OIDC/ForwardAuth provider. Git-managed blueprints own
+  application/provider configuration; Omni/Dex remains independent.
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
 - **searxng** — self-hosted metasearch; backs Open WebUI's web-search
   (`http://searxng:8080`, see `apps/base/openwebui`).

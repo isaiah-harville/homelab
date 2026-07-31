@@ -21,10 +21,11 @@ being deleted if a claim is accidentally removed.
 
 ## Authentication
 
-`grafana.int.harville.dev` is protected by the Authelia ForwardAuth middleware.
-Authelia returns `Remote-Email`, `Remote-Name`, and `Remote-Groups`; Grafana's
-auth-proxy mode uses `Remote-Email` as the user identity and creates the user on
-first access. Grafana's login form is disabled. The chart-generated admin
+`grafana.int.harville.dev` is protected by the Authentik ForwardAuth middleware.
+Authentik returns `X-authentik-email`, `X-authentik-name`, and
+`X-authentik-groups`; Grafana's auth-proxy mode uses `X-authentik-email` as the
+user identity and creates the user on first access. Grafana's login form is
+disabled. The chart-generated admin
 credential remains internal because the dashboard sidecar uses it to call
 Grafana's provisioning API; it is no longer hard-coded or presented as a
 second user login.
@@ -32,7 +33,7 @@ second user login.
 Authenticated homelab users receive the Grafana organization Admin role. The
 Grafana pod also has an ingress NetworkPolicy allowing port 3000 only from the
 internal Traefik and monitoring namespaces. Do not expose its ClusterIP through
-an ingress that omits Authelia.
+an ingress that omits Authentik.
 
 ## Dashboard coverage
 

@@ -45,7 +45,7 @@ spec:
           gethomepage.dev/description: GitOps delivery dashboard
           gethomepage.dev/href: https://flux.int.harville.dev
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+          traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
         hosts:
           - host: flux.int.harville.dev
             paths:

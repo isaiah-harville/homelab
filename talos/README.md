@@ -13,7 +13,7 @@ omni/patches/                Talos machine-config patches
   install-*.yaml               per-machine OS disk selectors
   allow-scheduling.yaml        run workloads on control-plane nodes
   controlplane-vip.yaml        floating Kubernetes API VIP
-  kubernetes-oidc.yaml         trust Authelia OIDC tokens for Kubernetes RBAC
+  kubernetes-oidc.yaml         trust Authentik OIDC tokens for Kubernetes RBAC
   longhorn-disk.yaml           dedicated Longhorn disk (UserVolumeConfig) + mount
   longhorn-root-disk.yaml      mount Longhorn path on a shared system disk
   longhorn-storage-node.yaml   label nodes eligible for Longhorn disk creation
