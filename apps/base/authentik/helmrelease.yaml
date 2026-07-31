@@ -28,12 +28,13 @@ spec:
     postgresql:
       enabled: false
     authentik:
-      enabled: false
+      enabled: true
+      existingSecret:
+        secretName: authentik-core
+    serviceAccount:
+      create: false
     global:
       priorityClassName: system-cluster-critical
-      envFrom:
-        - secretRef:
-            name: authentik-core
       env:
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local
