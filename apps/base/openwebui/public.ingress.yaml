@@ -10,7 +10,7 @@ metadata:
     gethomepage.dev/name: Open WebUI
     gethomepage.dev/description: Chat UI pointing to VLLM
     gethomepage.dev/pod-selector: app.kubernetes.io/name=open-webui
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-public
   tls:
