@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: authentik
+  namespace: apps
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Security
+    gethomepage.dev/name: Authentik
+    gethomepage.dev/description: Shared identity provider
+    gethomepage.dev/pod-selector: app.kubernetes.io/instance=authentik,app.kubernetes.io/name=authentik
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [auth.harville.dev]
+  rules:
+    - host: auth.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  name: http

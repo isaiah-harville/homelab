@@ -1,0 +1,97 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: authentik
+      version: ">=2026.5.6 <2026.6.0"
+      sourceRef:
+        kind: HelmRepository
+        name: authentik
+        namespace: flux-system
+  values:
+    postgresql:
+      enabled: false
+    authentik:
+      enabled: false
+    global:
+      priorityClassName: system-cluster-critical
+      envFrom:
+        - secretRef:
+            name: authentik-core
+      env:
+        - name: AUTHENTIK_POSTGRESQL__HOST
+          value: authentik-postgres-rw.apps.svc.cluster.local
+        - name: AUTHENTIK_POSTGRESQL__NAME
+          value: authentik
+        - name: AUTHENTIK_POSTGRESQL__USER
+          valueFrom:
+            secretKeyRef:
+              name: authentik-postgres
+              key: username
+        - name: AUTHENTIK_POSTGRESQL__PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-postgres
+              key: password
+        - name: AUTHENTIK_ERROR_REPORTING__ENABLED
+          value: "false"
+      affinity:
+        podAntiAffinity: hard
+        nodeAffinity:
+          type: none
+          matchExpressions: []
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+    blueprints:
+      configMaps:
+        - authentik-blueprint
+    server:
+      replicas: 2
+      pdb:
+        enabled: true
+        minAvailable: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          labels:
+            release: kube-prometheus-stack
+      ingress:
+        enabled: false
+    worker:
+      replicas: 2
+      pdb:
+        enabled: true
+        minAvailable: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          labels:
+            release: kube-prometheus-stack

@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-blueprint
+  namespace: apps
+data:
+  homelab.yaml: |
+    version: 1
+    metadata:
+      name: Homelab
+    entries: []
