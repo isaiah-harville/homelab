@@ -31,11 +31,10 @@ Flux watches this repository and reconciles the Kubernetes resources rooted at
 the cluster directory chooses which pieces are active.
 
 Flux Operator manages controller lifecycle and provides the status UI and
-reporting APIs. During the zero-downtime ownership migration, the declared
-`FluxInstance` uses the supported `2.8.x` distribution and matches the CLI
-bootstrap's components and sync settings; both sets of manifests remain in Git.
-The generated bootstrap manifests are removed only after the instance is Ready
-and the root Kustomization is no longer reported as Flux-managed.
+reporting APIs. The declared `FluxInstance` follows the supported `2.8.x`
+distribution and owns both the controllers and root Git sync. The former
+CLI-bootstrap manifests were removed after the instance became Ready and the
+root Kustomization was confirmed as operator-managed.
 
 This layer is responsible for:
 

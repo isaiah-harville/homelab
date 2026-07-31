@@ -109,15 +109,13 @@ local `flux-operator-mcp` binary with the user's kubeconfig; prefer its reportin
 and reconcile tools for Flux operations, but keep persistent resource changes in
 Git.
 
-The operator ownership migration is in its first, zero-downtime stage:
-`flux-instance.yaml` declares the current supported `2.8.x` distribution and
-the same components and sync configuration as the CLI bootstrap, while
-`gotk-components.yaml` and `gotk-sync.yaml` remain checked in. After that commit
-is deployed, require `FluxInstance/flux` to be Ready and `flux trace
-kustomization flux-system` to report "Not managed by Flux" before removing the
-bootstrap manifests in a later commit. Never combine those stages, because
-pruning bootstrap resources before the operator takes ownership can remove the
-controllers performing the migration.
+Flux Operator owns the Flux controllers and root Git sync through
+`flux-instance.yaml`, which follows the supported `2.8.x` distribution. The
+former CLI-bootstrap `gotk-components.yaml` and `gotk-sync.yaml` manifests were
+removed only after `FluxInstance/flux` reported Ready and `flux trace
+kustomization flux-system` confirmed the root object was not managed by Flux.
+Do not recreate generated bootstrap manifests alongside the operator-owned
+instance.
 
 ## Adding an app (the common task)
 
