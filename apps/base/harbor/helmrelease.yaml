@@ -29,7 +29,7 @@ spec:
     # Recreate releases the ReadWriteOnce volumes before starting replacement pods.
     updateStrategy:
       type: Recreate
-    # `docker login` cannot traverse Authelia forward auth.
+    # `docker login` cannot traverse Authentik forward auth.
     expose:
       type: ingress
       tls:
