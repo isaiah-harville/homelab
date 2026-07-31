@@ -7,10 +7,12 @@ metadata:
 spec:
   interval: 30m
   install:
+    crds: CreateReplace
     disableWait: true
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     disableWait: true
     remediation:
       retries: 1
@@ -19,12 +21,21 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: "41.0.2"
+      version: ">=41.0.0 <42.0.0"
       sourceRef:
         kind: HelmRepository
         name: traefik
         namespace: flux-system
   values:
+    metrics:
+      prometheus:
+        addRoutersLabels: true
+        service:
+          enabled: true
+        serviceMonitor:
+          enabled: true
+          additionalLabels:
+            release: kube-prometheus-stack
     deployment:
       replicas: 2
     podDisruptionBudget:

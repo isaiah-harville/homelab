@@ -79,6 +79,7 @@ nav:
       - Backup and recovery: operations/backups.md
       - Secrets: operations/secrets.md
       - Storage: operations/storage.md
+      - Monitoring: operations/monitoring.md
       - External inference: operations/external-inference.md
   - Decisions:
       - Terraform state backend: decisions/terraform-state.md

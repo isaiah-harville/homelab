@@ -5,6 +5,11 @@ metadata:
   name: openwebui-public
   namespace: apps
   annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: AI
+    gethomepage.dev/name: Open WebUI
+    gethomepage.dev/description: Chat UI pointing to VLLM
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=open-webui
     traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-public

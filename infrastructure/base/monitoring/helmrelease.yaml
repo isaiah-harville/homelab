@@ -7,17 +7,22 @@ metadata:
 spec:
   interval: 30m
   install:
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     remediation:
       retries: 1
       remediateLastFailure: true
       strategy: rollback
+  dependsOn:
+    - name: longhorn
+      namespace: longhorn-system
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: ">=82.0.0 <83.0.0"
+      version: ">=87.0.0 <88.0.0"
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -25,17 +30,51 @@ spec:
   values:
     prometheus:
       prometheusSpec:
-        retention: 24h
-        storageSpec: null
+        retention: 30d
+        # Leave filesystem headroom for WAL and compaction on the 25 GiB claim.
+        retentionSize: 22GB
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 25Gi
+              storageClassName: longhorn-retain
     alertmanager:
       alertmanagerSpec:
-        storage: {}
+        retention: 120h
+        storage:
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 5Gi
+              storageClassName: longhorn-retain
     grafana:
-      adminPassword: "admin"
       deploymentStrategy:
         type: Recreate
       initChownData:
         enabled: false
+      grafana.ini:
+        users:
+          allow_sign_up: false
+          auto_assign_org_role: Admin
+        auth:
+          disable_login_form: true
+        auth.proxy:
+          enabled: true
+          header_name: Remote-Email
+          header_property: email
+          auto_sign_up: true
+          headers: "Name:Remote-Name Email:Remote-Email Groups:Remote-Groups"
+          enable_login_token: false
+        security:
+          cookie_secure: true
+          cookie_samesite: strict
       persistence:
         enabled: true
         type: pvc
@@ -43,6 +82,62 @@ spec:
         size: 10Gi
         accessModes:
           - ReadWriteOnce
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+            - name: kubernetes
+              orgId: 1
+              folder: Kubernetes
+              type: file
+              disableDeletion: true
+              editable: false
+              options:
+                path: /var/lib/grafana/dashboards/kubernetes
+            - name: storage
+              orgId: 1
+              folder: Storage
+              type: file
+              disableDeletion: true
+              editable: false
+              options:
+                path: /var/lib/grafana/dashboards/storage
+            - name: networking
+              orgId: 1
+              folder: Networking
+              type: file
+              disableDeletion: true
+              editable: false
+              options:
+                path: /var/lib/grafana/dashboards/networking
+      dashboards:
+        kubernetes:
+          global:
+            gnetId: 15757
+            revision: 43
+            datasource: Prometheus
+          namespaces:
+            gnetId: 15758
+            revision: 46
+            datasource: Prometheus
+          nodes:
+            gnetId: 15759
+            revision: 40
+            datasource: Prometheus
+          pods:
+            gnetId: 15760
+            revision: 39
+            datasource: Prometheus
+        storage:
+          longhorn:
+            gnetId: 16888
+            revision: 14
+            datasource: Prometheus
+        networking:
+          traefik:
+            gnetId: 17346
+            revision: 9
+            datasource: Prometheus
       service:
         type: ClusterIP
       ingress:

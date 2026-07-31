@@ -48,11 +48,25 @@ Distributed block storage across the nodes, configured via Helm values in
 `infrastructure/base/longhorn/helmrelease.yaml`:
 
 - `defaultDataPath: /var/mnt/longhorn` + `storageReservedPercentageForDefaultDisk: 30`
-  — on Talos this is a dedicated disk mounted via `UserVolumeConfig`. Storage nodes
-  need both `longhorn-disk.yaml` and `longhorn-storage-node.yaml`.
+  — dedicated disks use a Talos `UserVolumeConfig`; intentionally selected
+  single-disk nodes use the root-disk mount patch. Every storage node also needs
+  `longhorn-storage-node.yaml`.
 - `defaultReplicaCount: 3` with strict anti-affinity puts one replica on each
   node, so **any single node can fail with no data loss** and volumes stay
   redundant during the outage.
+- The default recurring-job group keeps seven daily snapshots and runs a weekly
+  filesystem trim.
+- `longhorn-retain` is available for new critical PVCs that should survive
+  accidental claim deletion.
+
+## Monitoring
+
+The kube-prometheus-stack deployment keeps Prometheus data for 30 days on a
+25 GiB `longhorn-retain` volume and Alertmanager state on a 5 GiB retained
+volume. Grafana retains its database on the existing 10 GiB Longhorn claim,
+uses Authelia proxy identity instead of a separate password, and declaratively
+provisions Kubernetes, node, pod, Longhorn, and Traefik dashboards. Operational
+details are in the monitoring runbook under `docs/operations/`.
 
 ## Validation
 

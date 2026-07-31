@@ -8,9 +8,11 @@ spec:
   interval: 30m
   releaseName: authelia
   install:
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     remediation:
       retries: 1
       remediateLastFailure: true
@@ -18,7 +20,7 @@ spec:
   chart:
     spec:
       chart: authelia
-      version: "*"
+      version: ">=0.11.0 <0.12.0"
       sourceRef:
         kind: HelmRepository
         name: authelia

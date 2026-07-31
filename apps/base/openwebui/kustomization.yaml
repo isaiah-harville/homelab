@@ -5,5 +5,4 @@ namespace: apps
 resources:
   - helmrelease.yaml
   - pvc-longhorn.yaml
-  - ingress.yaml
   - public.ingress.yaml
