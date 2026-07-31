@@ -165,6 +165,9 @@ data:
           name: authentik Embedded Outpost
         attrs:
           type: proxy
+          config:
+            authentik_host: https://auth.harville.dev
+            authentik_host_browser: https://auth.harville.dev
           providers:
             - !KeyOf webui-provider
             - !KeyOf seaweedfs-provider
