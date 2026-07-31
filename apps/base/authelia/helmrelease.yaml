@@ -30,6 +30,13 @@ spec:
     pod:
       kind: StatefulSet
       replicas: 1
+      priorityClassName: system-cluster-critical
+      # SQLite requires a single writer. Reserve enough capacity for reliable
+      # scheduling but leave memory uncapped for password-hash verification.
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
     ingress:
       enabled: false
     persistence:

@@ -28,6 +28,8 @@ machines:
 patches:
   - name: controlplane-vip
     file: patches/controlplane-vip.yaml
+  - name: kubernetes-oidc
+    file: patches/kubernetes-oidc.yaml
 ---
 kind: Workers
 machines:

@@ -78,6 +78,7 @@ nav:
       - Terraform for Omni: terraform/omni/README.md
       - Backup and recovery: operations/backups.md
       - Secrets: operations/secrets.md
+      - Authentication: operations/authentication.md
       - Storage: operations/storage.md
       - Monitoring: operations/monitoring.md
       - External inference: operations/external-inference.md

@@ -27,6 +27,16 @@ spec:
   values:
     config:
       watchPlugins: true
+      oidc:
+        secret:
+          create: false
+        clientID: headlamp
+        issuerURL: https://auth.harville.dev
+        scopes: openid,profile,email,groups
+        callbackURL: https://headlamp.int.harville.dev/oidc-callback
+        usePKCE: true
+    clusterRoleBinding:
+      create: false
     pluginsManager:
       enabled: true
       version: 0.1.1

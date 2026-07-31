@@ -17,6 +17,18 @@ resource "omni_config_patch" "controlplane_vip" {
   data = file("${local.patch_dir}/controlplane-vip.yaml")
 }
 
+# Trust Authelia-issued ID tokens for browser and kubelogin access to the
+# Kubernetes API. RBAC remains the authorization boundary.
+resource "omni_config_patch" "kubernetes_oidc" {
+  name    = "kubernetes-oidc"
+  cluster = omni_cluster.homelab.name
+  weight  = 401
+  selector = {
+    machine_set = omni_machine_set.control_plane.name
+  }
+  data = file("${local.patch_dir}/kubernetes-oidc.yaml")
+}
+
 resource "omni_config_patch" "install" {
   for_each = local.install_patch
 
