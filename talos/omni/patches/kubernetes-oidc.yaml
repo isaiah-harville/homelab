@@ -2,7 +2,7 @@
 cluster:
   apiServer:
     extraArgs:
-      oidc-issuer-url: https://auth.harville.dev
+      oidc-issuer-url: https://auth.harville.dev/application/o/headlamp/
       oidc-client-id: headlamp
       oidc-groups-claim: groups
       oidc-groups-prefix: "oidc:"

@@ -2,10 +2,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: headlamp-authelia-admins
+  name: headlamp-authentik-admins
 subjects:
   - kind: Group
-    name: oidc:admins
+    name: "oidc:authentik Admins"
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole

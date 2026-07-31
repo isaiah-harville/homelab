@@ -67,10 +67,10 @@ spec:
           disable_login_form: true
         auth.proxy:
           enabled: true
-          header_name: Remote-Email
+          header_name: X-authentik-email
           header_property: email
           auto_sign_up: true
-          headers: "Name:Remote-Name Email:Remote-Email Groups:Remote-Groups"
+          headers: "Name:X-authentik-name Email:X-authentik-email Groups:X-authentik-groups"
           enable_login_token: false
         security:
           cookie_secure: true
@@ -150,7 +150,7 @@ spec:
           gethomepage.dev/description: Dashboards and alerting
           gethomepage.dev/pod-selector: app.kubernetes.io/name=grafana
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+          traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
         hosts:
           - grafana.int.harville.dev
         tls:

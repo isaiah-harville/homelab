@@ -10,7 +10,7 @@ metadata:
     gethomepage.dev/name: Longhorn
     gethomepage.dev/description: Distributed storage dashboard
     gethomepage.dev/pod-selector: app=longhorn-ui
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authelia-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-internal
   tls:
