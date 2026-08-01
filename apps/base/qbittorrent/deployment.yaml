@@ -76,6 +76,7 @@ spec:
                 - ALL
               add:
                 - CHOWN
+                - DAC_OVERRIDE
                 - NET_ADMIN
           env:
             - name: VPN_SERVICE_PROVIDER
