@@ -8,6 +8,7 @@ resources:
   - services.yaml
   - ingress.yaml
   - cleanup-cronjob.yaml
+  - networkpolicy.yaml
 configMapGenerator:
   - name: qbittorrent-scripts
     files:

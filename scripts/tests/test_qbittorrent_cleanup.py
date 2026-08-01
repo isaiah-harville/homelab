@@ -14,6 +14,14 @@ SPEC.loader.exec_module(cleanup)
 
 
 class CleanupSelectionTests(unittest.TestCase):
+    def test_login_accepts_authentik_subnet_bypass_response(self):
+        client = cleanup.QBittorrentClient(
+            "http://qbittorrent.apps.svc:8080", "admin", "password"
+        )
+        client._post = lambda path, payload: ""
+
+        client.login()
+
     def test_selects_only_imported_torrent_at_least_24_hours_old(self):
         now = 200_000
         torrents = [

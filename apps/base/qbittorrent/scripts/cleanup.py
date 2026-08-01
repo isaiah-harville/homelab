@@ -60,7 +60,7 @@ class QBittorrentClient:
             "/api/v2/auth/login",
             {"username": self.username, "password": self.password},
         )
-        if response.strip() != "Ok.":
+        if response.strip() not in {"", "Ok."}:
             raise RuntimeError("qBittorrent authentication failed")
 
     def list_torrents(self, category):

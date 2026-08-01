@@ -66,6 +66,26 @@ abort "missing Authentik middleware" unless middleware == "apps-authentik-forwar
 
 cronjob = resource!(apps, "CronJob", "qbittorrent-cleanup", "apps")
 abort "cleanup must run daily" unless cronjob.dig("spec", "schedule") == "15 6 * * *"
+abort "cleanup pod label missing" unless cronjob.dig(
+  "spec", "jobTemplate", "spec", "template", "metadata", "labels",
+  "app.kubernetes.io/name"
+) == "qbittorrent-cleanup"
+
+network_policy = resource!(apps, "NetworkPolicy", "qbittorrent-webui", "apps")
+abort "qBittorrent NetworkPolicy selector missing" unless network_policy.dig(
+  "spec", "podSelector", "matchLabels", "app.kubernetes.io/name"
+) == "qbittorrent"
+
+scripts = apps.find do |document|
+  document["kind"] == "ConfigMap" &&
+    document.dig("metadata", "namespace") == "apps" &&
+    document.dig("metadata", "name").start_with?("qbittorrent-scripts-")
+end
+abort "missing qBittorrent scripts ConfigMap" unless scripts
+bootstrap = scripts.dig("data", "bootstrap.py")
+abort "qBittorrent Authentik subnet bypass missing" unless bootstrap.include?(
+  '"WebUI\\\\AuthSubnetWhitelist": "10.244.0.0/16"'
+)
 
 books = resource!(apps, "Deployment", "books", "apps")
 books_spec = books.dig("spec", "template", "spec")
@@ -119,6 +139,9 @@ blueprint = resource!(apps, "ConfigMap", "authentik-blueprint", "apps").dig(
 end
 abort "Authentik blueprint missing qBittorrent admin binding" unless blueprint.match?(
   /slug, qbittorrent.*?authentik Admins/m
+)
+abort "CWA blueprint missing Books Users binding" unless blueprint.match?(
+  /slug, calibre-web-automated.*?group: !KeyOf books-users/m
 )
 abort "Authentik outpost missing qBittorrent provider" unless blueprint.include?(
   "- !KeyOf qbittorrent-provider"

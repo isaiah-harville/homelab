@@ -257,6 +257,12 @@ data:
           target: !Find [authentik_core.application, [slug, calibre-web-automated]]
           order: 0
         attrs:
+          group: !KeyOf books-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, calibre-web-automated]]
+          order: 1
+        attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: qbittorrent-provider

@@ -14,6 +14,12 @@ SPEC.loader.exec_module(bootstrap)
 
 
 class BootstrapTests(unittest.TestCase):
+    def test_authentik_proxy_subnet_bypasses_native_login(self):
+        values = bootstrap.preference_values("admin", "verifier")
+
+        self.assertEqual(values["WebUI\\AuthSubnetWhitelistEnabled"], "true")
+        self.assertEqual(values["WebUI\\AuthSubnetWhitelist"], "10.244.0.0/16")
+
     def test_server_domain_allowlist_uses_semicolon_separator(self):
         values = bootstrap.preference_values("admin", "verifier")
 

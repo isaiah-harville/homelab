@@ -39,6 +39,8 @@ def upsert_section_values(text, section, values):
 def preference_values(username, password_hash):
     return {
         "WebUI\\Address": "*",
+        "WebUI\\AuthSubnetWhitelist": "10.244.0.0/16",
+        "WebUI\\AuthSubnetWhitelistEnabled": "true",
         "WebUI\\CSRFProtection": "true",
         "WebUI\\ClickjackingProtection": "true",
         "WebUI\\HostHeaderValidation": "true",
