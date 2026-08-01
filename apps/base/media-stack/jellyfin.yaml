@@ -40,6 +40,7 @@ spec:
               add:
                 - CHOWN
                 - DAC_OVERRIDE
+                - FOWNER
           env:
             - name: AUTHENTIK_LDAP_BIND_TOKEN
               valueFrom:

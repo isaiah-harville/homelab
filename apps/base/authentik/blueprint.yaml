@@ -548,6 +548,25 @@ data:
           order: 2
         attrs:
           user: !KeyOf jellyfin-ldap-bind-user
+      # Pre-create the deterministic outpost identity and managed token. The
+      # Outpost model then adopts them and builds the least-privilege provider
+      # permissions when its provider relation is attached.
+      - model: authentik_core.user
+        id: jellyfin-ldap-outpost-user
+        identifiers:
+          username: ak-outpost-7e1f9d0aefad4e6891aadf8261227079
+        attrs:
+          name: Jellyfin LDAP Outpost Service-Account
+          type: service_account
+      - model: authentik_core.token
+        identifiers:
+          identifier: ak-outpost-7e1f9d0a-efad-4e68-91aa-df8261227079-api
+        attrs:
+          key: !Env [AUTHENTIK_LDAP_OUTPOST_TOKEN, ""]
+          user: !KeyOf jellyfin-ldap-outpost-user
+          intent: api
+          expiring: false
+          managed: goauthentik.io/outpost/ak-outpost-7e1f9d0a-efad-4e68-91aa-df8261227079-api
       - model: authentik_outposts.outpost
         identifiers:
           uuid: 7e1f9d0a-efad-4e68-91aa-df8261227079
@@ -558,14 +577,6 @@ data:
             authentik_host: http://authentik-server.apps.svc.cluster.local
           providers:
             - !KeyOf jellyfin-ldap-provider
-      - model: authentik_core.token
-        identifiers:
-          identifier: ak-outpost-7e1f9d0a-efad-4e68-91aa-df8261227079-api
-        attrs:
-          key: !Env [AUTHENTIK_LDAP_OUTPOST_TOKEN, ""]
-          user: !Find [authentik_core.user, [username, ak-outpost-7e1f9d0aefad4e6891aadf8261227079]]
-          intent: api
-          expiring: false
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
