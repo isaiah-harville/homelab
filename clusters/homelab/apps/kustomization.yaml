@@ -163,6 +163,14 @@ replacements:
       - select:
           kind: Deployment
           namespace: apps
+          name: seerr
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
           name: authentik-ldap
         fieldPaths:
           - spec.template.metadata.annotations.media-auth-mac

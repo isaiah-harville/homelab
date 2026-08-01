@@ -491,6 +491,107 @@ data:
           order: 1
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Seerr uses its native OIDC preview implementation so browser sessions,
+      # user creation, and access policy all remain owned by Authentik.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: seerr-provider
+        identifiers:
+          name: Seerr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: !Env [SEERR_OIDC_CLIENT_ID, ""]
+          client_secret: !Env [SEERR_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+          redirect_uris:
+            - matching_mode: strict
+              url: https://movies.harville.dev/login
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://movies.harville.dev/profile/settings/linked-accounts
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: seerr
+        attrs:
+          name: Movies
+          provider: !KeyOf seerr-provider
+          meta_launch_url: https://movies.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seerr]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seerr]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Jellyfin's web UI uses OIDC. LDAP remains available as the default
+      # password provider for television and native clients without web SSO.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: jellyfin-oidc-provider
+        identifiers:
+          name: Jellyfin OIDC Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: !Env [JELLYFIN_OIDC_CLIENT_ID, ""]
+          client_secret: !Env [JELLYFIN_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://watch.harville.dev/sso/OID/r/authentik
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://watch.harville.dev/sso/OID/redirect/authentik
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: jellyfin-oidc
+        attrs:
+          name: Jellyfin
+          provider: !KeyOf jellyfin-oidc-provider
+          meta_launch_url: https://watch.harville.dev/sso/OID/p/authentik
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-oidc]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-oidc]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       # Jellyfin clients need native username/password authentication. Authentik's
       # LDAP outpost validates those credentials while Jellyfin JIT-provisions
       # its own local user records through the LDAP Authentication plugin.
@@ -501,8 +602,6 @@ data:
         attrs:
           name: Jellyfin LDAP Bind
           type: service_account
-          permissions:
-            - authentik_providers_ldap.search_full_directory
       - model: authentik_core.token
         identifiers:
           identifier: jellyfin-ldap-bind
@@ -522,13 +621,16 @@ data:
           base_dn: dc=media,dc=harville,dc=dev
           bind_mode: cached
           search_mode: cached
+        permissions:
+          - permission: search_full_directory
+            user: !KeyOf jellyfin-ldap-bind-user
       - model: authentik_core.application
         identifiers:
           slug: jellyfin-ldap
         attrs:
-          name: Jellyfin
+          name: Jellyfin LDAP
           provider: !KeyOf jellyfin-ldap-provider
-          meta_launch_url: https://media.harville.dev
+          meta_launch_url: https://watch.harville.dev
           policy_engine_mode: any
       - model: authentik_policies.policybinding
         identifiers:

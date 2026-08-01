@@ -7,6 +7,7 @@ resources:
   - prowlarr.yaml
   - radarr.yaml
   - jellyfin.yaml
+  - seerr.yaml
   - authentik-ldap.yaml
   - services.yaml
   - ingresses.yaml
@@ -16,3 +17,4 @@ configMapGenerator:
     files:
       - arr_bootstrap.py=scripts/arr_bootstrap.py
       - jellyfin_prepare.sh=scripts/jellyfin_prepare.sh
+      - seerr_prepare.py=scripts/seerr_prepare.py

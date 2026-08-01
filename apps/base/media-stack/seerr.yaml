@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jellyfin
+  name: seerr
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: jellyfin
+      app.kubernetes.io/name: seerr
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: jellyfin
+        app.kubernetes.io/name: seerr
     spec:
       terminationGracePeriodSeconds: 60
       affinity:
@@ -30,53 +30,47 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
         - name: prepare
-          image: alpine:3.22
+          image: python:3.14-alpine
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
-              add:
-                - CHOWN
-                - DAC_OVERRIDE
-                - FOWNER
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
-            - name: AUTHENTIK_LDAP_BIND_TOKEN
+            - name: SEERR_OIDC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: media-auth
-                  key: AUTHENTIK_LDAP_BIND_TOKEN
-            - name: JELLYFIN_OIDC_CLIENT_ID
+                  key: SEERR_OIDC_CLIENT_ID
+            - name: SEERR_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: media-auth
-                  key: JELLYFIN_OIDC_CLIENT_ID
-            - name: JELLYFIN_OIDC_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: media-auth
-                  key: JELLYFIN_OIDC_CLIENT_SECRET
+                  key: SEERR_OIDC_CLIENT_SECRET
           command:
-            - /bin/sh
-            - /scripts/jellyfin_prepare.sh
+            - python
+            - /scripts/seerr_prepare.py
           resources:
             requests:
               cpu: 10m
               memory: 32Mi
             limits:
-              memory: 128Mi
+              memory: 64Mi
           volumeMounts:
             - name: config
-              mountPath: /config
-            - name: media-pool
-              mountPath: /media
+              mountPath: /app/config
             - name: scripts
               mountPath: /scripts
               readOnly: true
       containers:
-        - name: jellyfin
-          image: jellyfin/jellyfin:10.11.11
+        - name: seerr
+          # Native OIDC is not in Seerr stable yet. Pin the official preview's
+          # multi-architecture digest so a mutable preview tag cannot drift.
+          image: ghcr.io/seerr-team/seerr@sha256:6a2a160b878b98d079c8ee6933f58997bb26d68dbcbc789c1a559bc6955db60d
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -89,60 +83,58 @@ spec:
           env:
             - name: TZ
               value: America/Chicago
-            - name: JELLYFIN_PublishedServerUrl
-              value: https://watch.harville.dev
-            - name: JELLYFIN_OIDC_CLIENT_SECRET
+            - name: PORT
+              value: "5055"
+            - name: CONFIG_DIRECTORY
+              value: /app/config
+            # These are consumed by the init container. Keeping the references
+            # on the workload also makes secret rotation roll the Deployment.
+            - name: SEERR_OIDC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: media-auth
-                  key: JELLYFIN_OIDC_CLIENT_SECRET
+                  key: SEERR_OIDC_CLIENT_ID
+            - name: SEERR_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: media-auth
+                  key: SEERR_OIDC_CLIENT_SECRET
           ports:
-            - name: jellyfin-http
-              containerPort: 8096
+            - name: seerr-http
+              containerPort: 5055
           startupProbe:
             httpGet:
-              path: /health
-              port: jellyfin-http
+              path: /api/v1/status
+              port: seerr-http
             periodSeconds: 5
             failureThreshold: 60
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /health
-              port: jellyfin-http
+              path: /api/v1/status
+              port: seerr-http
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
-              port: jellyfin-http
+              path: /api/v1/status
+              port: seerr-http
             periodSeconds: 30
             failureThreshold: 3
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              memory: 4Gi
+              memory: 1Gi
           volumeMounts:
             - name: config
-              mountPath: /config
-            - name: cache
-              mountPath: /cache
-            - name: media-pool
-              mountPath: /media
-              readOnly: true
+              mountPath: /app/config
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: jellyfin-config
-        - name: cache
-          emptyDir:
-            sizeLimit: 10Gi
-        - name: media-pool
-          persistentVolumeClaim:
-            claimName: media-pool
+            claimName: seerr-config
         - name: scripts
           configMap:
             name: media-stack-scripts

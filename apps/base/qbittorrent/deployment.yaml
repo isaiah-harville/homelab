@@ -88,6 +88,10 @@ spec:
               value: udp
             - name: SERVER_COUNTRIES
               value: United States
+            - name: SERVER_CATEGORIES
+              value: P2P
+            - name: UPDATER_PERIOD
+              value: 480h
             - name: FIREWALL_INPUT_PORTS
               value: "8080"
             - name: TZ
@@ -196,4 +200,5 @@ spec:
             path: /dev/net/tun
             type: CharDevice
         - name: gluetun-state
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: qbittorrent-gluetun-state

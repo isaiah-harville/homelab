@@ -38,6 +38,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: seerr
+spec:
+  selector:
+    app.kubernetes.io/name: seerr
+  ports:
+    - name: http
+      port: 5055
+      targetPort: seerr-http
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: authentik-ldap
 spec:
   selector:
