@@ -622,7 +622,7 @@ data:
           bind_mode: cached
           search_mode: cached
         permissions:
-          - permission: search_full_directory
+          - permission: authentik_providers_ldap.search_full_directory
             user: !KeyOf jellyfin-ldap-bind-user
       - model: authentik_core.application
         identifiers:
