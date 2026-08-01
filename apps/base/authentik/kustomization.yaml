@@ -18,6 +18,8 @@ configMapGenerator:
   - name: authentik-customization
     files:
       - homelab-customization.yaml=customization-blueprint.yaml.tpl
+    options:
+      disableNameSuffixHash: true
 generatorOptions:
   disableNameSuffixHash: false
 configurations:
