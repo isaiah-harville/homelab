@@ -610,12 +610,58 @@ data:
           user: !KeyOf jellyfin-ldap-bind-user
           intent: app_password
           expiring: false
+      # LDAP clients cannot execute this installation's browser/MFA policies.
+      # Use a dedicated bind flow containing only credential verification and
+      # session creation, as recommended by Authentik for LDAP providers.
+      - model: authentik_stages_password.passwordstage
+        id: jellyfin-ldap-password-stage
+        identifiers:
+          name: jellyfin-ldap-password
+        attrs:
+          backends:
+            - authentik.core.auth.InbuiltBackend
+            - authentik.core.auth.TokenBackend
+          failed_attempts_before_cancel: 5
+      - model: authentik_stages_identification.identificationstage
+        id: jellyfin-ldap-identification-stage
+        identifiers:
+          name: jellyfin-ldap-identification
+        attrs:
+          user_fields:
+            - username
+            - email
+          password_stage: !KeyOf jellyfin-ldap-password-stage
+          case_insensitive_matching: true
+          pretend_user_exists: true
+      - model: authentik_stages_user_login.userloginstage
+        id: jellyfin-ldap-login-stage
+        identifiers:
+          name: jellyfin-ldap-login
+      - model: authentik_flows.flow
+        id: jellyfin-ldap-authentication-flow
+        identifiers:
+          slug: jellyfin-ldap-authentication
+        attrs:
+          name: Jellyfin LDAP Authentication
+          title: Jellyfin LDAP Authentication
+          designation: authentication
+          authentication: none
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf jellyfin-ldap-authentication-flow
+          stage: !KeyOf jellyfin-ldap-identification-stage
+          order: 10
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf jellyfin-ldap-authentication-flow
+          stage: !KeyOf jellyfin-ldap-login-stage
+          order: 30
       - model: authentik_providers_ldap.ldapprovider
         id: jellyfin-ldap-provider
         identifiers:
           name: Jellyfin LDAP Provider
         attrs:
-          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authentication_flow: !KeyOf jellyfin-ldap-authentication-flow
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           base_dn: dc=media,dc=harville,dc=dev

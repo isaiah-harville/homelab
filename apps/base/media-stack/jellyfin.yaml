@@ -91,11 +91,6 @@ spec:
               value: America/Chicago
             - name: JELLYFIN_PublishedServerUrl
               value: https://watch.harville.dev
-            - name: JELLYFIN_OIDC_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: media-auth
-                  key: JELLYFIN_OIDC_CLIENT_SECRET
           ports:
             - name: jellyfin-http
               containerPort: 8096
