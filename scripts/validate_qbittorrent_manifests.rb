@@ -50,6 +50,8 @@ abort "Gluetun missing required capabilities" unless gluetun_caps == %w[CHOWN DA
 abort "qBittorrent unexpectedly privileged" if qbit.dig("securityContext", "privileged")
 abort "qBittorrent must let s6 initialize as root" if qbit.dig("securityContext", "runAsUser")
 abort "qBittorrent must drop service privileges" unless qbit.fetch("env").any? { |item| item == { "name" => "PUID", "value" => "1000" } }
+qbit_caps = Array(qbit.dig("securityContext", "capabilities", "add")).sort
+abort "qBittorrent missing s6 capabilities" unless qbit_caps == %w[CHOWN DAC_OVERRIDE SETGID SETUID]
 abort "DL380 exclusion missing" unless excludes_hostname?(pod_spec, "talos-rwj-wvp")
 
 downloads = resource!(apps, "PersistentVolumeClaim", "qbittorrent-downloads", "apps")
