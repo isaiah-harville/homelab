@@ -16,6 +16,15 @@ spec:
         app.kubernetes.io/name: books
     spec:
       terminationGracePeriodSeconds: 60
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - talos-rwj-wvp
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
