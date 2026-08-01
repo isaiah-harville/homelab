@@ -12,6 +12,8 @@ resources:
 configMapGenerator:
   - name: authentik-branding-assets
     files:
+      - harville-labs-logo.png=assets/harville-labs-logo.png
+      - harville-labs-favicon.png=assets/harville-labs-favicon.png
       - homelab-login-background.jpg=assets/homelab-login-background.jpg
   - name: authentik-customization
     files:

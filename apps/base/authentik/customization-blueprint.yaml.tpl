@@ -151,6 +151,8 @@ entries:
       domain: authentik-default
     attrs:
       branding_title: Harville Homelab
-      branding_default_flow_background: /static/dist/assets/images/homelab-login-background.jpg
+      branding_logo: homelab-branding/harville-labs-logo.png
+      branding_favicon: homelab-branding/harville-labs-favicon.png
+      branding_default_flow_background: homelab-branding/homelab-login-background.jpg
       flow_recovery: !KeyOf recovery-flow
 # authentik-social-mac: __AUTHENTIK_SOCIAL_SECRET_VERSION__
