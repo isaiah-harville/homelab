@@ -10,6 +10,14 @@ data:
     metadata:
       name: Homelab
     entries:
+      # Content-addressed blueprint mounts can coexist briefly during rolling
+      # updates. Frequent discovery guarantees the newest revision is imported
+      # immediately after all old workers have exited.
+      - model: authentik_tasks_schedules.schedule
+        identifiers:
+          actor_name: authentik.blueprints.v1.tasks.blueprints_discovery
+        attrs:
+          crontab: "*/2 * * * *"
       - model: authentik_core.group
         id: open-webui-users
         identifiers:
