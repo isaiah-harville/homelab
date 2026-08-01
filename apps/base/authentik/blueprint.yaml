@@ -662,7 +662,9 @@ data:
           name: Jellyfin LDAP Provider
         attrs:
           authentication_flow: !KeyOf jellyfin-ldap-authentication-flow
-          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          # Authentik's LDAP outpost executes authorization_flow as its bind
+          # flow (exposed as bind_flow_slug in the outpost API).
+          authorization_flow: !KeyOf jellyfin-ldap-authentication-flow
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           base_dn: dc=media,dc=harville,dc=dev
           bind_mode: cached
