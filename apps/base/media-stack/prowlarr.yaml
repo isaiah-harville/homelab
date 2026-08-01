@@ -88,6 +88,10 @@ spec:
               value: udp
             - name: SERVER_COUNTRIES
               value: United States
+            # This endpoint is also used by the healthy qBittorrent tunnel.
+            # Pinning it avoids stale Nord endpoints in Gluetun's bundled list.
+            - name: SERVER_HOSTNAMES
+              value: us8481.nordvpn.com
             - name: FIREWALL_INPUT_PORTS
               value: "9696"
             # Permit only in-cluster service/pod ranges outside the VPN so
