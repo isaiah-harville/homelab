@@ -52,6 +52,13 @@ spec:
     # The admin password comes from SOPS; the chart manages its other secrets.
     existingSecretAdminPassword: harbor-secrets
     existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+    core:
+      extraEnvVars:
+        - name: CONFIG_OVERWRITE_JSON
+          valueFrom:
+            secretKeyRef:
+              name: harbor-oidc
+              key: CONFIG_OVERWRITE_JSON
     database:
       type: internal
     redis:

@@ -10,6 +10,7 @@ resources:
   - ./secrets/seaweedfs-s3-config.yaml
   - ./secrets/omni-backup-s3-creds.yaml
   - ./secrets/harbor-secrets.yaml
+  - ./secrets/harbor-oidc.yaml
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
   - ./secrets/openvitae-secrets.yaml
@@ -108,6 +109,28 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.values.global.podAnnotations.books-oidc-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: harbor-oidc
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: harbor
+          namespace: apps
+        fieldPaths:
+          - spec.values.core.podAnnotations.harbor-oidc-mac
+        options:
+          create: true
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.harbor-oidc-mac
         options:
           create: true
   - source:

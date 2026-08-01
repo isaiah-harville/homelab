@@ -41,6 +41,16 @@ spec:
         - secretRef:
             name: books-oidc
       env:
+        - name: HARBOR_OIDC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: harbor-oidc
+              key: HARBOR_OIDC_CLIENT_ID
+        - name: HARBOR_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: harbor-oidc
+              key: HARBOR_OIDC_CLIENT_SECRET
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local
         - name: AUTHENTIK_POSTGRESQL__NAME
