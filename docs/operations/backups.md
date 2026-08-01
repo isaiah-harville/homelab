@@ -18,11 +18,44 @@ The pinned Terraform provider does not expose the cluster backup configuration.
 The S3 backup resource and interval are therefore configured with `omnictl`,
 while Terraform continues to manage the supported cluster fields.
 
+## Authentik database
+
+Authentik's Postgres is the one piece of application state that cannot be
+rebuilt from Git: users, groups, OIDC providers and flows exist only there.
+CloudNativePG backs it up to the `backups` bucket in SeaweedFS under
+`config/authentik-postgres` — continuous WAL archiving plus a nightly base
+backup at 01:30, which together give point-in-time recovery rather than a
+once-a-day image. Retention is `backup.retentionPolicy` on the Cluster, set to
+30 days; CNPG prunes its own backups.
+
+Other application volumes are covered only by the daily Longhorn snapshot. That
+is a deliberate trade: everything else is either rebuildable, replaceable, or
+not worth the object storage.
+
+`seaweedfs-backup-prune` must never delete anything under `config/`. Removing a
+WAL segment or base backup by age breaks the recovery chain that the remaining
+backups depend on, so the CronJob explicitly ignores that prefix.
+
+Failures are alerted on rather than discovered later: `CNPGBackupFailing`,
+`CNPGNoRecentBackup` and `CNPGWALArchiveFailing` in
+`apps/base/authentik/postgres-alerts.yaml`. The WAL alert matters most — WAL
+archiving can break while nightly base backups keep succeeding, silently
+removing point-in-time recovery between them.
+
+This is not disaster recovery. SeaweedFS is itself backed by Longhorn volumes on
+the same nodes, so it covers application-level loss but not loss of the cluster
+or the disks. Pointing `destinationPath` and the credentials Secret at off-site
+S3 would close that gap with no other changes.
+
 ## Snapshot retention
 
 Omni creates new objects but does not prune older S3 snapshots. The
 `seaweedfs-backup-prune` CronJob removes snapshots older than the configured
 retention window.
+
+The CronJob walks the top-level prefixes of the `backups` bucket and prunes each
+one except `config/`. Omni writes its snapshots under a per-cluster UUID prefix,
+so this covers them; loose objects at the bucket root are not pruned.
 
 The backup interval is relative to the previous backup rather than aligned to a
 wall-clock schedule. The pruning schedule is therefore a best-effort offset,

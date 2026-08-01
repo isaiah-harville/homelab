@@ -35,6 +35,56 @@ spec:
       number: 1
   monitoring:
     disableDefaultQueries: false
+  # Authentik's users, groups, OIDC providers and flows live only here — none of
+  # it is reconstructable from Git. Longhorn snapshots of a running Postgres are
+  # crash-consistent at best, so back the database up properly: continuous WAL
+  # archiving plus a nightly base backup gives point-in-time recovery.
+  #
+  # Uses the Barman Cloud plugin rather than spec.backup.barmanObjectStore,
+  # which CNPG deprecated in 1.26. Configuration lives in the ObjectStore below.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: authentik-postgres-backup
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: authentik-postgres-backup
+  namespace: apps
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://backups/config/authentik-postgres
+    endpointURL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+    s3Credentials:
+      accessKeyId:
+        name: config-backup-s3
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: config-backup-s3
+        key: AWS_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: authentik-postgres-nightly
+  namespace: apps
+spec:
+  # CNPG uses six-field cron: seconds first. 01:30 daily, before the 02:15
+  # Longhorn snapshot window so the two do not contend for disk.
+  schedule: "0 30 1 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: authentik-postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor

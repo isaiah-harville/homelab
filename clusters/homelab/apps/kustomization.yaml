@@ -11,6 +11,7 @@ resources:
   - ./secrets/omni-backup-s3-creds.yaml
   - ./secrets/harbor-secrets.yaml
   - ./secrets/harbor-oidc.yaml
+  - ./secrets/config-backup-s3.yaml
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
   - ./secrets/openvitae-secrets.yaml

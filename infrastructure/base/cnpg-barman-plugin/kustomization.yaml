@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Vendored from the upstream release rather than fetched at reconcile time, so
+# the manifest is reviewable in Git and Flux does not depend on GitHub being up.
+#
+#   https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.14.0/manifest.yaml
+#
+# To upgrade: re-download that URL at the new tag, replace the file, and check
+# the diff for CRD or RBAC changes. Requires cert-manager, which issues the mTLS
+# certificates the operator and plugin use to talk to each other.
+resources:
+  - plugin-barman-cloud.yaml

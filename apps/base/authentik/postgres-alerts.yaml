@@ -1,0 +1,64 @@
+---
+# A backup that fails silently is the same as no backup. These alerts cover the
+# two ways this setup can rot: the nightly base backup stops succeeding, or WAL
+# archiving breaks and quietly ends the point-in-time recovery chain.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-backups
+  namespace: apps
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: cnpg-backups
+      rules:
+        - alert: CNPGBackupFailing
+          # The most recent attempt failed and no successful one has landed since.
+          expr: |
+            cnpg_collector_last_failed_backup_timestamp > 0
+            and
+            cnpg_collector_last_failed_backup_timestamp
+              > cnpg_collector_last_available_backup_timestamp
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "CNPG backup failing for {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: >-
+              The most recent CloudNativePG base backup failed and no later
+              backup has succeeded. Check the Cluster's backup credentials and
+              the SeaweedFS endpoint.
+
+        - alert: CNPGNoRecentBackup
+          # Nightly schedule, so anything past 26h means a run was missed.
+          # Also catches a cluster that has never produced a backup at all,
+          # where the timestamp sits at 0.
+          expr: |
+            cnpg_collector_last_available_backup_timestamp == 0
+            or
+            time() - cnpg_collector_last_available_backup_timestamp > 26 * 3600
+          for: 2h
+          labels:
+            severity: critical
+          annotations:
+            summary: "No recent CNPG backup for {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: >-
+              No successful CloudNativePG base backup in the last 26 hours.
+              Authentik's users, groups and OIDC providers exist nowhere else.
+
+        - alert: CNPGWALArchiveFailing
+          # WAL archiving breaking is the quiet failure: nightly base backups
+          # keep succeeding while point-in-time recovery between them is gone.
+          expr: |
+            cnpg_pg_stat_archiver_last_failed_time
+              > cnpg_pg_stat_archiver_last_archived_time
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "WAL archiving failing for {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: >-
+              Postgres WAL archiving has been failing since the last successful
+              archive. Point-in-time recovery is degraded even while base
+              backups continue to succeed.

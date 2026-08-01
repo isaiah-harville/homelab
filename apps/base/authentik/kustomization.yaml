@@ -5,6 +5,7 @@ namespace: apps
 resources:
   - helmrelease.yaml
   - postgres.yaml
+  - postgres-alerts.yaml
   - ingress.yaml
   - middleware.yaml
   - callback-ingresses.yaml

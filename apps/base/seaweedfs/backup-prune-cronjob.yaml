@@ -50,7 +50,18 @@ spec:
                 - -c
                 - |
                   set -eu
-                  mc rm --recursive --force --older-than 76h backup/backups/
+                  # Prune Omni's etcd snapshots by age, but never touch
+                  # backups/config/: CNPG's base backups and WAL segments live
+                  # there and deleting any of them by age breaks the WAL chain
+                  # that point-in-time recovery depends on. CNPG prunes itself
+                  # via backup.retentionPolicy on the Cluster.
+                  #
+                  # --ignore matches the whole path including the alias, so the
+                  # pattern is fully qualified rather than relative.
+                  mc find backup/backups/ \
+                    --ignore "backup/backups/config/*" \
+                    --older-than 76h \
+                    --exec "mc rm --force {}"
               resources:
                 requests:
                   cpu: 10m
