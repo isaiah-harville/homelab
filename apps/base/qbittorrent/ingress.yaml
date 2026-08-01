@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qbittorrent
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: qBittorrent
+    gethomepage.dev/description: Torrent client over NordVPN
+    gethomepage.dev/group: Media
+    gethomepage.dev/icon: qbittorrent
+spec:
+  ingressClassName: traefik-internal
+  rules:
+    - host: torrent.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qbittorrent
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - torrent.int.harville.dev
+      secretName: placeholder

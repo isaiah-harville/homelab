@@ -15,8 +15,10 @@ resources:
   - ./secrets/openvitae-secrets.yaml
   - ./secrets/books-oidc.yaml
   - ./secrets/books-smtp.yaml
+  - ./secrets/qbittorrent.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
+  - ../../../apps/base/qbittorrent
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
@@ -120,5 +122,27 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.template.metadata.annotations.books-smtp-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: qbittorrent
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: qbittorrent
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.qbittorrent-secret-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          name: books
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.qbittorrent-secret-mac
         options:
           create: true

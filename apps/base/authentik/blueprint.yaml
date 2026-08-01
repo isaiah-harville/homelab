@@ -254,6 +254,30 @@ data:
           order: 0
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: qbittorrent-provider
+        identifiers:
+          name: qBittorrent Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://torrent.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: qbittorrent
+        attrs:
+          name: qBittorrent
+          provider: !KeyOf qbittorrent-provider
+          meta_launch_url: https://torrent.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, qbittorrent]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_oauth2.scopemapping
         id: groups-scope
         identifiers:
@@ -370,3 +394,4 @@ data:
             - !KeyOf longhorn-provider
             - !KeyOf grafana-provider
             - !KeyOf calibre-web-automated-provider
+            - !KeyOf qbittorrent-provider

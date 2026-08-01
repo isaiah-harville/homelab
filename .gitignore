@@ -16,3 +16,6 @@ site/
 *.tfstate
 *.tfstate.*
 *.tfplan
+
+__pycache__/
+*.pyc

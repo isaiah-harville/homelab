@@ -122,6 +122,28 @@ spec:
               value: /books
             - name: CALIBRE_WEB_URL
               value: https://calibre.int.harville.dev
+            - name: PROWLARR_TORRENT_CLIENT
+              value: qbittorrent
+            - name: QBITTORRENT_URL
+              value: http://qbittorrent.apps.svc:8080
+            - name: QBITTORRENT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent
+                  key: QBITTORRENT_USERNAME
+            - name: QBITTORRENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent
+                  key: QBITTORRENT_PASSWORD
+            - name: QBITTORRENT_CATEGORY
+              value: books
+            - name: QBITTORRENT_DOWNLOAD_DIR
+              value: /data/torrents
+            - name: PROWLARR_TORRENT_ACTION
+              value: change_category
+            - name: PROWLARR_TORRENT_POST_IMPORT_CATEGORY
+              value: imported
             - name: REQUESTS_ENABLED
               value: "false"
           ports:
@@ -158,6 +180,8 @@ spec:
               mountPath: /config
             - name: ingest
               mountPath: /books
+            - name: qbittorrent-downloads
+              mountPath: /data/torrents
       volumes:
         - name: cwa-config
           persistentVolumeClaim:
@@ -177,3 +201,6 @@ spec:
             items:
               - key: CLOUDFLARE_SMTP_TOKEN
                 path: cloudflare-smtp-token
+        - name: qbittorrent-downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads
