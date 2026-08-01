@@ -36,6 +36,24 @@ def upsert_section_values(text, section, values):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+def preference_values(username, password_hash):
+    return {
+        "WebUI\\Address": "*",
+        "WebUI\\CSRFProtection": "true",
+        "WebUI\\ClickjackingProtection": "true",
+        "WebUI\\HostHeaderValidation": "true",
+        "WebUI\\LocalHostAuth": "true",
+        "WebUI\\Password_PBKDF2": password_hash,
+        "WebUI\\Port": "8080",
+        "WebUI\\ServerDomains": (
+            "torrent.int.harville.dev;qbittorrent;qbittorrent.apps.svc;"
+            "qbittorrent.apps.svc.cluster.local"
+        ),
+        "WebUI\\UseUPnP": "false",
+        "WebUI\\Username": username,
+    }
+
+
 def main():
     config_root = Path(os.environ.get("QBITTORRENT_CONFIG_DIR", "/config"))
     config_dir = config_root / "qBittorrent"
@@ -43,21 +61,10 @@ def main():
     config_dir.mkdir(parents=True, exist_ok=True, mode=0o750)
 
     current = config_path.read_text() if config_path.exists() else ""
-    values = {
-        "WebUI\\Address": "*",
-        "WebUI\\CSRFProtection": "true",
-        "WebUI\\ClickjackingProtection": "true",
-        "WebUI\\HostHeaderValidation": "true",
-        "WebUI\\LocalHostAuth": "true",
-        "WebUI\\Password_PBKDF2": os.environ["QBITTORRENT_PASSWORD_HASH"],
-        "WebUI\\Port": "8080",
-        "WebUI\\ServerDomains": (
-            "torrent.int.harville.dev,qbittorrent,qbittorrent.apps.svc,"
-            "qbittorrent.apps.svc.cluster.local"
-        ),
-        "WebUI\\UseUPnP": "false",
-        "WebUI\\Username": os.environ["QBITTORRENT_USERNAME"],
-    }
+    values = preference_values(
+        os.environ["QBITTORRENT_USERNAME"],
+        os.environ["QBITTORRENT_PASSWORD_HASH"],
+    )
     rendered = upsert_section_values(current, "Preferences", values)
 
     with tempfile.NamedTemporaryFile(

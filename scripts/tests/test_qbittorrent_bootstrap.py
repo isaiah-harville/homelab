@@ -14,6 +14,17 @@ SPEC.loader.exec_module(bootstrap)
 
 
 class BootstrapTests(unittest.TestCase):
+    def test_server_domain_allowlist_uses_semicolon_separator(self):
+        values = bootstrap.preference_values("admin", "verifier")
+
+        self.assertEqual(
+            values["WebUI\\ServerDomains"],
+            (
+                "torrent.int.harville.dev;qbittorrent;qbittorrent.apps.svc;"
+                "qbittorrent.apps.svc.cluster.local"
+            ),
+        )
+
     def test_creates_preferences_and_preserves_unrelated_sections(self):
         original = "[LegalNotice]\nAccepted=true\n"
 
