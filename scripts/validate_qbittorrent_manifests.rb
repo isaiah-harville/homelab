@@ -45,7 +45,8 @@ qbit = pod_spec.fetch("containers").find { |item| item["name"] == "qbittorrent" 
 abort "missing Gluetun sidecar" unless gluetun
 abort "missing qBittorrent container" unless qbit
 abort "Gluetun is not a native sidecar" unless gluetun["restartPolicy"] == "Always"
-abort "Gluetun missing NET_ADMIN" unless gluetun.dig("securityContext", "capabilities", "add") == ["NET_ADMIN"]
+gluetun_caps = Array(gluetun.dig("securityContext", "capabilities", "add")).sort
+abort "Gluetun missing required capabilities" unless gluetun_caps == %w[CHOWN NET_ADMIN]
 abort "qBittorrent unexpectedly privileged" if qbit.dig("securityContext", "privileged")
 abort "DL380 exclusion missing" unless excludes_hostname?(pod_spec, "talos-rwj-wvp")
 

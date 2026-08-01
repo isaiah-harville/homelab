@@ -75,6 +75,7 @@ spec:
               drop:
                 - ALL
               add:
+                - CHOWN
                 - NET_ADMIN
           env:
             - name: VPN_SERVICE_PROVIDER
