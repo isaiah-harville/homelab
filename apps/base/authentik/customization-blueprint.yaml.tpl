@@ -10,6 +10,7 @@ entries:
       name: GitHub
       enabled: true
       promoted: true
+      user_matching_mode: email_link
       authentication_flow: !Find [authentik_flows.flow, [slug, default-source-authentication]]
       enrollment_flow: !Find [authentik_flows.flow, [slug, default-source-enrollment]]
       provider_type: github
@@ -27,6 +28,7 @@ entries:
       name: Google
       enabled: true
       promoted: true
+      user_matching_mode: email_link
       authentication_flow: !Find [authentik_flows.flow, [slug, default-source-authentication]]
       enrollment_flow: !Find [authentik_flows.flow, [slug, default-source-enrollment]]
       provider_type: google
