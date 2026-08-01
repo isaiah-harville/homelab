@@ -90,6 +90,11 @@ spec:
               value: United States
             - name: FIREWALL_INPUT_PORTS
               value: "9696"
+            # Permit only in-cluster service/pod ranges outside the VPN so
+            # Prowlarr can reach Radarr and qBittorrent without leaking indexer
+            # traffic onto the LAN.
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: 10.96.0.0/12,10.244.0.0/16
             - name: TZ
               value: America/Chicago
             - name: OPENVPN_USER
