@@ -46,8 +46,9 @@ def preference_values(username, password_hash):
         "WebUI\\Password_PBKDF2": password_hash,
         "WebUI\\Port": "8080",
         "WebUI\\ServerDomains": (
-            "torrent.int.harville.dev;qbittorrent;qbittorrent.apps.svc;"
-            "qbittorrent.apps.svc.cluster.local"
+            "torrent.int.harville.dev;qbittorrent:8080;"
+            "qbittorrent.apps.svc:8080;"
+            "qbittorrent.apps.svc.cluster.local:8080"
         ),
         "WebUI\\UseUPnP": "false",
         "WebUI\\Username": username,

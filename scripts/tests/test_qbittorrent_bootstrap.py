@@ -20,8 +20,9 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(
             values["WebUI\\ServerDomains"],
             (
-                "torrent.int.harville.dev;qbittorrent;qbittorrent.apps.svc;"
-                "qbittorrent.apps.svc.cluster.local"
+                "torrent.int.harville.dev;qbittorrent:8080;"
+                "qbittorrent.apps.svc:8080;"
+                "qbittorrent.apps.svc.cluster.local:8080"
             ),
         )
 
