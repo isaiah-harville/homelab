@@ -1,0 +1,41 @@
+prefix_rule(
+    pattern = ["uvx", "pre-commit"],
+    decision = "allow",
+    justification = "Pre-commit checks are approved.",
+    match = [
+        "uvx pre-commit run",
+        "uvx pre-commit run --all-files",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "add"],
+    decision = "allow",
+    justification = "Staging local repository changes is approved.",
+    match = [
+        "git add -A",
+        "git add .",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "allow",
+    justification = "Creating local Git commits is approved.",
+    match = [
+        "git commit -m",
+        "git commit --message",
+        "git commit --amend",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Publishing commits to a remote requires user approval.",
+    match = [
+        "git push",
+        "git push origin main",
+        "git push --set-upstream origin feature/example",
+    ],
+)

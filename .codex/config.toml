@@ -1,3 +1,9 @@
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+[sandbox_workspace_write]
+network_access = true
+
 [mcp_servers.flux-operator-mcp]
 command = "flux-operator-mcp"
 args = ["serve"]
