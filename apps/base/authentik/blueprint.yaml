@@ -552,7 +552,6 @@ data:
         identifiers:
           name: Jellyfin LDAP Outpost
         attrs:
-          name: Jellyfin LDAP Outpost
           type: ldap
           config:
             authentik_host: http://authentik-server.apps.svc.cluster.local
