@@ -13,6 +13,10 @@ except FileNotFoundError:
     settings = {}
 
 main = settings.setdefault("main", {})
+# The preview's pre-migration probe loads settings without merging defaults.
+# Mark a new installation explicitly so it does not mistake an empty database
+# for an Overseerr database before TypeORM has created its migration table.
+main.setdefault("mediaServerType", 4)
 main.update(
     {
         "applicationUrl": "https://movies.harville.dev",
