@@ -1,0 +1,48 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+spec:
+  selector:
+    app.kubernetes.io/name: prowlarr
+  ports:
+    - name: http
+      port: 9696
+      targetPort: prowlarr-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+spec:
+  selector:
+    app.kubernetes.io/name: radarr
+  ports:
+    - name: http
+      port: 7878
+      targetPort: radarr-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+spec:
+  selector:
+    app.kubernetes.io/name: jellyfin
+  ports:
+    - name: http
+      port: 8096
+      targetPort: jellyfin-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-ldap
+spec:
+  selector:
+    app.kubernetes.io/name: authentik-ldap
+  ports:
+    - name: ldap
+      port: 3389
+      targetPort: ldap

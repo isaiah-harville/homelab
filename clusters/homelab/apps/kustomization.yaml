@@ -17,9 +17,11 @@ resources:
   - ./secrets/books-oidc.yaml
   - ./secrets/books-smtp.yaml
   - ./secrets/qbittorrent.yaml
+  - ./secrets/media-auth.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
+  - ../../../apps/base/media-stack
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
@@ -113,6 +115,60 @@ replacements:
           create: true
   - source:
       kind: Secret
+      name: media-auth
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
+          name: books
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
+          name: prowlarr
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
+          name: radarr
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
+          name: jellyfin
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          namespace: apps
+          name: authentik-ldap
+        fieldPaths:
+          - spec.template.metadata.annotations.media-auth-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
       name: harbor-oidc
       namespace: apps
       fieldPath: sops.mac
@@ -164,6 +220,14 @@ replacements:
       - select:
           kind: Deployment
           name: books
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.qbittorrent-secret-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          name: prowlarr
           namespace: apps
         fieldPaths:
           - spec.template.metadata.annotations.qbittorrent-secret-mac

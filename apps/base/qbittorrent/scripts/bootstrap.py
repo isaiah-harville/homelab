@@ -53,6 +53,9 @@ def preference_values(username, password_hash):
         ),
         "WebUI\\UseUPnP": "false",
         "WebUI\\Username": username,
+        "Downloads\\SavePath": "/media/downloads/complete/",
+        "Downloads\\TempPath": "/media/downloads/incomplete/",
+        "Downloads\\TempPathEnabled": "true",
     }
 
 

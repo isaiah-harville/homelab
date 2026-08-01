@@ -51,6 +51,10 @@ data:
         identifiers:
           name: Books Users
       - model: authentik_core.group
+        id: media-users
+        identifiers:
+          name: Media Users
+      - model: authentik_core.group
         id: harbor-users
         identifiers:
           name: Harbor Users
@@ -288,6 +292,54 @@ data:
           order: 0
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: prowlarr-provider
+        identifiers:
+          name: Prowlarr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://prowlarr.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: prowlarr
+        attrs:
+          name: Prowlarr
+          provider: !KeyOf prowlarr-provider
+          meta_launch_url: https://prowlarr.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, prowlarr]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: radarr-provider
+        identifiers:
+          name: Radarr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://radarr.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: radarr
+        attrs:
+          name: Radarr
+          provider: !KeyOf radarr-provider
+          meta_launch_url: https://radarr.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, radarr]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_oauth2.scopemapping
         id: groups-scope
         identifiers:
@@ -439,6 +491,81 @@ data:
           order: 1
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Jellyfin clients need native username/password authentication. Authentik's
+      # LDAP outpost validates those credentials while Jellyfin JIT-provisions
+      # its own local user records through the LDAP Authentication plugin.
+      - model: authentik_core.user
+        id: jellyfin-ldap-bind-user
+        identifiers:
+          username: jellyfin-ldap-bind
+        attrs:
+          name: Jellyfin LDAP Bind
+          type: service_account
+          permissions:
+            - authentik_providers_ldap.search_full_directory
+      - model: authentik_core.token
+        identifiers:
+          identifier: jellyfin-ldap-bind
+        attrs:
+          key: !Env [AUTHENTIK_LDAP_BIND_TOKEN, ""]
+          user: !KeyOf jellyfin-ldap-bind-user
+          intent: app_password
+          expiring: false
+      - model: authentik_providers_ldap.ldapprovider
+        id: jellyfin-ldap-provider
+        identifiers:
+          name: Jellyfin LDAP Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          base_dn: dc=media,dc=harville,dc=dev
+          bind_mode: cached
+          search_mode: cached
+      - model: authentik_core.application
+        identifiers:
+          slug: jellyfin-ldap
+        attrs:
+          name: Jellyfin
+          provider: !KeyOf jellyfin-ldap-provider
+          meta_launch_url: https://media.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 2
+        attrs:
+          user: !KeyOf jellyfin-ldap-bind-user
+      - model: authentik_outposts.outpost
+        identifiers:
+          uuid: 7e1f9d0a-efad-4e68-91aa-df8261227079
+        attrs:
+          name: Jellyfin LDAP Outpost
+          type: ldap
+          config:
+            authentik_host: http://authentik-server.apps.svc.cluster.local
+          providers:
+            - !KeyOf jellyfin-ldap-provider
+      - model: authentik_core.token
+        identifiers:
+          identifier: ak-outpost-7e1f9d0a-efad-4e68-91aa-df8261227079-api
+        attrs:
+          key: !Env [AUTHENTIK_LDAP_OUTPOST_TOKEN, ""]
+          user: !Find [authentik_core.user, [username, ak-outpost-7e1f9d0aefad4e6891aadf8261227079]]
+          intent: api
+          expiring: false
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
@@ -456,3 +583,5 @@ data:
             - !KeyOf grafana-provider
             - !KeyOf calibre-web-automated-provider
             - !KeyOf qbittorrent-provider
+            - !KeyOf prowlarr-provider
+            - !KeyOf radarr-provider

@@ -27,7 +27,9 @@ spec:
                 operator: In
                 values:
                   - books
+                  - prowlarr
                   - qbittorrent-cleanup
+                  - radarr
       ports:
         - protocol: TCP
           port: 8080

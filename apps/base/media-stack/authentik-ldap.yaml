@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-ldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-ldap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik-ldap
+    spec:
+      containers:
+        - name: ldap
+          image: ghcr.io/goauthentik/ldap:2026.5.6
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          env:
+            - name: AUTHENTIK_HOST
+              value: http://authentik-server.apps.svc.cluster.local
+            - name: AUTHENTIK_INSECURE
+              value: "true"
+            - name: AUTHENTIK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: media-auth
+                  key: AUTHENTIK_LDAP_OUTPOST_TOKEN
+          ports:
+            - name: ldap
+              containerPort: 3389
+            - name: metrics
+              containerPort: 9300
+          startupProbe:
+            tcpSocket:
+              port: ldap
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: ldap
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: ldap
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi

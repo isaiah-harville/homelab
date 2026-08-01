@@ -1,18 +1,19 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qbittorrent
+  name: prowlarr
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: qbittorrent
+      app.kubernetes.io/name: prowlarr
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: qbittorrent
+        app.kubernetes.io/name: prowlarr
     spec:
       terminationGracePeriodSeconds: 60
       affinity:
@@ -40,19 +41,18 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
           env:
-            - name: QBITTORRENT_USERNAME
+            - name: ARR_NAME
+              value: Prowlarr
+            - name: ARR_PORT
+              value: "9696"
+            - name: ARR_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: qbittorrent
-                  key: QBITTORRENT_USERNAME
-            - name: QBITTORRENT_PASSWORD_HASH
-              valueFrom:
-                secretKeyRef:
-                  name: qbittorrent
-                  key: QBITTORRENT_PASSWORD_HASH
+                  name: media-auth
+                  key: PROWLARR_API_KEY
           command:
             - python
-            - /scripts/bootstrap.py
+            - /scripts/arr_bootstrap.py
           resources:
             requests:
               cpu: 10m
@@ -89,7 +89,7 @@ spec:
             - name: SERVER_COUNTRIES
               value: United States
             - name: FIREWALL_INPUT_PORTS
-              value: "8080"
+              value: "9696"
             - name: TZ
               value: America/Chicago
             - name: OPENVPN_USER
@@ -128,8 +128,8 @@ spec:
             - name: gluetun-state
               mountPath: /gluetun
       containers:
-        - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.2.3_v2.0.13-ls469 # {"$imagepolicy": "flux-system:qbittorrent"}
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr:2.5.2.5491-ls155
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -148,26 +148,21 @@ spec:
               value: "1000"
             - name: TZ
               value: America/Chicago
-            - name: WEBUI_PORT
-              value: "8080"
-            - name: TORRENTING_PORT
-              value: "6881"
           ports:
-            - name: qbit-http
-              containerPort: 8080
+            - name: prowlarr-http
+              containerPort: 9696
           startupProbe:
             tcpSocket:
-              port: qbit-http
+              port: prowlarr-http
             periodSeconds: 5
             failureThreshold: 60
           readinessProbe:
             tcpSocket:
-              port: qbit-http
+              port: prowlarr-http
             periodSeconds: 10
-            failureThreshold: 3
           livenessProbe:
             tcpSocket:
-              port: qbit-http
+              port: prowlarr-http
             periodSeconds: 30
             failureThreshold: 3
           resources:
@@ -175,22 +170,17 @@ spec:
               cpu: 100m
               memory: 256Mi
             limits:
-              memory: 2Gi
+              memory: 1Gi
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: media-pool
-              mountPath: /media
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: qbittorrent-config
-        - name: media-pool
-          persistentVolumeClaim:
-            claimName: media-pool
+            claimName: prowlarr-config
         - name: scripts
           configMap:
-            name: qbittorrent-scripts
+            name: media-stack-scripts
         - name: tun
           hostPath:
             path: /dev/net/tun
