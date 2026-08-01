@@ -15,11 +15,16 @@ spec:
       rules:
         - alert: CNPGBackupFailing
           # The most recent attempt failed and no successful one has landed since.
+          #
+          # These are the Barman Cloud plugin's metrics, not the in-tree
+          # cnpg_collector_* ones. The in-tree series still exist but sit at 0
+          # forever when backups run through the plugin, so alerting on them
+          # would mean one alert that never fires and one that never stops.
           expr: |
-            cnpg_collector_last_failed_backup_timestamp > 0
+            barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp > 0
             and
-            cnpg_collector_last_failed_backup_timestamp
-              > cnpg_collector_last_available_backup_timestamp
+            barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp
+              > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp
           for: 30m
           labels:
             severity: critical
@@ -35,9 +40,11 @@ spec:
           # Also catches a cluster that has never produced a backup at all,
           # where the timestamp sits at 0.
           expr: |
-            cnpg_collector_last_available_backup_timestamp == 0
+            barman_cloud_cloudnative_pg_io_last_available_backup_timestamp == 0
             or
-            time() - cnpg_collector_last_available_backup_timestamp > 26 * 3600
+            time()
+              - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp
+              > 26 * 3600
           for: 2h
           labels:
             severity: critical
