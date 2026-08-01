@@ -78,6 +78,7 @@ spec:
                 - CHOWN
                 - DAC_OVERRIDE
                 - NET_ADMIN
+                - SETUID
           env:
             - name: VPN_SERVICE_PROVIDER
               value: nordvpn

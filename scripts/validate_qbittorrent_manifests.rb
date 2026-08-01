@@ -46,7 +46,7 @@ abort "missing Gluetun sidecar" unless gluetun
 abort "missing qBittorrent container" unless qbit
 abort "Gluetun is not a native sidecar" unless gluetun["restartPolicy"] == "Always"
 gluetun_caps = Array(gluetun.dig("securityContext", "capabilities", "add")).sort
-abort "Gluetun missing required capabilities" unless gluetun_caps == %w[CHOWN DAC_OVERRIDE NET_ADMIN]
+abort "Gluetun missing required capabilities" unless gluetun_caps == %w[CHOWN DAC_OVERRIDE NET_ADMIN SETUID]
 abort "qBittorrent unexpectedly privileged" if qbit.dig("securityContext", "privileged")
 abort "DL380 exclusion missing" unless excludes_hostname?(pod_spec, "talos-rwj-wvp")
 
