@@ -1,6 +1,8 @@
 version: 1
 metadata:
-  name: Homelab login customization
+  # Increment v3 when this blueprint changes independently of OAuth secrets.
+  # The SOPS timestamp makes credential rotations distinct blueprint revisions.
+  name: "Homelab login customization v3@@__AUTHENTIK_SOCIAL_SECRET_TIMESTAMP__@@"
 entries:
   - model: authentik_sources_oauth.oauthsource
     id: github-source

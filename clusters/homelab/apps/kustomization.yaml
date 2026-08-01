@@ -83,3 +83,18 @@ replacements:
         options:
           delimiter: '# authentik-social-mac: '
           index: 1
+  - source:
+      kind: Secret
+      name: authentik-social
+      namespace: apps
+      fieldPath: sops.lastmodified
+    targets:
+      - select:
+          kind: ConfigMap
+          name: authentik-customization
+          namespace: apps
+        fieldPaths:
+          - data.homelab-customization\.yaml
+        options:
+          delimiter: '@@'
+          index: 1
