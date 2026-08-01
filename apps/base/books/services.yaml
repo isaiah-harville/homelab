@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre-web-automated
+spec:
+  selector:
+    app.kubernetes.io/name: books
+  ports:
+    - name: http
+      port: 8083
+      targetPort: cwa-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shelfmark
+spec:
+  selector:
+    app.kubernetes.io/name: books
+  ports:
+    - name: http
+      port: 8084
+      targetPort: shelfmark-http

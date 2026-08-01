@@ -1,0 +1,170 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: books
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: books
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: books
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: calibre-web-automated
+          image: ghcr.io/crocodilestick/calibre-web-automated:v4.0.6 # {"$imagepolicy": "flux-system:calibre-web-automated"}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: America/Chicago
+          ports:
+            - name: cwa-http
+              containerPort: 8083
+          startupProbe:
+            httpGet:
+              path: /
+              port: cwa-http
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: cwa-http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: cwa-http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: cwa-config
+              mountPath: /config
+            - name: library
+              mountPath: /calibre-library
+            - name: ingest
+              mountPath: /cwa-book-ingest
+            - name: smtp-credentials
+              mountPath: /run/secrets/books-smtp
+              readOnly: true
+        - name: shelfmark
+          image: ghcr.io/calibrain/shelfmark:v1.3.5 # {"$imagepolicy": "flux-system:shelfmark"}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: America/Chicago
+            - name: AUTH_METHOD
+              value: oidc
+            - name: OIDC_DISCOVERY_URL
+              value: https://auth.harville.dev/application/o/books/.well-known/openid-configuration
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: books-oidc
+                  key: BOOKS_OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: books-oidc
+                  key: BOOKS_OIDC_CLIENT_SECRET
+            - name: OIDC_GROUP_CLAIM
+              value: groups
+            - name: OIDC_ADMIN_GROUP
+              value: authentik Admins
+            - name: OIDC_USE_ADMIN_GROUP
+              value: "true"
+            - name: OIDC_AUTO_PROVISION
+              value: "true"
+            - name: DISABLE_LOCAL_AUTH
+              value: "true"
+            - name: OIDC_AUTO_REDIRECT
+              value: "true"
+            - name: SESSION_COOKIE_SECURE
+              value: "true"
+            - name: BOOKS_OUTPUT_MODE
+              value: folder
+            - name: INGEST_DIR
+              value: /books
+            - name: CALIBRE_WEB_URL
+              value: https://calibre.int.harville.dev
+            - name: REQUESTS_ENABLED
+              value: "false"
+          ports:
+            - name: shelfmark-http
+              containerPort: 8084
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: shelfmark-http
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: shelfmark-http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: shelfmark-http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: shelfmark-config
+              mountPath: /config
+            - name: ingest
+              mountPath: /books
+      volumes:
+        - name: cwa-config
+          persistentVolumeClaim:
+            claimName: books-cwa-config
+        - name: library
+          persistentVolumeClaim:
+            claimName: books-library
+        - name: ingest
+          persistentVolumeClaim:
+            claimName: books-ingest
+        - name: shelfmark-config
+          persistentVolumeClaim:
+            claimName: books-shelfmark-config
+        - name: smtp-credentials
+          secret:
+            secretName: books-smtp
+            items:
+              - key: CLOUDFLARE_SMTP_TOKEN
+                path: cloudflare-smtp-token

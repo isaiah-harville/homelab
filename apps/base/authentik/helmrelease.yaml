@@ -38,6 +38,8 @@ spec:
       envFrom:
         - secretRef:
             name: authentik-social
+        - secretRef:
+            name: books-oidc
       env:
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local

@@ -1,0 +1,52 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shelfmark
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Books
+    gethomepage.dev/description: Search and send books to Kindle
+    gethomepage.dev/group: Media
+    gethomepage.dev/icon: mdi-bookshelf
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: books.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shelfmark
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - books.harville.dev
+      secretName: placeholder
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: calibre-web-automated
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik-internal
+  rules:
+    - host: calibre.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: calibre-web-automated
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - calibre.int.harville.dev
+      secretName: placeholder

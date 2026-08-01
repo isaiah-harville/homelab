@@ -13,7 +13,10 @@ resources:
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
   - ./secrets/openvitae-secrets.yaml
+  - ./secrets/books-oidc.yaml
+  - ./secrets/books-smtp.yaml
   - ../../../apps/base/authentik
+  - ../../../apps/base/books
   - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
@@ -83,3 +86,39 @@ replacements:
         options:
           delimiter: '# authentik-social-mac: '
           index: 1
+  - source:
+      kind: Secret
+      name: books-oidc
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: books
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.books-oidc-mac
+        options:
+          create: true
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.books-oidc-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: books-smtp
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: books
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.books-smtp-mac
+        options:
+          create: true
