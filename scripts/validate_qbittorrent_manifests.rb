@@ -48,6 +48,8 @@ abort "Gluetun is not a native sidecar" unless gluetun["restartPolicy"] == "Alwa
 gluetun_caps = Array(gluetun.dig("securityContext", "capabilities", "add")).sort
 abort "Gluetun missing required capabilities" unless gluetun_caps == %w[CHOWN DAC_OVERRIDE NET_ADMIN SETUID]
 abort "qBittorrent unexpectedly privileged" if qbit.dig("securityContext", "privileged")
+abort "qBittorrent must let s6 initialize as root" if qbit.dig("securityContext", "runAsUser")
+abort "qBittorrent must drop service privileges" unless qbit.fetch("env").any? { |item| item == { "name" => "PUID", "value" => "1000" } }
 abort "DL380 exclusion missing" unless excludes_hostname?(pod_spec, "talos-rwj-wvp")
 
 downloads = resource!(apps, "PersistentVolumeClaim", "qbittorrent-downloads", "apps")

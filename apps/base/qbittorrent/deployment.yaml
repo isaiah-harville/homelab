@@ -136,9 +136,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
           env:
             - name: PUID
               value: "1000"
