@@ -120,8 +120,28 @@ cat > /config/config/branding.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <LoginDisclaimer>&lt;a class="raised button-submit block emby-button" href="https://watch.harville.dev/sso/OID/p/authentik"&gt;Sign in with Authentik&lt;/a&gt;</LoginDisclaimer>
-  <CustomCss />
-  <SplashscreenEnabled>false</SplashscreenEnabled>
+  <CustomCss>/* The login disclaimer is sanitised into a &lt;p&gt; and the anchor is upgraded
+   to an emby-linkbutton, which adds .button-link. That class sets padding to 0
+   and colour to #00a4dc — the same blue as .button-submit's background — so the
+   stock button collapses to a thin bar with its label invisible against itself.
+   Two classes here to outrank .button-link's single class. */
+.loginDisclaimer p { margin: 0; }
+.loginDisclaimer .emby-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0.9em 1em;
+  background: #00a4dc;
+  color: #fff;
+  text-decoration: none;
+}
+.loginDisclaimer .emby-button:hover,
+.loginDisclaimer .emby-button:focus { background: #0587b5; color: #fff; }</CustomCss>
+  <SplashscreenEnabled>true</SplashscreenEnabled>
+  <SplashscreenLocation>/config/data/splashscreen-upload.jpg</SplashscreenLocation>
 </BrandingOptions>
 EOF
 
