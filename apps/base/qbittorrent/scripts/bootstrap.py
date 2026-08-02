@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 
 def upsert_section_values(text, section, values):
@@ -36,6 +36,33 @@ def upsert_section_values(text, section, values):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+def remove_section_keys(text, section, keys):
+    lines = text.splitlines()
+    header = f"[{section}]"
+
+    try:
+        section_start = lines.index(header)
+    except ValueError:
+        return text
+
+    section_end = len(lines)
+    for index in range(section_start + 1, len(lines)):
+        line = lines[index]
+        if line.startswith("[") and line.endswith("]"):
+            section_end = index
+            break
+
+    kept = []
+    for index, line in enumerate(lines):
+        if section_start < index < section_end:
+            key, separator, _ = line.partition("=")
+            if separator and key in keys:
+                continue
+        kept.append(line)
+
+    return "\n".join(kept).rstrip("\n") + "\n"
+
+
 CATEGORY_DIRECTORIES = (
     "downloads/complete/books",
     "downloads/complete/imported",
@@ -66,9 +93,24 @@ def preference_values(username, password_hash):
         ),
         "WebUI\\UseUPnP": "false",
         "WebUI\\Username": username,
-        "Downloads\\SavePath": "/media/downloads/complete/",
-        "Downloads\\TempPath": "/media/downloads/incomplete/",
-        "Downloads\\TempPathEnabled": "true",
+    }
+
+
+LEGACY_DOWNLOAD_KEYS = frozenset(
+    {
+        "Downloads\\SavePath",
+        "Downloads\\TempPath",
+        "Downloads\\TempPathEnabled",
+    }
+)
+
+
+def session_values():
+    return {
+        "Session\\DefaultSavePath": "/media/downloads/complete/",
+        "Session\\TempPath": "/media/downloads/incomplete/",
+        "Session\\TempPathEnabled": "true",
+        "Session\\DisableAutoTMMByDefault": "false",
     }
 
 
@@ -87,6 +129,8 @@ def main():
         os.environ["QBITTORRENT_PASSWORD_HASH"],
     )
     rendered = upsert_section_values(current, "Preferences", values)
+    rendered = remove_section_keys(rendered, "Preferences", LEGACY_DOWNLOAD_KEYS)
+    rendered = upsert_section_values(rendered, "BitTorrent", session_values())
 
     with tempfile.NamedTemporaryFile(
         mode="w",
