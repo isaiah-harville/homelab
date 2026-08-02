@@ -81,6 +81,7 @@ spec:
       createBuckets:
         - name: general
         - name: backups
+        - name: mlflow
       resources:
         requests:
           cpu: 50m
