@@ -11,6 +11,7 @@ NOTES.md
 node_modules/
 .venv/
 site/
+.worktrees/
 
 **/.terraform/*
 *.tfstate
