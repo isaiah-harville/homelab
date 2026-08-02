@@ -53,6 +53,11 @@ spec:
             secretKeyRef:
               name: harbor-oidc
               key: HARBOR_OIDC_CLIENT_SECRET
+        - name: MLFLOW_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-oidc
+              key: OIDC_CLIENT_SECRET
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local
         - name: AUTHENTIK_POSTGRESQL__NAME
