@@ -62,6 +62,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: media-pool
+              mountPath: /media
             - name: scripts
               mountPath: /scripts
               readOnly: true

@@ -36,6 +36,19 @@ def upsert_section_values(text, section, values):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+CATEGORY_DIRECTORIES = (
+    "downloads/complete/books",
+    "downloads/complete/imported",
+    "downloads/complete/movies",
+    "downloads/complete/prowlarr",
+)
+
+
+def ensure_category_directories(media_root):
+    for relative in CATEGORY_DIRECTORIES:
+        (media_root / relative).mkdir(parents=True, exist_ok=True, mode=0o755)
+
+
 def preference_values(username, password_hash):
     return {
         "WebUI\\Address": "*",
@@ -64,6 +77,9 @@ def main():
     config_dir = config_root / "qBittorrent"
     config_path = config_dir / "qBittorrent.conf"
     config_dir.mkdir(parents=True, exist_ok=True, mode=0o750)
+
+    media_root = Path(os.environ.get("QBITTORRENT_MEDIA_DIR", "/media"))
+    ensure_category_directories(media_root)
 
     current = config_path.read_text() if config_path.exists() else ""
     values = preference_values(
