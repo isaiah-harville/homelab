@@ -4,9 +4,15 @@
 import json
 import os
 from pathlib import Path
+import sqlite3
 
 
-settings_path = Path("/app/config/settings.json")
+REQUEST_PERMISSION = 32
+AUTO_APPROVE_PERMISSION = 128
+ADMIN_PERMISSION = 2
+
+config_directory = Path(os.environ.get("CONFIG_DIRECTORY", "/app/config"))
+settings_path = config_directory / "settings.json"
 try:
     settings = json.loads(settings_path.read_text())
 except FileNotFoundError:
@@ -23,6 +29,7 @@ main.update(
         "localLogin": False,
         "mediaServerLogin": False,
         "oidcLogin": True,
+        "defaultPermissions": REQUEST_PERMISSION | AUTO_APPROVE_PERMISSION,
     }
 )
 settings["oidc"] = {
@@ -39,6 +46,20 @@ settings["oidc"] = {
         }
     ]
 }
+
+database_path = config_directory / "db/db.sqlite3"
+if database_path.exists():
+    with sqlite3.connect(database_path) as database:
+        user_table_exists = database.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'user'"
+        ).fetchone()
+        if user_table_exists:
+            database.execute(
+                'UPDATE "user" '
+                "SET permissions = permissions | ? "
+                "WHERE (permissions & ?) = 0",
+                (AUTO_APPROVE_PERMISSION, ADMIN_PERMISSION),
+            )
 
 temporary_path = settings_path.with_suffix(".json.tmp")
 temporary_path.write_text(json.dumps(settings, indent=2) + "\n")
