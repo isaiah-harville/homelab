@@ -311,3 +311,17 @@ replacements:
           - spec.template.metadata.annotations.mosquitto-passwd-mac
         options:
           create: true
+  - source:
+      kind: Secret
+      name: mosquitto-clients
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: zigbee2mqtt
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.mosquitto-clients-mac
+        options:
+          create: true

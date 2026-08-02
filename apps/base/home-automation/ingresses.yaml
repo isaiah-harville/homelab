@@ -1,0 +1,32 @@
+---
+# The Zigbee2MQTT frontend has no authentication of its own, so it sits behind
+# Authentik. Nothing but a browser talks to it.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zigbee2mqtt
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Zigbee2MQTT
+    gethomepage.dev/description: Zigbee device gateway
+    gethomepage.dev/group: Home
+    gethomepage.dev/icon: zigbee2mqtt.png
+    gethomepage.dev/href: https://zigbee2mqtt.int.harville.dev
+spec:
+  ingressClassName: traefik-internal
+  rules:
+    - host: zigbee2mqtt.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: zigbee2mqtt
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - zigbee2mqtt.int.harville.dev
+      secretName: placeholder

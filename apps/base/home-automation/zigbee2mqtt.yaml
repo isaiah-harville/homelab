@@ -1,0 +1,138 @@
+---
+# Zigbee2MQTT's own configuration.yaml lives on the PVC (it rewrites the file at
+# runtime — notably the generated network key, which must survive restarts or
+# every paired device drops off). Anything this repo wants to own is set through
+# ZIGBEE2MQTT_CONFIG_* environment overrides instead of templating that file.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zigbee2mqtt-adapter
+  namespace: apps
+data:
+  # The coordinator is a network (TCP) radio, so nothing is passed through from
+  # a Talos node and the pod can be scheduled anywhere.
+  #
+  # TODO: replace with the coordinator's address. 6638 is the SLZB-06 default;
+  # ser2net/esphome bridges commonly use 6638 or 8888.
+  serial_port: tcp://10.1.10.0:6638
+  # Coordinator firmware family. `ember` for SLZB-06/EFR32 (EmberZNet),
+  # `zstack` for TI CC2652/CC1352, `deconz` for ConBee, `zboss` for Nordic.
+  # `auto` detection is unreliable over TCP, so name it explicitly.
+  serial_adapter: ember
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zigbee2mqtt-data
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zigbee2mqtt
+  namespace: apps
+  labels:
+    app: zigbee2mqtt
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zigbee2mqtt
+  template:
+    metadata:
+      labels:
+        app: zigbee2mqtt
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: zigbee2mqtt
+          image: koenkk/zigbee2mqtt:2.13.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: TZ
+              value: America/Chicago
+            - name: ZIGBEE2MQTT_DATA
+              value: /app/data
+            - name: ZIGBEE2MQTT_CONFIG_MQTT_SERVER
+              value: mqtt://mosquitto:1883
+            - name: ZIGBEE2MQTT_CONFIG_MQTT_BASE_TOPIC
+              value: zigbee2mqtt
+            - name: ZIGBEE2MQTT_CONFIG_MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-clients
+                  key: ZIGBEE2MQTT_MQTT_USER
+            - name: ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-clients
+                  key: ZIGBEE2MQTT_MQTT_PASSWORD
+            - name: ZIGBEE2MQTT_CONFIG_SERIAL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: zigbee2mqtt-adapter
+                  key: serial_port
+            - name: ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: zigbee2mqtt-adapter
+                  key: serial_adapter
+            # Publishes MQTT discovery messages so paired devices appear in
+            # Home Assistant without per-device YAML.
+            - name: ZIGBEE2MQTT_CONFIG_HOMEASSISTANT_ENABLED
+              value: "true"
+            - name: ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED
+              value: "true"
+            - name: ZIGBEE2MQTT_CONFIG_FRONTEND_PORT
+              value: "8080"
+            - name: ZIGBEE2MQTT_CONFIG_FRONTEND_URL
+              value: https://zigbee2mqtt.int.harville.dev
+            - name: ZIGBEE2MQTT_CONFIG_ADVANCED_LOG_LEVEL
+              value: info
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: zigbee2mqtt-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zigbee2mqtt
+  namespace: apps
+spec:
+  selector:
+    app: zigbee2mqtt
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
