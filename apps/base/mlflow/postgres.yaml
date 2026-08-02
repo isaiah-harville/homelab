@@ -1,0 +1,102 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mlflow-postgres
+  namespace: apps
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-minimal-trixie
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: mlflow
+      owner: mlflow
+      secret:
+        name: mlflow-postgres
+      # MLflow's basic-auth backend wants a database of its own, and CNPG only
+      # creates the single application database. postInitSQL runs as superuser
+      # against `postgres`, so this is the one place the second database can be
+      # created declaratively.
+      postInitSQL:
+        - CREATE DATABASE mlflow_auth OWNER mlflow;
+  storage:
+    storageClass: longhorn-database
+    size: 10Gi
+  inheritedMetadata:
+    labels:
+      recurring-job-group.longhorn.io/default: enabled
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+  monitoring:
+    disableDefaultQueries: false
+  # Experiment metadata (runs, params, metrics, model registry) lives only here.
+  # The artifacts in S3 are meaningless without it, so it gets the same WAL
+  # archiving + nightly base backup treatment as the Authentik database.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: mlflow-postgres-backup
+---
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: mlflow-postgres-backup
+  namespace: apps
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://backups/config/mlflow-postgres
+    endpointURL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+    s3Credentials:
+      accessKeyId:
+        name: config-backup-s3
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: config-backup-s3
+        key: AWS_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: mlflow-postgres-nightly
+  namespace: apps
+spec:
+  # Six-field cron (seconds first). 01:45, staggered off the Authentik backup
+  # at 01:30 so the two do not compete for the same SeaweedFS volume server.
+  schedule: "0 45 1 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: mlflow-postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: mlflow-postgres
+  namespace: apps
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: mlflow-postgres
+  podMetricsEndpoints:
+    - port: metrics

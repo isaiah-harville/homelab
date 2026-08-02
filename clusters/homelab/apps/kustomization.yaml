@@ -19,6 +19,7 @@ resources:
   - ./secrets/books-smtp.yaml
   - ./secrets/qbittorrent.yaml
   - ./secrets/media-auth.yaml
+  - ./secrets/mlflow.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
@@ -39,6 +40,7 @@ resources:
   - ../../../apps/base/harbor
   - ../../../apps/base/vllm-router
   - ../../../apps/base/searxng
+  - ../../../apps/base/mlflow
 patches:
   - target:
       kind: Ingress
@@ -240,5 +242,55 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.template.metadata.annotations.qbittorrent-secret-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: mlflow-postgres
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: mlflow
+          namespace: apps
+        fieldPaths:
+          - spec.values.podAnnotations.mlflow-postgres-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: mlflow-s3
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: mlflow
+          namespace: apps
+        fieldPaths:
+          - spec.values.podAnnotations.mlflow-s3-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: mlflow-oidc
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: mlflow
+          namespace: apps
+        fieldPaths:
+          - spec.values.podAnnotations.mlflow-oidc-mac
+        options:
+          create: true
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.mlflow-oidc-mac
         options:
           create: true

@@ -1,0 +1,119 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mlflow
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: mlflow
+      version: ">=1.11.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: community-charts
+        namespace: flux-system
+  values:
+    fullnameOverride: mlflow
+    replicaCount: 1
+    # The chart's default image (burakince/mlflow) bundles psycopg2 and boto3;
+    # the upstream ghcr.io/mlflow/mlflow image does not, which is why this chart
+    # is used instead of hand-rolled manifests.
+    backendStore:
+      databaseMigration: true
+      databaseConnectionCheck: true
+      postgres:
+        enabled: true
+        host: mlflow-postgres-rw.apps.svc.cluster.local
+        port: 5432
+        database: mlflow
+        driver: psycopg2
+      existingDatabaseSecret:
+        name: mlflow-postgres
+        usernameKey: username
+        passwordKey: password
+    artifactRoot:
+      # The server proxies artifact upload/download, so clients only ever talk
+      # to MLflow. No SeaweedFS access keys have to be handed out to laptops or
+      # training jobs, and the S3 endpoint stays cluster-internal.
+      proxiedArtifactStorage: true
+      s3:
+        enabled: true
+        bucket: mlflow
+        existingSecret:
+          name: mlflow-s3
+          keyOfAccessKeyId: AWS_ACCESS_KEY_ID
+          keyOfSecretAccessKey: AWS_SECRET_ACCESS_KEY
+    extraEnvVars:
+      MLFLOW_S3_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+      AWS_DEFAULT_REGION: us-east-1
+    # Authentik OIDC via the mlflow-oidc-auth plugin, not the ForwardAuth
+    # middleware: the plugin also issues personal access tokens, so the Python
+    # client can authenticate against the same identity without traversing a
+    # browser redirect. Access and per-experiment permissions follow Authentik
+    # group membership; the mapping is stored in the mlflow_auth database.
+    oidcAuth:
+      enabled: true
+      discoveryUrl: https://auth.harville.dev/application/o/mlflow/.well-known/openid-configuration
+      clientId: mlflow
+      existingSecret:
+        name: mlflow-oidc
+        clientSecretKey: OIDC_CLIENT_SECRET
+      providerDisplayName: Login with Authentik
+      scope: openid,email,profile,groups
+      groupsAttribute: groups
+      groupName:
+        - MLflow Users
+      adminGroupName:
+        - MLflow Admins
+      defaultPermission: READ
+      sessionCookieSecure: true
+      # The redirect URI is derived from the forwarded headers, which is only
+      # trustworthy once traefik-internal's pod network is trusted.
+      trustedProxies:
+        - 10.244.0.0/16
+      database:
+        postgres:
+          enabled: true
+          host: mlflow-postgres-rw.apps.svc.cluster.local
+          port: 5432
+          database: mlflow_auth
+          driver: psycopg2
+          existingSecret:
+            name: mlflow-postgres
+            usernameKey: username
+            passwordKey: password
+    # Ingress is a standalone manifest (ingress.yaml) so the `apps` Kustomization
+    # patches reach it. That skips the chart's host auto-detection, and an
+    # explicit allow-list would reject the kubelet's probes, which address the
+    # pod by IP. The service is LAN-only and behind basic auth.
+    serverAllowedHosts:
+      - "*"
+    corsAllowedOrigins:
+      - https://mlflow.int.harville.dev
+    service:
+      type: ClusterIP
+      port: 5000
+    serviceMonitor:
+      enabled: true
+      namespace: apps
+      useServicePort: true
+      labels:
+        release: kube-prometheus-stack
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 2Gi

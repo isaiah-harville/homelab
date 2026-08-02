@@ -1,0 +1,31 @@
+---
+# No Authentik ForwardAuth: the MLflow Python client cannot follow the browser
+# redirect flow. MLflow's own basic auth guards both the UI and the REST API.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: MLflow
+    gethomepage.dev/description: Experiment tracking and model registry
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: mlflow.png
+    gethomepage.dev/href: https://mlflow.int.harville.dev
+spec:
+  ingressClassName: traefik-internal
+  rules:
+    - host: mlflow.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mlflow
+                port:
+                  number: 5000
+  tls:
+    - hosts:
+        - mlflow.int.harville.dev
+      secretName: placeholder
