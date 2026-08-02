@@ -5,4 +5,5 @@ namespace: apps
 resources:
   - mosquitto.yaml
   - zigbee2mqtt.yaml
+  - home-assistant.yaml
   - ingresses.yaml
