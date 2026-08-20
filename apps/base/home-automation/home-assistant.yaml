@@ -67,7 +67,16 @@ spec:
       labels:
         app: home-assistant
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         # configuration.yaml !includes these; Home Assistant refuses to start if
         # a referenced file is missing. Create them empty once, then leave them
@@ -87,7 +96,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: ghcr.io/home-assistant/home-assistant:2026.7.4
+          image: ghcr.io/home-assistant/home-assistant:2026.8.2
           ports:
             - name: http
               containerPort: 8123
