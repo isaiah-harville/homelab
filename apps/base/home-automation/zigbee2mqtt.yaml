@@ -9,16 +9,11 @@ metadata:
   name: zigbee2mqtt-adapter
   namespace: apps
 data:
-  # The coordinator is a network (TCP) radio, so nothing is passed through from
-  # a Talos node and the pod can be scheduled anywhere.
-  #
-  # TODO: replace with the coordinator's address. 6638 is the SLZB-06 default;
-  # ser2net/esphome bridges commonly use 6638 or 8888.
-  serial_port: tcp://10.1.10.0:6638
-  # Coordinator firmware family. `ember` for SLZB-06/EFR32 (EmberZNet),
-  # `zstack` for TI CC2652/CC1352, `deconz` for ConBee, `zboss` for Nordic.
-  # `auto` detection is unreliable over TCP, so name it explicitly.
-  serial_adapter: ember
+  # Radio 2 / CC2674P10 is reserved for Zigbee. Replace port 0 with the
+  # endpoint shown by the configured MR3U; never point this at Radio 1.
+  serial_port: tcp://slzb-mr3u.home.arpa:0
+  serial_adapter: zstack
+  serial_baudrate: "115200"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -53,6 +48,30 @@ spec:
         app: zigbee2mqtt
     spec:
       enableServiceLinks: false
+      initContainers:
+        - name: validate-radio-config
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -ec
+            - |
+              case "${SERIAL_PORT}" in
+                tcp://*:0)
+                  echo "Set zigbee2mqtt-adapter serial_port to the MR3U CC2674P10 Zigbee endpoint" >&2
+                  exit 1
+                  ;;
+                tcp://*:*) ;;
+                *)
+                  echo "serial_port must be a tcp:// URL" >&2
+                  exit 1
+                  ;;
+              esac
+          env:
+            - name: SERIAL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: zigbee2mqtt-adapter
+                  key: serial_port
       containers:
         - name: zigbee2mqtt
           image: koenkk/zigbee2mqtt:2.13.0
@@ -65,7 +84,7 @@ spec:
             - name: ZIGBEE2MQTT_DATA
               value: /app/data
             - name: ZIGBEE2MQTT_CONFIG_MQTT_SERVER
-              value: mqtt://mosquitto:1883
+              value: mqtt://mosquitto.apps.svc.cluster.local:1883
             - name: ZIGBEE2MQTT_CONFIG_MQTT_BASE_TOPIC
               value: zigbee2mqtt
             - name: ZIGBEE2MQTT_CONFIG_MQTT_USER
@@ -88,6 +107,11 @@ spec:
                 configMapKeyRef:
                   name: zigbee2mqtt-adapter
                   key: serial_adapter
+            - name: ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE
+              valueFrom:
+                configMapKeyRef:
+                  name: zigbee2mqtt-adapter
+                  key: serial_baudrate
             # Publishes MQTT discovery messages so paired devices appear in
             # Home Assistant without per-device YAML.
             - name: ZIGBEE2MQTT_CONFIG_HOMEASSISTANT_ENABLED

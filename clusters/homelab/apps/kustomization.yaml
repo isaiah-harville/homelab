@@ -325,3 +325,11 @@ replacements:
           - spec.template.metadata.annotations.mosquitto-clients-mac
         options:
           create: true
+      - select:
+          kind: Deployment
+          name: mosquitto
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.mosquitto-clients-mac
+        options:
+          create: true

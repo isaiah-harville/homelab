@@ -16,6 +16,10 @@ data:
     persistence true
     persistence_location /mosquitto/data/
     autosave_interval 60
+    autosave_on_changes true
+    persistent_client_expiration 14d
+    max_queued_messages 1000
+    max_queued_bytes 10485760
     log_dest stdout
     log_type error
     log_type warning
