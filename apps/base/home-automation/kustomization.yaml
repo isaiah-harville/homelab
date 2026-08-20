@@ -8,4 +8,5 @@ resources:
   - home-assistant.yaml
   - matter-server.yaml
   - otbr.yaml
+  - monitoring.yaml
   - ingresses.yaml
