@@ -6,4 +6,5 @@ resources:
   - mosquitto.yaml
   - zigbee2mqtt.yaml
   - home-assistant.yaml
+  - matter-server.yaml
   - ingresses.yaml
