@@ -7,4 +7,5 @@ resources:
   - homepage.yaml
   - lmstack-router.yaml
   - nginx.yaml
+  - pigeon-relay.yaml
   - automation.yaml
