@@ -85,6 +85,14 @@ the cluster pod CIDR used by Traefik.
 Home Assistant uses only the privileges required by host networking; it does
 not receive `/dev/net/tun`, `NET_ADMIN`, or a privileged security context.
 
+Home Assistant's native Lovelace dashboards, automation editor, script editor,
+scene editor, and device/entity management UI remain enabled through
+`default_config`. Dashboard definitions and UI-created automations persist on
+the `/config` PVC. No separate dashboard or automation application is needed.
+The operations runbook will distinguish Git-owned base configuration from
+Home Assistant-owned UI state so an operator does not overwrite dashboards or
+automations during reconciliation.
+
 ### Matter Server
 
 Matter Server uses the official
@@ -243,6 +251,13 @@ The runbook will cover UI-owned configuration:
 - Matter and Thread: add the Matter Server and OTBR integrations, form or import
   exactly one Thread dataset, make it preferred, and synchronize credentials to
   the companion phone before commissioning locks.
+- Apple HomeKit: use Home Assistant's HomeKit Device integration to import
+  compatible HomeKit accessories and HomeKit Bridge to expose selected Home
+  Assistant entities to Apple Home. Configure both through Home Assistant,
+  retain pairing state on the Home Assistant PVC, and keep pairing codes and
+  Apple account data out of Git. Host networking supplies the mDNS visibility
+  required by HomeKit discovery. Avoid bridging an entity back into the
+  ecosystem from which it was imported, which would create duplicate devices.
 - Future UniFi SuperLink/security devices: add only when Home Assistant exposes
   a supported integration; no speculative resources are created.
 
@@ -313,6 +328,10 @@ Runtime acceptance after the MR3U is installed includes:
 - verify `/dev/net/tun`, `wpan0`, IPv6 forwarding, RIO routes, mDNS, and OTBR
   REST health on `thinkcentre-01`;
 - add MQTT, Matter Server, and OTBR integrations in Home Assistant;
+- create a test Lovelace dashboard and UI-authored automation, restart Home
+  Assistant, and verify that both persist;
+- pair one compatible HomeKit accessory or bridge a test entity to Apple Home,
+  verify mDNS discovery, and confirm that no duplicate entity loop is created;
 - pair one powered Zigbee router, one Zigbee sensor, and a test Matter device;
 - restart each singleton and verify its state survives;
 - confirm Prometheus alerts clear after successful startup; and
