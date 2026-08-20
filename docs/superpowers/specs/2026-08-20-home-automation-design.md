@@ -111,8 +111,9 @@ Home Assistant Core in Kubernetes and will be stated in the runbook.
 Matter Server does not own the Thread radio or the OTBR process. It reaches
 Matter-over-Thread devices through normal LAN IPv6 routing advertised by OTBR.
 Its built-in dashboard is retained for Matter diagnostics and configuration,
-but is reachable only through the ClusterIP or an operator port-forward; it
-does not receive an Ingress. No fake Matter nodes or lock definitions are
+and it does not receive an Ingress. Because the pod uses host networking, TCP
+5580 is also reachable on the scheduled node's LAN address; it is internal-LAN
+access, not public exposure. No fake Matter nodes or lock definitions are
 created.
 
 ### Kubernetes OTBR
@@ -215,8 +216,11 @@ Kustomization applies `websecure` and replaces the placeholder TLS secret with
 `harville-wildcard-shared-tls`. Standard HTTP upgrade handling in Traefik
 supports Home Assistant WebSockets without a special middleware.
 
-Mosquitto, Matter Server, and OTBR have ClusterIP Services only. They are never
-published through public ingress.
+Mosquitto, Matter Server, and OTBR have ClusterIP Services only and are never
+published through public ingress. Matter Server and OTBR still bind their
+host-network ports on the scheduled nodes. The initial trusted LAN may reach
+those ports; a future VLAN/firewall design must restrict TCP 5580 and 8081 to
+Home Assistant and cluster-node sources without blocking IPv6 or multicast.
 
 ## Persistent data and recovery
 
