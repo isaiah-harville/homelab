@@ -86,6 +86,8 @@ patches:
     file: patches/longhorn-root-disk.yaml
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
+  - name: otbr-host
+    file: patches/otbr-host.yaml
 ---
 # dl380: two 1TB HP RAID logical volumes — OS on sda (by wwid), Longhorn on sdb.
 kind: Machine

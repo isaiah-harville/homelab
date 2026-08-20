@@ -76,3 +76,15 @@ resource "omni_config_patch" "longhorn_storage_node" {
   }
   data = file("${local.patch_dir}/longhorn-storage-node.yaml")
 }
+
+resource "omni_config_patch" "otbr_host" {
+  for_each = toset(local.otbr_nodes)
+
+  name    = "otbr-host"
+  cluster = omni_cluster.homelab.name
+  weight  = 403
+  selector = {
+    cluster_machine = each.value
+  }
+  data = file("${local.patch_dir}/otbr-host.yaml")
+}
