@@ -95,9 +95,10 @@ automations during reconciliation.
 
 ### Matter Server
 
-Matter Server uses the official
-`ghcr.io/home-assistant-libs/python-matter-server` image pinned to a concrete
-version. It runs as one host-networked replica with
+Matter Server uses the official `ghcr.io/matter-js/matterjs-server` image,
+pinned to a concrete version and digest. Home Assistant Matter App 9.x uses
+this matter.js implementation exclusively; the former Python Matter Server was
+archived in June 2026. It runs as one host-networked replica with
 `dnsPolicy: ClusterFirstWithHostNet`, retained `/data` state, and a ClusterIP
 Service for its WebSocket API on TCP 5580. Home Assistant connects through
 `ws://matter-server.apps.svc.cluster.local:5580/ws`.
@@ -109,7 +110,10 @@ Home Assistant Core in Kubernetes and will be stated in the runbook.
 
 Matter Server does not own the Thread radio or the OTBR process. It reaches
 Matter-over-Thread devices through normal LAN IPv6 routing advertised by OTBR.
-No fake Matter nodes or lock definitions are created.
+Its built-in dashboard is retained for Matter diagnostics and configuration,
+but is reachable only through the ClusterIP or an operator port-forward; it
+does not receive an Ingress. No fake Matter nodes or lock definitions are
+created.
 
 ### Kubernetes OTBR
 
