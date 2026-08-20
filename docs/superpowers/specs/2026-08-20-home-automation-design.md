@@ -113,18 +113,21 @@ No fake Matter nodes or lock definitions are created.
 
 ### Kubernetes OTBR
 
-OTBR uses the upstream `openthread/border-router` image pinned to a released
-version or immutable digest. A small, separately pinned `socat` sidecar connects
-to the configured SLZB-MR3U Thread RCP TCP socket and exposes a pseudo-TTY in a
-shared in-memory volume. OTBR consumes that local pseudo-TTY through its Spinel
-radio URL. This isolates the TCP bridge from OTBR and avoids maintaining a
-custom image.
+OTBR uses `bnutzer/otbr-tcp`, pinned by its immutable source tag and container
+digest. This image packages upstream OTBR with `socat` in the same container and
+is specifically designed for network-attached Thread RCPs. SMLIGHT recommends
+it for container deployments outside Home Assistant OS. Keeping `socat` and
+OTBR in one container is necessary because a pseudo-TTY created in a normal
+sidecar belongs to that sidecar's private `devpts` mount and is not reliably
+usable by another container. The selected image avoids a custom homelab image
+while retaining the upstream OTBR implementation.
 
-The Thread ConfigMap exposes the SMLIGHT hostname, TCP port, full radio URL,
-baud rate, hardware flow-control choice, LAN infrastructure interface, REST
-listen address, and logging level. The initial TCP port is `0`; an init
-validator prevents OTBR from starting until a real value is supplied. Neither
-the MR3U's final port nor its complete RCP URL is guessed.
+The Thread ConfigMap exposes the SMLIGHT hostname, TCP port, local RCP TTY,
+baud rate, additional Spinel arguments such as hardware flow control, LAN
+infrastructure interface, REST listen address, and logging level. The initial
+TCP port is `0`; an init validator prevents OTBR from starting until a real
+value is supplied. Neither the MR3U's final port nor its complete RCP settings
+are guessed.
 
 OTBR runs with:
 
@@ -188,7 +191,7 @@ Zigbee2MQTT     -> mosquitto.apps.svc.cluster.local:1883
 Home Assistant -> matter-server.apps.svc.cluster.local:5580
 Home Assistant -> otbr.apps.svc.cluster.local:8081
 Zigbee2MQTT     -> SLZB-MR3U Zigbee TCP endpoint
-OTBR/socat      -> SLZB-MR3U Thread RCP TCP endpoint
+OTBR TCP bridge -> SLZB-MR3U Thread RCP TCP endpoint
 Matter Server   -> LAN/Thread devices over IPv6 and multicast
 Home Assistant -> ecobee cloud endpoints and local UniFi Protect controller
 ```
