@@ -1,0 +1,71 @@
+---
+# Anonymous Grafana access is intentionally limited to the internal router.
+# Strip identity headers so a LAN client cannot impersonate an Authentik user.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: grafana-strip-authentik-headers
+  namespace: monitoring
+spec:
+  headers:
+    customRequestHeaders:
+      X-authentik-email: ""
+      X-authentik-name: ""
+      X-authentik-groups: ""
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-internal
+  namespace: monitoring
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Observability
+    gethomepage.dev/name: Grafana
+    gethomepage.dev/description: Dashboards and alerting
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=grafana
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-strip-authentik-headers@kubernetescrd
+spec:
+  ingressClassName: traefik-internal
+  tls:
+    - hosts:
+        - grafana.int.harville.dev
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: grafana.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-grafana
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-public
+  namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts:
+        - grafana.harville.dev
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: grafana.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-grafana
+                port:
+                  number: 80
