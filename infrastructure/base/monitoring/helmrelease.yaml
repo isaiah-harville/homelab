@@ -57,6 +57,11 @@ spec:
     grafana:
       deploymentStrategy:
         type: Recreate
+      # Keep anonymous Viewer access deterministic for the LAN-only ingress.
+      # These environment variables override any stale generated grafana.ini.
+      env:
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       initChownData:
         enabled: false
       grafana.ini:
