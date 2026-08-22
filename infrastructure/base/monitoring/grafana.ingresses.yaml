@@ -13,6 +13,28 @@ spec:
       X-authentik-name: ""
       X-authentik-groups: ""
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: grafana-internal-login-redirect
+  namespace: monitoring
+spec:
+  redirectRegex:
+    regex: '^https://grafana\.int\.harville\.dev/login.*$'
+    replacement: https://grafana.int.harville.dev/dashboards
+    permanent: false
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: grafana-internal
+  namespace: monitoring
+spec:
+  chain:
+    middlewares:
+      - name: grafana-internal-login-redirect
+      - name: grafana-strip-authentik-headers
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -25,7 +47,8 @@ metadata:
     gethomepage.dev/description: Dashboards and alerting
     gethomepage.dev/pod-selector: app.kubernetes.io/name=grafana
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-strip-authentik-headers@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-internal@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
   ingressClassName: traefik-internal
   tls:
