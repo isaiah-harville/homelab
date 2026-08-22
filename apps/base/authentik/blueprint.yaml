@@ -225,14 +225,14 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           mode: forward_single
-          external_host: https://grafana.int.harville.dev
+          external_host: https://grafana.harville.dev
       - model: authentik_core.application
         identifiers:
           slug: grafana
         attrs:
           name: Grafana
           provider: !KeyOf grafana-provider
-          meta_launch_url: https://grafana.int.harville.dev
+          meta_launch_url: https://grafana.harville.dev
           policy_engine_mode: any
       - model: authentik_policies.policybinding
         identifiers:
