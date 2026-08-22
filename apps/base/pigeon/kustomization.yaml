@@ -1,7 +1,8 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: apps
 resources:
-  - gitrepository.yaml
+  - deployment.yaml
+  - service.yaml
   - ingress.yaml
-  - release.kustomization.yaml

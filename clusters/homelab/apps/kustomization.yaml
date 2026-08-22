@@ -28,7 +28,7 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/releases/swing-thoughts
-  - ../../../apps/releases/pigeon
+  - ../../../apps/base/pigeon
   - ../../../apps/releases/runway
   - ../../../apps/base/pigeon-relay
   - ../../../apps/releases/orion
