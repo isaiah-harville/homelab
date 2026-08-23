@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/isaiah-harville/pigeon/website
-  interval: 6h
+  interval: 5m
   exclusionList:
     - ^.*\.sig$
 ---
