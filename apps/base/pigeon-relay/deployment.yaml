@@ -18,7 +18,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: pigeon-relay
-          image: ghcr.io/isaiah-harville/pigeon/relay:v0.2.0 # {"$imagepolicy": "flux-system:pigeon-relay"}
+          image: ghcr.io/isaiah-harville/pigeon/relay:v0.3.0 # {"$imagepolicy": "flux-system:pigeon-relay"}
           imagePullPolicy: IfNotPresent
           env:
             - name: PIGEON_RELAY_ADDR
