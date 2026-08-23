@@ -19,7 +19,7 @@ spec:
       containers:
         - name: website
           image: ghcr.io/isaiah-harville/pigeon/website:v0.2.0 # {"$imagepolicy": "flux-system:pigeon-website"}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
