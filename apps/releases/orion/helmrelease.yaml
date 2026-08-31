@@ -19,7 +19,7 @@ spec:
   chart:
     spec:
       chart: orion
-      version: ">=0.1.1 <=5.0.0"
+      version: ">=0.2.0 <=5.0.0"
       sourceRef:
         kind: HelmRepository
         name: orion
@@ -29,7 +29,11 @@ spec:
     ingress:
       enabled: false
     persistence:
-      enabled: false
+      enabled: true
+      accessMode: ReadWriteMany
+      size: 15Gi
+    api:
+      replicaCount: 2
     gui:
       env:
         VITE_API_URL: https://orion.harville.dev/api
