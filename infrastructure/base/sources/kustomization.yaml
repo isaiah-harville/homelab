@@ -17,5 +17,6 @@ resources:
   - metrics-server.helmrepository.yaml
   - actions-runner-controller.helmrepository.yaml
   - community-charts.helmrepository.yaml
+  - orion.helmrepository.yaml
   - flux-operator.ocirepository.yaml
   - flux-operator-mcp.ocirepository.yaml
