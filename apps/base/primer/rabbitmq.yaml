@@ -1,0 +1,38 @@
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: primer-rabbitmq
+  namespace: apps
+spec:
+  # Primer declares its Celery queues as quorum queues, which replicate across
+  # a majority. Three nodes is the smallest cluster where that means anything.
+  replicas: 3
+  # Credentials come from the SOPS secret instead of the operator generating
+  # its own, so the same file also holds the broker URL Primer reads. An
+  # operator-generated secret has no AMQP URL in it, and nothing in Kustomize
+  # can compose one out of the separate host/user/password keys.
+  secretBackend:
+    externalSecret:
+      name: primer-rabbitmq
+  persistence:
+    storageClassName: longhorn
+    storage: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: primer-rabbitmq
+          topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalConfig: |
+      # A parse worker holding a whole PDF can be slow to acknowledge; the
+      # default 30-minute consumer timeout kills it mid-document.
+      consumer_timeout = 7200000

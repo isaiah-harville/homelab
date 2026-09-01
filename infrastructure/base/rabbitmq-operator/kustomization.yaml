@@ -1,0 +1,16 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Vendored from the upstream release rather than fetched at reconcile time, so
+# the manifest is reviewable in Git and Flux does not depend on GitHub being up.
+#
+#   https://github.com/rabbitmq/cluster-operator/releases/download/v2.22.5/cluster-operator.yml
+#
+# To upgrade: re-download that URL at the new tag, replace the file, and check
+# the diff for CRD or RBAC changes. The upstream manifest brings its own
+# rabbitmq-system namespace, so it is not listed in base/namespaces.
+#
+# Chosen over the Bitnami chart because Bitnami moved its free images to a
+# rolling latest-only repository, which cannot be pinned in GitOps.
+resources:
+  - cluster-operator.yaml
