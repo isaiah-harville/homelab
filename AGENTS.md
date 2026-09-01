@@ -284,17 +284,25 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **vllm** — OpenAI-compatible inference at `vllm.int.harville.dev` (API-key auth),
   wired into Open WebUI. See "GPU / vLLM" below.
 
-## GPU / vLLM (external, not a cluster node)
+## GPU / vLLM
 
-There are **no GPU nodes in the cluster** — the Talos cluster is CPU-only. GPU
-inference runs on a **standalone WSL box** (`harvi-desktop`, `10.1.10.20`) that is
-**not** a Talos node. vLLM runs on that box directly and serves an OpenAI-compatible
-API on `10.1.10.20:8000`.
+Two cluster nodes have a discrete NVIDIA GPU: `talos-h5j-x2r` (Quadro T1000
+Mobile) and `talos-6t5-q1d` (RTX A2000 Mobile), both control planes. Talos is
+immutable, so the driver arrives as the `nonfree-kmod-nvidia-production` and
+`nvidia-container-toolkit-production` system extensions plus
+`talos/omni/patches/nvidia-gpu.yaml`; the NVIDIA GPU operator
+(`infrastructure/base/nvidia-gpu-operator/`) runs with its driver and toolkit
+containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
+needs manual labelling. Details in `talos/README.md`.
 
-Inside the cluster, `apps/base/vllm-router` (the vLLM Production Stack router) points
-at that box as a **static external backend** and exposes it at `vllm.int.harville.dev`
-(so Open WebUI sees the model). Today it fronts a single backend (`qwen3-8b`); add
-more `--static-backends` entries to fan out to additional external endpoints.
+The old standalone WSL box (`harvi-desktop`, `10.1.10.20`) that used to serve
+vLLM is dead. `apps/base/vllm-router` still points at it as a static backend
+and must be repointed at an in-cluster vLLM once one is sized against the
+A2000's actual VRAM.
+
+Embeddings deliberately stay on CPU (`apps/base/primer/embeddings.yaml`,
+`bge-small-en-v1.5`): the model is 33M parameters, and keeping it off the card
+leaves the whole GPU for chat.
 
 ## Ops cheatsheet
 

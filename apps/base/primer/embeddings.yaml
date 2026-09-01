@@ -1,0 +1,94 @@
+---
+# Text Embeddings Inference, CPU-only and deliberately so: bge-small is 33M
+# parameters, and keeping it off the GPU leaves the whole card for chat.
+# Serves an OpenAI-compatible /v1/embeddings, which is all Primer asks for.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: primer-embeddings
+  namespace: apps
+  labels:
+    app: primer-embeddings
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: primer-embeddings
+  template:
+    metadata:
+      labels:
+        app: primer-embeddings
+    spec:
+      containers:
+        - name: tei
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+          args:
+            - --model-id
+            - BAAI/bge-small-en-v1.5
+            - --port
+            - "8080"
+            # Ingestion embeds in batches; the default of 1 leaves the CPU
+            # idle between requests from the index worker.
+            - --max-concurrent-requests
+            - "64"
+          env:
+            - name: HUGGINGFACE_HUB_CACHE
+              value: /data
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            # The model is downloaded on first start; give it room before the
+            # probe starts failing the pod.
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              memory: 3Gi
+          volumeMounts:
+            - name: model-cache
+              mountPath: /data
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: primer-embeddings-cache
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: primer-embeddings-cache
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: primer-embeddings
+  namespace: apps
+  labels:
+    app: primer-embeddings
+spec:
+  selector:
+    app: primer-embeddings
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
