@@ -19,10 +19,6 @@ spec:
   chart:
     spec:
       chart: primer
-      # Pre-1.0 and self-published: the version comes from the release tag, so
-      # the next one could be 0.1.x or 0.2.0. Tracking all of 0.x keeps the
-      # deployment from silently sitting on an old chart; a bad upgrade is
-      # caught by the rollback remediation above.
       version: ">=0.1.0 <1.0.0"
       sourceRef:
         kind: HelmRepository
