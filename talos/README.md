@@ -17,6 +17,7 @@ omni/patches/                Talos machine-config patches
   longhorn-disk.yaml           dedicated Longhorn disk (UserVolumeConfig) + mount
   longhorn-root-disk.yaml      mount Longhorn path on a shared system disk
   longhorn-storage-node.yaml   label nodes eligible for Longhorn disk creation
+  nvidia-gpu.yaml              load the NVIDIA kernel modules on GPU machines
 ```
 
 ## Bring-up
@@ -30,8 +31,10 @@ curl -X POST --data-binary @image/schematic.yaml \
 #   https://factory.talos.dev/image/<id>/<talos-version>/metal-amd64.iso
 ```
 
-Register the same two extensions in Omni (cluster machine config / Extensions)
-so Talos upgrades keep them.
+Register the extensions in Omni (cluster machine config / Extensions) so Talos
+upgrades keep them. `omni/cluster-template.yaml` carries the authoritative list
+per machine; the Terraform provider has no extensions attribute, so this is the
+one part of the machine layer Terraform does not manage.
 
 ### 2. Boot each node → it enrolls in Omni
 
@@ -52,6 +55,8 @@ omnictl get machines        # copy the UUIDs
 - On an intentionally selected single-disk storage node, apply
   `longhorn-root-disk.yaml` and `longhorn-storage-node.yaml` instead. Longhorn's
   reserved-space setting protects capacity needed by Talos and workloads.
+- Apply `nvidia-gpu.yaml` — plus the two NVIDIA extensions — only to machines
+  with a discrete NVIDIA GPU (see "GPU nodes" below).
 - Keep the same UUIDs and patch mapping in `../terraform/omni/locals.tf`.
 
 ### 4. Create or update the cluster
@@ -105,3 +110,44 @@ Talos + k8s upgrades are driven from Omni (rolling, one node at a time), which
 owns node lifecycle and health. To add a node: boot it off the image, add its
 UUID to the template, update `terraform/omni/locals.tf`, and apply through the
 chosen control path.
+
+## GPU nodes
+
+Two machines have a discrete NVIDIA GPU:
+
+| Machine UUID | Node | GPU |
+| --- | --- | --- |
+| `4c4c4544-0030-5910-805a-c6c04f503133` | talos-h5j-x2r | Quadro T1000 Mobile (Turing) |
+| `4c4c4544-0039-4210-8046-b8c04f314a33` | talos-6t5-q1d | RTX A2000 Mobile (Ampere) |
+
+Re-check after any hardware change:
+
+```bash
+talosctl get pcidevices | grep -i nvidia
+```
+
+Talos is immutable, so the driver cannot be compiled on the node. Each GPU
+machine instead gets:
+
+- `siderolabs/nonfree-kmod-nvidia-production` — proprietary kernel modules,
+  built per Talos release (`<driver>-<talos-version>`).
+- `siderolabs/nvidia-container-toolkit-production` — the container runtime
+  bits, versioned `<driver>-<toolkit-version>`.
+- `patches/nvidia-gpu.yaml` — loads the modules at boot.
+
+Both extensions must be bumped together, and both are pinned to the Talos
+version: **upgrading Talos requires a matching extension set**, or the modules
+fail to load. The `-lts` variants are the fallback if the production driver
+branch ever drops one of these GPUs.
+
+The Kubernetes half is the NVIDIA GPU operator, reconciled by Flux from
+`../infrastructure/base/nvidia-gpu-operator/` with the driver and toolkit
+containers disabled. Node Feature Discovery labels the GPU machines, so the
+operands place themselves and no node labelling is needed here.
+
+Verify:
+
+```bash
+talosctl -n <gpu-node-ip> read /proc/driver/nvidia/version
+kubectl get nodes -o custom-columns=NAME:.metadata.name,GPU:.status.allocatable.'nvidia\.com/gpu'
+```

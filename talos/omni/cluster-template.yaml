@@ -40,6 +40,11 @@ machines:
 # Dell laptop: OS on the NVMe, Longhorn on the 1TB HDD.
 kind: Machine
 name: 4c4c4544-0030-5910-805a-c6c04f503133
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
+  - siderolabs/nonfree-kmod-nvidia-production
+  - siderolabs/nvidia-container-toolkit-production
 patches:
   - name: install-nvme
     file: patches/install-type-nvme.yaml
@@ -47,10 +52,17 @@ patches:
     file: patches/longhorn-disk.yaml
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
+  - name: nvidia-gpu
+    file: patches/nvidia-gpu.yaml
 ---
 # Dell laptop: OS on the 256GB NVMe, Longhorn on the 1TB NVMe.
 kind: Machine
 name: 4c4c4544-0039-4210-8046-b8c04f314a33
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
+  - siderolabs/nonfree-kmod-nvidia-production
+  - siderolabs/nvidia-container-toolkit-production
 patches:
   - name: install-256
     file: patches/install-le400gb.yaml
@@ -58,11 +70,16 @@ patches:
     file: patches/longhorn-disk.yaml
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
+  - name: nvidia-gpu
+    file: patches/nvidia-gpu.yaml
 ---
 # Dell laptop: single 512GB NVMe. Share the system disk with Longhorn while
 # reserving 30% through Longhorn's default disk setting.
 kind: Machine
 name: 4c4c4544-0052-3610-8039-cac04f484733
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
@@ -79,6 +96,9 @@ patches:
 # isn't a mandatory replica member of every volume.
 kind: Machine
 name: 9ba21500-a881-11e5-ae5a-d524518f0c00
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
 patches:
   - name: install-single
     file: patches/install-ge100gb.yaml
@@ -90,6 +110,9 @@ patches:
 # dl380: two 1TB HP RAID logical volumes — OS on sda (by wwid), Longhorn on sdb.
 kind: Machine
 name: 30393137-3436-584d-5135-343430303635
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
 patches:
   - name: install-dl380
     file: patches/install-dl380.yaml
