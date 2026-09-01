@@ -3,3 +3,4 @@
 ## App runbooks
 
 - [Books and Kindle delivery](books.md)
+- [Primer](primer.md)

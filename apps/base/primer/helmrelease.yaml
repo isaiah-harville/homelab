@@ -1,0 +1,134 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: primer
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: primer
+      version: ">=0.1.0 <0.2.0"
+      sourceRef:
+        kind: HelmRepository
+        name: primer
+        namespace: flux-system
+  # The chart has no extraEnv, and `sourceStore.existingSecret` is declared in
+  # values.yaml but read by no template, so SeaweedFS credentials have no way
+  # in through values. Only Control and the two ingestion workers touch the
+  # source store; the other services never see these.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: primer-(control|worker-parse|worker-index)
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: primer-s3
+                      key: AWS_ACCESS_KEY_ID
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: primer-s3
+                      key: AWS_SECRET_ACCESS_KEY
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: AWS_ENDPOINT_URL
+                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
+              # botocore reads AWS_ENDPOINT_URL; fsspec builds its own storage
+              # options and only honours the FSSPEC_-prefixed form. Both are
+              # set because which one applies depends on the call path.
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: FSSPEC_S3_ENDPOINT_URL
+                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value:
+                  name: AWS_DEFAULT_REGION
+                  value: us-east-1
+  values:
+    fullnameOverride: primer
+
+    # oauth2-proxy against Authentik. Not the shared ForwardAuth middleware:
+    # Primer reads oauth2-proxy's X-Auth-Request-* headers specifically, and
+    # the proxy is what overwrites them from the verified session.
+    auth:
+      mode: oidc
+      oidc:
+        issuerUrl: https://auth.harville.dev/application/o/primer/
+        clientId: primer
+        existingSecret: primer-oidc
+        clientSecretKey: client-secret
+        cookieSecretKey: cookie-secret
+        scopes: openid profile email groups
+        emailDomains:
+          - "*"
+
+    # Ingress is a standalone manifest (public.ingress.yaml): the chart's
+    # header stripping is nginx-only and has to be re-expressed as a Traefik
+    # middleware, and the `apps` Kustomization patches only reach manifests
+    # it owns. See middleware.yaml — that rule is load-bearing.
+    ingress:
+      enabled: false
+
+    # CNPG generates this secret and puts a ready-made connection URI in it,
+    # so no password is managed by hand. Primer normalizes the scheme onto
+    # asyncpg itself, so the plain postgresql:// URI is what it wants.
+    postgresql:
+      existingSecret: primer-postgres-app
+      urlKey: uri
+
+    rabbitmq:
+      existingSecret: primer-rabbitmq
+      urlKey: broker-url
+
+    sourceStore:
+      url: s3://primer-sources
+
+    inference:
+      # Behind vllm-router rather than a vLLM service directly, so a second
+      # backend can be added without every consumer being rewired.
+      chat:
+        baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
+        model: qwen3-8b
+        existingSecret: vllm-api-key
+        apiKeyKey: VLLM_API_KEY
+      embeddings:
+        baseUrl: http://primer-embeddings.apps.svc.cluster.local:8080/v1
+        model: BAAI/bge-small-en-v1.5
+        # Must match the model. Changing either invalidates every stored
+        # vector and forces a full reindex.
+        dimensions: 384
+
+    vectorStore:
+      kind: pgvector
+
+    workers:
+      parse:
+        modelCache:
+          enabled: true
+          size: 4Gi
+          storageClass: longhorn

@@ -68,6 +68,7 @@ nav:
       - Reconciliation model: architecture/reconciliation.md
   - Repository:
       - Apps: apps/README.md
+      - Primer: apps/primer.md
       - Clusters: clusters/README.md
       - Homelab composition: clusters/homelab/README.md
       - Infrastructure: infrastructure/README.md

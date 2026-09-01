@@ -20,6 +20,8 @@ resources:
   - ./secrets/qbittorrent.yaml
   - ./secrets/media-auth.yaml
   - ./secrets/mlflow.yaml
+  - ./secrets/primer-rabbitmq.yaml
+  - ./secrets/primer-oidc.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
@@ -40,6 +42,7 @@ resources:
   - ../../../apps/base/vllm-router
   - ../../../apps/base/searxng
   - ../../../apps/base/mlflow
+  - ../../../apps/base/primer
 patches:
   - target:
       kind: Ingress
@@ -291,5 +294,19 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.values.global.podAnnotations.mlflow-oidc-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: primer-oidc
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.primer-oidc-mac
         options:
           create: true

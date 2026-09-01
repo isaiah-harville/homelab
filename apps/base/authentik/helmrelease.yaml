@@ -58,6 +58,11 @@ spec:
             secretKeyRef:
               name: mlflow-oidc
               key: OIDC_CLIENT_SECRET
+        - name: PRIMER_OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: primer-oidc
+              key: PRIMER_OIDC_CLIENT_SECRET
         - name: AUTHENTIK_POSTGRESQL__HOST
           value: authentik-postgres-rw.apps.svc.cluster.local
         - name: AUTHENTIK_POSTGRESQL__NAME

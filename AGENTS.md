@@ -122,7 +122,7 @@ instance.
 
 1. Create `apps/base/<name>/` with:
    - `helmrelease.yaml` — `HelmRelease` in namespace `apps`, with the standard
-     `install`/`upgrade` remediation block (copy from `apps/base/openwebui/helmrelease.yaml`).
+     `install`/`upgrade` remediation block (copy from `apps/base/primer/helmrelease.yaml`).
      Every HelmRelease sets both `install.crds` and `upgrade.crds` to
      `CreateReplace`; this lets Flux update CRDs shipped in a chart's `crds/`
      directory instead of Helm's default upgrade behavior silently skipping
@@ -180,8 +180,8 @@ external deployment.
   Authentik outage. Normal access still uses Headlamp's native Authentik OIDC flow
   and per-user Kubernetes RBAC; see `docs/operations/authentication.md`.
 - **Homepage** dashboard discovery: `gethomepage.dev/*` annotations on the Ingress.
-- Open WebUI only has the authenticated public route `webui.harville.dev`; do
-  not recreate the redundant `webui.int.harville.dev` route.
+- Primer only has the authenticated public route `primer.harville.dev`; do not
+  add an internal duplicate.
 
 ## TLS / certificates
 
@@ -274,15 +274,18 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **authentik** — HA SSO/OIDC/ForwardAuth provider. Git-managed blueprints own
   application/provider configuration; Omni/Dex remains independent.
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
-- **searxng** — self-hosted metasearch; backs Open WebUI's web-search
-  (`http://searxng:8080`, see `apps/base/openwebui`).
+- **searxng** — self-hosted metasearch (`http://searxng:8080`). Deployed but
+  currently unwired: it backed Open WebUI's web search, and Primer does not use
+  it.
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
 - **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **harbor** — container registry, public at `harbor.harville.dev`.
-- **vllm** — OpenAI-compatible inference at `vllm.int.harville.dev` (API-key auth),
-  wired into Open WebUI. See "GPU / vLLM" below.
+- **vllm-router** — OpenAI-compatible inference at `vllm.int.harville.dev`
+  (API-key auth), consumed by Primer. See "GPU / vLLM" below.
+- **primer** — cited answers over private document libraries, public at
+  `primer.harville.dev`. See `docs/apps/primer.md`.
 
 ## GPU / vLLM
 
