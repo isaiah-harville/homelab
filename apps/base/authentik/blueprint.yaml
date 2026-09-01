@@ -19,10 +19,6 @@ data:
         attrs:
           crontab: "*/2 * * * *"
       - model: authentik_core.group
-        id: open-webui-users
-        identifiers:
-          name: Open WebUI Users
-      - model: authentik_core.group
         id: seaweedfs-admins
         identifiers:
           name: SeaweedFS Admins
@@ -66,36 +62,6 @@ data:
         id: mlflow-admins
         identifiers:
           name: MLflow Admins
-      - model: authentik_providers_proxy.proxyprovider
-        id: webui-provider
-        identifiers:
-          name: Open WebUI Provider
-        attrs:
-          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
-          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-          mode: forward_single
-          external_host: https://webui.harville.dev
-      - model: authentik_core.application
-        identifiers:
-          slug: open-webui
-        attrs:
-          name: Open WebUI
-          provider: !KeyOf webui-provider
-          meta_launch_url: https://webui.harville.dev
-          policy_engine_mode: any
-      - model: authentik_policies.policybinding
-        identifiers:
-          target: !Find [authentik_core.application, [slug, open-webui]]
-          order: 0
-        attrs:
-          group: !KeyOf open-webui-users
-      - model: authentik_policies.policybinding
-        identifiers:
-          target: !Find [authentik_core.application, [slug, open-webui]]
-          order: 1
-        attrs:
-          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
         id: seaweedfs-provider
         identifiers:
