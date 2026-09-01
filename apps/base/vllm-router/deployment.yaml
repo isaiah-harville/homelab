@@ -27,9 +27,9 @@ spec:
             - --service-discovery
             - static
             - --static-backends
-            - http://10.1.10.20:8000
+            - http://vllm.apps.svc.cluster.local:8000
             - --static-models
-            - qwen3-8b
+            - qwen2.5-3b-instruct
             - --static-model-types
             - chat
             - --routing-logic

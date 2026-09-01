@@ -113,7 +113,7 @@ spec:
       # backend can be added without every consumer being rewired.
       chat:
         baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
-        model: qwen3-8b
+        model: qwen2.5-3b-instruct
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
       embeddings:

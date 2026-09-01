@@ -39,6 +39,7 @@ resources:
   - ../../../apps/base/lucerna
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor
+  - ../../../apps/base/vllm
   - ../../../apps/base/vllm-router
   - ../../../apps/base/searxng
   - ../../../apps/base/mlflow

@@ -298,10 +298,11 @@ immutable, so the driver arrives as the `nonfree-kmod-nvidia-production` and
 containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
 needs manual labelling. Details in `talos/README.md`.
 
-The old standalone WSL box (`harvi-desktop`, `10.1.10.20`) that used to serve
-vLLM is dead. `apps/base/vllm-router` still points at it as a static backend
-and must be repointed at an in-cluster vLLM once one is sized against the
-A2000's actual VRAM.
+Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`), which
+is what sizes everything: `apps/base/vllm` serves `Qwen2.5-3B-Instruct-AWQ` at
+4-bit with `--enforce-eager` and an fp8 KV cache, fronted by
+`apps/base/vllm-router`. The old WSL box (`harvi-desktop`, `10.1.10.20`) is
+gone. See `docs/operations/external-inference.md`.
 
 Embeddings deliberately stay on CPU (`apps/base/primer/embeddings.yaml`,
 `bge-small-en-v1.5`): the model is 33M parameters, and keeping it off the card

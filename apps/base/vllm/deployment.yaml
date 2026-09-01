@@ -1,0 +1,128 @@
+---
+# In-cluster inference, replacing the standalone WSL box that used to serve
+# this. Sizing is dictated by the hardware: both GPUs in the cluster are 4GB
+# laptop parts (PCI 0x25b8 is the 4GB RTX A2000 Mobile, not the 8GB 0x25ba;
+# 0x1fb9 is the Quadro T1000 Mobile). See docs/operations/external-inference.md.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+  namespace: apps
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  strategy:
+    # One GPU per node and the pod holds it for its whole life, so a surge
+    # replica would sit Pending forever waiting for a card that never frees.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.28.0
+          args:
+            - --model
+            - Qwen/Qwen2.5-3B-Instruct-AWQ
+            - --served-model-name
+            - qwen2.5-3b-instruct
+            - --port
+            - "8000"
+            # 4-bit AWQ: the FP16 weights alone would not fit, let alone the
+            # KV cache. Marlin is the fast AWQ kernel on Ampere and Turing.
+            - --quantization
+            - awq_marlin
+            # CUDA graphs cost roughly a gigabyte to capture, which on a 4GB
+            # card is the difference between a usable context window and none.
+            # Costs throughput, buys context.
+            - --enforce-eager
+            - --gpu-memory-utilization
+            - "0.92"
+            # Chosen to fit the remaining VRAM once weights are resident, with
+            # fp8 KV halving the per-token cost. Primer stuffs retrieved
+            # passages into the prompt, so context is what matters most here.
+            - --max-model-len
+            - "16384"
+            - --kv-cache-dtype
+            - fp8
+            # A handful of concurrent requests is all this card can serve, and
+            # capping it keeps the KV cache from being the thing that OOMs.
+            - --max-num-seqs
+            - "4"
+          env:
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            # First start downloads ~2GB of weights and then loads them.
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: "1"
+              memory: 6Gi
+            limits:
+              # The device plugin hands out whole GPUs; there is no fractional
+              # request, so this pod owns the card it lands on.
+              nvidia.com/gpu: 1
+              memory: 12Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-models
+        - name: shm
+          # vLLM's default 64MB /dev/shm is not enough for its worker IPC.
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-models
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm
+  namespace: apps
+  labels:
+    app: vllm
+spec:
+  selector:
+    app: vllm
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

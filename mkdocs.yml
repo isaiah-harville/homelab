@@ -82,7 +82,7 @@ nav:
       - Authentication: operations/authentication.md
       - Storage: operations/storage.md
       - Monitoring: operations/monitoring.md
-      - External inference: operations/external-inference.md
+      - Inference: operations/external-inference.md
   - Decisions:
       - Terraform state backend: decisions/terraform-state.md
       - Metrics Server TLS: decisions/metrics-server-tls.md
