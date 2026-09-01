@@ -19,56 +19,15 @@ spec:
   chart:
     spec:
       chart: primer
-      version: ">=0.1.0 <0.2.0"
+      # Pre-1.0 and self-published: the version comes from the release tag, so
+      # the next one could be 0.1.x or 0.2.0. Tracking all of 0.x keeps the
+      # deployment from silently sitting on an old chart; a bad upgrade is
+      # caught by the rollback remediation above.
+      version: ">=0.1.0 <1.0.0"
       sourceRef:
         kind: HelmRepository
         name: primer
         namespace: flux-system
-  # The chart has no extraEnv, and `sourceStore.existingSecret` is declared in
-  # values.yaml but read by no template, so SeaweedFS credentials have no way
-  # in through values. Only Control and the two ingestion workers touch the
-  # source store; the other services never see these.
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: Deployment
-              name: primer-(control|worker-parse|worker-index)
-            patch: |
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: primer-s3
-                      key: AWS_ACCESS_KEY_ID
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: primer-s3
-                      key: AWS_SECRET_ACCESS_KEY
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: AWS_ENDPOINT_URL
-                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
-              # botocore reads AWS_ENDPOINT_URL; fsspec builds its own storage
-              # options and only honours the FSSPEC_-prefixed form. Both are
-              # set because which one applies depends on the call path.
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: FSSPEC_S3_ENDPOINT_URL
-                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
-              - op: add
-                path: /spec/template/spec/containers/0/env/-
-                value:
-                  name: AWS_DEFAULT_REGION
-                  value: us-east-1
   values:
     fullnameOverride: primer
 
@@ -107,6 +66,11 @@ spec:
 
     sourceStore:
       url: s3://primer-sources
+      # Mounted whole into Control and the two ingestion workers - the only
+      # services that open a source object - so this secret carries the
+      # endpoint and region alongside the credentials. SeaweedFS is not AWS,
+      # and fsspec needs FSSPEC_S3_ENDPOINT_URL to find it.
+      existingSecret: primer-s3
 
     inference:
       # Behind vllm-router rather than a vLLM service directly, so a second

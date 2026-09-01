@@ -58,9 +58,18 @@ type: Opaque
 stringData:
   AWS_ACCESS_KEY_ID: <the key you just added>
   AWS_SECRET_ACCESS_KEY: <the secret you just added>
+  # SeaweedFS is not AWS, and this is how fsspec is told where the bucket is.
+  FSSPEC_S3_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+  AWS_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+  AWS_DEFAULT_REGION: us-east-1
 EOF
 sops -e -i clusters/homelab/apps/secrets/primer-s3.yaml
 ```
+
+The chart mounts this secret whole into Control and the two ingestion workers
+— the only services that open a source object — so every key in it becomes an
+environment variable there. That is why the endpoint and region live in the
+secret rather than in the `HelmRelease`.
 
 Add it to `clusters/homelab/apps/kustomization.yaml` beside the other Primer
 secrets, and create the bucket if SeaweedFS does not create it on first write.
@@ -81,19 +90,13 @@ file. Change the password in one place and both follow.
 The Postgres URL is not managed here at all — CNPG generates
 `primer-postgres-app` with a ready-made `uri` key, and the chart reads that.
 
-## Known gaps
+## Chart version
 
-**Primer does not depend on `s3fs`.** `packages/storage` uses
-`fsspec.core.url_to_fs`, but neither `s3fs` nor any S3 backend is in Primer's
-dependency tree, so an `s3://` source store raises `ImportError` on the first
-upload. Chat works; ingestion does not. Fix is a dependency addition and an
-image rebuild in the Primer repository.
-
-**The chart cannot pass S3 credentials.** `sourceStore.existingSecret` is
-declared in `values.yaml` but read by no template, and there is no `extraEnv`.
-The `HelmRelease` injects `AWS_*` and `FSSPEC_S3_ENDPOINT_URL` with a Flux
-post-renderer into Control and the two ingestion workers — the only services
-that touch the store. An `extraEnv` in the chart would retire that patch.
+The chart is pre-1.0 and published from this repository's own release tags, so
+the `HelmRelease` tracks all of `0.x` rather than a single minor. A chart that
+fails to install is rolled back by the release's own remediation, which is a
+better failure than the deployment quietly sitting on a stale version because
+the next tag happened to bump the minor.
 
 ## Embedding dimensions
 
