@@ -34,48 +34,31 @@ Every Primer service is `ClusterIP`, and the only ingress path is the proxy.
 
 ## Manual steps before first reconcile
 
-Two things cannot be created from this repository.
+**Authentik group membership.** The blueprint creates a **Primer Users**
+group; add the intended people to it. Authentik admins retain access.
 
-**1. The SeaweedFS identity and bucket.** The source store needs credentials of
-its own; the S3 identities live in the encrypted `seaweedfs-s3-config` secret.
+## The source store
+
+Primer's source objects live in the SeaweedFS bucket `primer-sources`, reached
+with an identity of its own. Both halves are in this repository:
+`seaweedfs-s3-config` carries a `primer` identity scoped to
+Read/Write/List/Tagging on that bucket, and `primer-s3.yaml` carries the
+matching credentials.
+
+The chart mounts `primer-s3` whole into Control and the two ingestion workers
+— the only services that open a source object — so every key in it becomes an
+environment variable there. That is why the endpoint and region live in the
+secret rather than in the `HelmRelease`. SeaweedFS is not AWS, and
+`FSSPEC_S3_ENDPOINT_URL` is how fsspec is told where the bucket is.
+
+Rotating the credential means editing both files together:
 
 ```bash
 sops clusters/homelab/apps/secrets/seaweedfs-s3-config.yaml
-# add an identity "primer" with Read/Write/List on the primer-sources bucket
+sops clusters/homelab/apps/secrets/primer-s3.yaml
 ```
 
-Then create the matching credential secret and encrypt it:
-
-```bash
-cat > clusters/homelab/apps/secrets/primer-s3.yaml <<'EOF'
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: primer-s3
-  namespace: apps
-type: Opaque
-stringData:
-  AWS_ACCESS_KEY_ID: <the key you just added>
-  AWS_SECRET_ACCESS_KEY: <the secret you just added>
-  # SeaweedFS is not AWS, and this is how fsspec is told where the bucket is.
-  FSSPEC_S3_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
-  AWS_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
-  AWS_DEFAULT_REGION: us-east-1
-EOF
-sops -e -i clusters/homelab/apps/secrets/primer-s3.yaml
-```
-
-The chart mounts this secret whole into Control and the two ingestion workers
-— the only services that open a source object — so every key in it becomes an
-environment variable there. That is why the endpoint and region live in the
-secret rather than in the `HelmRelease`.
-
-Add it to `clusters/homelab/apps/kustomization.yaml` beside the other Primer
-secrets, and create the bucket if SeaweedFS does not create it on first write.
-
-**2. Authentik group membership.** The blueprint creates a **Primer Users**
-group; add the intended people to it. Authentik admins retain access.
+SeaweedFS creates the bucket on first write.
 
 ## Credentials this repository does manage
 

@@ -22,6 +22,7 @@ resources:
   - ./secrets/mlflow.yaml
   - ./secrets/primer-rabbitmq.yaml
   - ./secrets/primer-oidc.yaml
+  - ./secrets/primer-s3.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
