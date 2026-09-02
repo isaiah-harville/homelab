@@ -48,6 +48,12 @@ spec:
     # it owns. See middleware.yaml — that rule is load-bearing.
     ingress:
       enabled: false
+      # oauth2-proxy builds --redirect-url from this even with the ingress
+      # resource itself disabled - it has no other way to know its own
+      # public hostname. Leaving it at the chart's placeholder default
+      # (primer.example.com) breaks every login with a redirect_uri
+      # mismatch, since Authentik's provider is pinned to the real host.
+      host: primer.harville.dev
 
     # CNPG generates this secret and puts a ready-made connection URI in it,
     # so no password is managed by hand. Primer normalizes the scheme onto
@@ -92,3 +98,13 @@ spec:
           enabled: true
           size: 4Gi
           storageClass: longhorn
+      # The chart's celery command sets no --concurrency, so Celery falls
+      # back to the node's CPU count rather than anything the container is
+      # actually sized for - 16 prefork workers on this node against a 2Gi
+      # default limit, which OOMs on startup before doing any work. Belongs
+      # in the chart (a concurrency knob wired to --concurrency); this is
+      # the values-only workaround until that lands.
+      index:
+        resources:
+          requests: { cpu: 100m, memory: 1Gi }
+          limits: { memory: 4Gi }
