@@ -4,6 +4,8 @@ terraform {
   required_providers {
     omni = {
       source = "siderolabs/omni"
+      # Pin the alpha provider and review upgrades manually.
+      version = "0.1.0-alpha.3"
     }
   }
 
