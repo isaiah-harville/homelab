@@ -77,9 +77,9 @@ resource "omni_config_patch" "longhorn_storage_node" {
   data = file("${local.patch_dir}/longhorn-storage-node.yaml")
 }
 
-# Load the NVIDIA kernel modules on GPU machines. The matching system
-# extensions are not managed here — the provider has no extensions attribute,
-# so they live in talos/omni/cluster-template.yaml and Omni.
+# Load the NVIDIA kernel modules on GPU machines. The modules themselves come
+# from the system extensions in extensions.tf; this patch is inert without
+# them.
 resource "omni_config_patch" "nvidia_gpu" {
   for_each = toset(local.gpu_nodes)
 

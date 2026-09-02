@@ -21,6 +21,7 @@ merge to `main`.
 | `locals.tf`    | Machine assignments, versions, and per-machine patch map |
 | `cluster.tf`   | `omni_cluster`, control-plane + workers machine sets, node assignments |
 | `patches.tf`   | `omni_config_patch` per the template (reads `../../talos/omni/patches/*.yaml`) |
+| `extensions.tf`| `omni_machine_extensions` — the cluster-wide base set, narrowed for the GPU nodes |
 
 ## How it runs (CI)
 

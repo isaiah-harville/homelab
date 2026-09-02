@@ -43,4 +43,13 @@ locals {
     "4c4c4544-0030-5910-805a-c6c04f503133",
     "4c4c4544-0039-4210-8046-b8c04f314a33",
   ]
+
+  base_extensions = [
+    "siderolabs/iscsi-tools",
+    "siderolabs/util-linux-tools",
+  ]
+  gpu_extensions = concat(local.base_extensions, [
+    "siderolabs/nonfree-kmod-nvidia-production",
+    "siderolabs/nvidia-container-toolkit-production",
+  ])
 }

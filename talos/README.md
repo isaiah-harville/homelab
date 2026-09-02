@@ -31,10 +31,14 @@ curl -X POST --data-binary @image/schematic.yaml \
 #   https://factory.talos.dev/image/<id>/<talos-version>/metal-amd64.iso
 ```
 
-Register the extensions in Omni (cluster machine config / Extensions) so Talos
-upgrades keep them. `omni/cluster-template.yaml` carries the authoritative list
-per machine; the Terraform provider has no extensions attribute, so this is the
-one part of the machine layer Terraform does not manage.
+Extensions are applied through Terraform, like the rest of the machine layer:
+`omni_machine_extensions` in `../terraform/omni/extensions.tf` sets a
+cluster-wide base list and narrows it per machine for the GPU nodes. Omni
+reconciles a change as an upgrade, so the machine reboots onto a schematic
+carrying them and later Talos upgrades keep them.
+
+`omni/cluster-template.yaml` repeats the same list per machine for the manual
+fallback path; keep the two in step.
 
 ### 2. Boot each node → it enrolls in Omni
 
@@ -56,7 +60,8 @@ omnictl get machines        # copy the UUIDs
   `longhorn-root-disk.yaml` and `longhorn-storage-node.yaml` instead. Longhorn's
   reserved-space setting protects capacity needed by Talos and workloads.
 - Apply `nvidia-gpu.yaml` — plus the two NVIDIA extensions — only to machines
-  with a discrete NVIDIA GPU (see "GPU nodes" below).
+  with a discrete NVIDIA GPU (see "GPU nodes" below). The patch only modprobes
+  the modules; without the extensions that ship them it does nothing.
 - Keep the same UUIDs and patch mapping in `../terraform/omni/locals.tf`.
 
 ### 4. Create or update the cluster
