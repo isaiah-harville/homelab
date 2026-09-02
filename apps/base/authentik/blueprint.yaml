@@ -66,6 +66,20 @@ data:
         id: mlflow-admins
         identifiers:
           name: MLflow Admins
+      # KeyOf only resolves backwards - an entry can reference one that
+      # came before it in the document, never one that comes later - so this
+      # has to be defined before primer-provider, its first use, rather than
+      # grouped with the property mappings further down where every other
+      # provider using it already comes after it.
+      - model: authentik_providers_oauth2.scopemapping
+        id: groups-scope
+        identifiers:
+          name: Homelab groups
+        attrs:
+          scope_name: groups
+          description: Kubernetes RBAC group membership
+          expression: |
+            return {"groups": [group.name for group in request.user.ak_groups.all()]}
       # Primer authenticates through its own oauth2-proxy rather than the
       # ForwardAuth middleware: it reads oauth2-proxy's X-Auth-Request-*
       # headers, which only that proxy sets from a verified session.
@@ -369,15 +383,6 @@ data:
           order: 0
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
-      - model: authentik_providers_oauth2.scopemapping
-        id: groups-scope
-        identifiers:
-          name: Homelab groups
-        attrs:
-          scope_name: groups
-          description: Kubernetes RBAC group membership
-          expression: |
-            return {"groups": [group.name for group in request.user.ak_groups.all()]}
       - model: authentik_providers_oauth2.oauth2provider
         id: shelfmark-provider
         identifiers:
@@ -802,7 +807,6 @@ data:
             authentik_host: https://auth.harville.dev
             authentik_host_browser: https://auth.harville.dev
           providers:
-            - !KeyOf webui-provider
             - !KeyOf seaweedfs-provider
             - !KeyOf openvitae-provider
             - !KeyOf flux-provider
