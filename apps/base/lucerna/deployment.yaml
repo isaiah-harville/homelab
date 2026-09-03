@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: docker.io/library/nginx:1.31.4-alpine # {"$imagepolicy": "flux-system:nginx"}
+          image: docker.io/library/nginx:1.31.5-alpine # {"$imagepolicy": "flux-system:nginx"}
           ports:
             - containerPort: 80
               name: http
