@@ -78,7 +78,7 @@ spec:
               mountPath: /run/secrets/books-smtp
               readOnly: true
         - name: shelfmark
-          image: ghcr.io/calibrain/shelfmark:v1.3.14 # {"$imagepolicy": "flux-system:shelfmark"}
+          image: ghcr.io/calibrain/shelfmark:v1.3.15 # {"$imagepolicy": "flux-system:shelfmark"}
           imagePullPolicy: IfNotPresent
           env:
             - name: PUID
