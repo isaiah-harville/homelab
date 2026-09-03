@@ -24,6 +24,17 @@ spec:
       labels:
         app: vllm
     spec:
+      # Kubernetes injects a Docker-link environment variable for every
+      # Service in the namespace, so the Service named `vllm` sets
+      # VLLM_PORT=tcp://10.x.x.x:8000 - and vLLM reads VLLM_PORT as its own
+      # configuration. It refuses to start, having been handed a URI where it
+      # expected a port number.
+      #
+      # Turning the links off is the fix rather than renaming the Service:
+      # the name is what the router and every consumer address, and the next
+      # component whose name collides with one of its own variables would hit
+      # exactly this again.
+      enableServiceLinks: false
       containers:
         - name: vllm
           image: vllm/vllm-openai:v0.28.0
