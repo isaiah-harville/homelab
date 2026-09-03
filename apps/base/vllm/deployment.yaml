@@ -44,13 +44,17 @@ spec:
             - --enforce-eager
             - --gpu-memory-utilization
             - "0.92"
-            # Chosen to fit the remaining VRAM once weights are resident, with
-            # fp8 KV halving the per-token cost. Primer stuffs retrieved
-            # passages into the prompt, so context is what matters most here.
+            # Chosen to fit the remaining VRAM once weights are resident.
+            # Primer stuffs retrieved passages into the prompt, so context is
+            # what matters most here.
             - --max-model-len
             - "16384"
+            # NOT fp8. Native FP8 needs SM89+ (Ada) and both cards are older:
+            # the A2000 Mobile is SM86, the T1000 is SM75, so the Triton
+            # attention backend refuses to start. This doubles the per-token
+            # KV cost; --max-model-len is the knob that pays for it.
             - --kv-cache-dtype
-            - fp8
+            - auto
             # A handful of concurrent requests is all this card can serve, and
             # capping it keeps the KV cache from being the thing that OOMs.
             - --max-num-seqs
