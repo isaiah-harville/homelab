@@ -42,6 +42,7 @@ resources:
   - ../../../apps/base/harbor
   - ../../../apps/base/vllm
   - ../../../apps/base/vllm-router
+  - ../../../apps/base/llama-cpp
   - ../../../apps/base/searxng
   - ../../../apps/base/mlflow
   - ../../../apps/base/primer

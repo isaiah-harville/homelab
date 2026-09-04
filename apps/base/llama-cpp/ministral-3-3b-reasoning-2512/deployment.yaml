@@ -1,0 +1,141 @@
+---
+# Ministral 3 3B Reasoning (2512), on the Quadro T1000.
+#
+# The same base model post-trained to think before answering, which is worth
+# a second card for the questions where the first answer is usually wrong -
+# maths, code, anything multi-step. It emits its reasoning in <think> blocks;
+# Primer splits those out and shows them under a disclosure rather than in
+# the answer, so no prompt-side suppression is wanted here.
+#
+# Deployed at zero replicas, on purpose. There are exactly two GPUs in this
+# cluster and vLLM currently holds this one (it schedules onto the T1000,
+# leaving the A2000 free for the instruct model above). Scaling this to 1
+# while vLLM is deployed produces a Pending pod waiting on a card that will
+# never free, not a second model.
+#
+# To bring it up: drop `../../../apps/base/vllm` from
+# clusters/homelab/apps/kustomization.yaml, and set replicas to 1 here.
+# Primer no longer needs the router to reach more than one endpoint - it
+# holds several providers itself - so the router goes with it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-ministral-3b-reasoning
+  namespace: apps
+  labels:
+    app: llama-ministral-3b-reasoning
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-ministral-3b-reasoning
+  template:
+    metadata:
+      labels:
+        app: llama-ministral-3b-reasoning
+    spec:
+      enableServiceLinks: false
+      # Pinned to the T1000 by the card rather than the node name. Note this
+      # is Turing (SM75) - old enough that runtimes needing SM89 features
+      # refuse to start on it, which is a large part of why llama.cpp is
+      # what runs here.
+      nodeSelector:
+        nvidia.com/gpu.product: Quadro-T1000
+      containers:
+        - name: llama-server
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda
+          args:
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8080"
+            - -hf
+            - unsloth/Ministral-3-3B-Reasoning-2512-GGUF:Q4_K_M
+            # Vision weights this deployment never uses; see the instruct
+            # deployment for the reasoning.
+            - --no-mmproj
+            - --alias
+            - ministral-3-3b-reasoning
+            - -ngl
+            - "all"
+            - -c
+            - "16384"
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            # One slot, unlike the instruct model. A reasoning model spends a
+            # long stretch of tokens thinking before the answer starts, so
+            # the whole context is better given to one request than halved
+            # between two that both then run out of room mid-thought.
+            - -np
+            - "1"
+            - --metrics
+          env:
+            - name: LLAMA_CACHE
+              value: /models
+            - name: LLAMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-api-key
+                  key: VLLM_API_KEY
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 90
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              nvidia.com/gpu: 1
+              memory: 8Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: llama-ministral-3b-reasoning-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-ministral-3b-reasoning-models
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-ministral-3b-reasoning
+  namespace: apps
+  labels:
+    app: llama-ministral-3b-reasoning
+spec:
+  selector:
+    app: llama-ministral-3b-reasoning
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

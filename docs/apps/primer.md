@@ -14,6 +14,7 @@ in `apps/base/primer/` exists to supply those:
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
 | Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `bge-small-en-v1.5` |
 | Chat model | `vllm-router` in `apps/base/vllm-router` |
+| GGUF-only models | `apps/base/llama-cpp/<model>` — one llama.cpp deployment per model |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
 
@@ -80,6 +81,29 @@ the `HelmRelease` tracks all of `0.x` rather than a single minor. A chart that
 fails to install is rolled back by the release's own remediation, which is a
 better failure than the deployment quietly sitting on a stale version because
 the next tag happened to bump the minor.
+
+## GPU capacity
+
+There are two GPUs in this cluster and both are 4GB laptop parts: an RTX A2000
+Laptop (Ampere, SM86) and a Quadro T1000 (Turing, SM75). The device plugin hands
+out whole cards, so **two models is the hard ceiling** — a third GPU deployment
+does not run slowly, it sits `Pending` forever.
+
+That ceiling is why `apps/base/llama-cpp/ministral-3-3b-reasoning-2512` is
+committed at `replicas: 0`. vLLM currently holds the T1000, leaving the A2000
+for the instruct model. Bringing the reasoning model up means removing
+`apps/base/vllm` (and `vllm-router` with it) from
+`clusters/homelab/apps/kustomization.yaml` first.
+
+Two consequences of the hardware are worth knowing before changing a model:
+
+- **SM75/SM86 rule out fp8.** Native FP8 needs SM89 or newer, so vLLM cannot
+  use an fp8 KV cache here. llama.cpp's `q8_0` KV cache has no such
+  requirement, which is what lets the Ministral deployments hold a 16k context
+  beside their weights on 4GB.
+- **The quantization has to exist.** vLLM needs a published AWQ or GPTQ.
+  Ministral 3 `-2512` shipped GGUF only, and at bf16 its 3.85B parameters need
+  roughly 7.7GB — which is why it runs under llama.cpp rather than vLLM.
 
 ## Embedding dimensions
 
