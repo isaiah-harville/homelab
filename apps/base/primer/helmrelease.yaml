@@ -75,11 +75,18 @@ spec:
       existingSecret: primer-s3
 
     inference:
-      # Behind vllm-router rather than a vLLM service directly, so a second
-      # backend can be added without every consumer being rewired.
+      # Straight at the model server, not through vllm-router. The router
+      # existed so that a second backend could be added without rewiring
+      # every consumer; Primer now holds several providers itself and offers
+      # them in the model picker, so for this consumer the router is a hop
+      # that can only add a way for chat to break.
+      #
+      # This is the deployment default, not the only choice available - the
+      # reasoning model on the T1000, and anything third-party, are added
+      # from Primer's own settings page.
       chat:
-        baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
-        model: qwen2.5-3b-instruct
+        baseUrl: http://llama-ministral-3b-instruct.apps.svc.cluster.local:8080/v1
+        model: ministral-3-3b-instruct
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
       embeddings:

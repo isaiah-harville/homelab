@@ -13,8 +13,8 @@ in `apps/base/primer/` exists to supply those:
 | PostgreSQL + pgvector | `postgres.yaml` — CNPG cluster, pgvector as an ImageVolume extension |
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
 | Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `bge-small-en-v1.5` |
-| Chat model | `vllm-router` in `apps/base/vllm-router` |
-| GGUF-only models | `apps/base/llama-cpp/<model>` — one llama.cpp deployment per model |
+| Chat model | `apps/base/llama-cpp/ministral-3-3b-instruct-2512` — addressed directly |
+| Other models | `apps/base/llama-cpp/<model>`, one deployment each; added from Primer's settings page |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
 
@@ -89,11 +89,15 @@ Laptop (Ampere, SM86) and a Quadro T1000 (Turing, SM75). The device plugin hands
 out whole cards, so **two models is the hard ceiling** — a third GPU deployment
 does not run slowly, it sits `Pending` forever.
 
-That ceiling is why `apps/base/llama-cpp/ministral-3-3b-reasoning-2512` is
-committed at `replicas: 0`. vLLM currently holds the T1000, leaving the A2000
-for the instruct model. Bringing the reasoning model up means removing
-`apps/base/vllm` (and `vllm-router` with it) from
-`clusters/homelab/apps/kustomization.yaml` first.
+Both cards are therefore spoken for: the instruct model has the A2000 and the
+reasoning model has the T1000. vLLM is scaled to zero — it held the T1000, and
+Ministral 3 replaces what it served. Its manifest is kept rather than deleted,
+because it is the record of what running vLLM on a 4GB SM75/SM86 card actually
+requires.
+
+Adding a third model means taking a card from one of these two, or reaching
+something outside the cluster. Primer supports both: extra providers, hosted or
+self-hosted, are configured from its settings page rather than from this repo.
 
 Two consequences of the hardware are worth knowing before changing a model:
 

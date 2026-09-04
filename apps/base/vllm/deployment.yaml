@@ -11,7 +11,7 @@ metadata:
   labels:
     app: vllm
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     # One GPU per node and the pod holds it for its whole life, so a surge
     # replica would sit Pending forever waiting for a card that never frees.

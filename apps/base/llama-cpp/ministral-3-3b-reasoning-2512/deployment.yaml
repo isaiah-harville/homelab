@@ -7,16 +7,10 @@
 # Primer splits those out and shows them under a disclosure rather than in
 # the answer, so no prompt-side suppression is wanted here.
 #
-# Deployed at zero replicas, on purpose. There are exactly two GPUs in this
-# cluster and vLLM currently holds this one (it schedules onto the T1000,
-# leaving the A2000 free for the instruct model above). Scaling this to 1
-# while vLLM is deployed produces a Pending pod waiting on a card that will
-# never free, not a second model.
-#
-# To bring it up: drop `../../../apps/base/vllm` from
-# clusters/homelab/apps/kustomization.yaml, and set replicas to 1 here.
-# Primer no longer needs the router to reach more than one endpoint - it
-# holds several providers itself - so the router goes with it.
+# This is the second of the cluster's two GPUs, and there is no third: the
+# device plugin hands out whole cards, so this deployment and the instruct
+# one above are the entire GPU budget. vLLM used to hold this card and is now
+# scaled to zero, which is what freed it.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +19,7 @@ metadata:
   labels:
     app: llama-ministral-3b-reasoning
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
