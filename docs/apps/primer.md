@@ -13,8 +13,7 @@ in `apps/base/primer/` exists to supply those:
 | PostgreSQL + pgvector | `postgres.yaml` — CNPG cluster, pgvector as an ImageVolume extension |
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
 | Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `bge-small-en-v1.5` |
-| Chat model | `apps/base/llama-cpp/ministral-3-3b-instruct-2512` — addressed directly |
-| Other models | `apps/base/llama-cpp/<model>`, one deployment each; added from Primer's settings page |
+| Chat models | `apps/base/llama-cpp/<model>`, one llama.cpp deployment each, fronted by `vllm-router` |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
 

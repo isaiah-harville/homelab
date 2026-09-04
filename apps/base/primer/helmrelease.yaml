@@ -75,17 +75,16 @@ spec:
       existingSecret: primer-s3
 
     inference:
-      # Straight at the model server, not through vllm-router. The router
-      # existed so that a second backend could be added without rewiring
-      # every consumer; Primer now holds several providers itself and offers
-      # them in the model picker, so for this consumer the router is a hop
-      # that can only add a way for chat to break.
+      # Behind vllm-router rather than a model server directly, so a backend
+      # can be added or replaced without rewiring every consumer. The name is
+      # now historical - what it fronts is llama.cpp, not vLLM.
       #
-      # This is the deployment default, not the only choice available - the
-      # reasoning model on the T1000, and anything third-party, are added
-      # from Primer's own settings page.
+      # The router fans out across both deployments, so this one URL offers
+      # the instruct model and the reasoning model both, and `model` below is
+      # only which of them a new conversation starts on. Anything outside the
+      # cluster is added from Primer's own settings page instead.
       chat:
-        baseUrl: http://llama-ministral-3b-instruct.apps.svc.cluster.local:8080/v1
+        baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
         model: ministral-3-3b-instruct
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
