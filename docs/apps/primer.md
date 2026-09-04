@@ -12,7 +12,7 @@ in `apps/base/primer/` exists to supply those:
 | --- | --- |
 | PostgreSQL + pgvector | `postgres.yaml` — CNPG cluster, pgvector as an ImageVolume extension |
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
-| Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `bge-small-en-v1.5` |
+| Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `Qwen3-Embedding-0.6B` |
 | Chat models | `apps/base/llama-cpp/<model>`, one llama.cpp deployment each, fronted by `vllm-router` |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
@@ -110,7 +110,24 @@ Two consequences of the hardware are worth knowing before changing a model:
 
 ## Embedding dimensions
 
-`bge-small-en-v1.5` is 384-dimensional, and the `HelmRelease` pins
-`inference.embeddings.dimensions: 384` to match. Changing the model without
-changing this number, or changing the number at all, invalidates every stored
-vector and requires a full reindex.
+`Qwen3-Embedding-0.6B` is 1024-dimensional, and the `HelmRelease` pins
+`inference.embeddings.dimensions: 1024` to match.
+
+Changing the model, or the number, is not a config change. Retrieval builds
+its pgvector store with `recreate_table=False`, so the `vectors.chunks`
+column keeps whatever width it was created with and the new vectors simply do
+not fit it. A model change is therefore:
+
+1. Change `inference.embeddings.model` and `dimensions` together.
+2. `DROP TABLE vectors.chunks` — the Haystack integration recreates it at the
+   new width on first use.
+3. Rebuild every document: `POST /api/v1/documents/{id}/reindex`, which
+   builds a new generation per document.
+
+Search returns nothing between steps 2 and 3. There is no library-wide
+reindex endpoint yet, so step 3 is per document.
+
+The model runs on CPU because both GPUs are held by the chat models, and it
+is roughly 18x the parameters of the `bge-small-en-v1.5` it replaced — so
+ingestion throughput, not search latency, is what pays for the better
+retrieval.

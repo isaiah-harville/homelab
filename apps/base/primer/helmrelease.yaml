@@ -90,10 +90,12 @@ spec:
         apiKeyKey: VLLM_API_KEY
       embeddings:
         baseUrl: http://primer-embeddings.apps.svc.cluster.local:8080/v1
-        model: BAAI/bge-small-en-v1.5
+        model: Qwen/Qwen3-Embedding-0.6B
         # Must match the model. Changing either invalidates every stored
-        # vector and forces a full reindex.
-        dimensions: 384
+        # vector and forces a full reindex - and more than that, the pgvector
+        # column is fixed at creation and the Haystack integration will not
+        # rewrite it, so `vectors.chunks` has to be dropped and rebuilt.
+        dimensions: 1024
 
     vectorStore:
       kind: pgvector
