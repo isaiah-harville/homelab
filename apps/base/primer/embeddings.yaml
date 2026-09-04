@@ -30,11 +30,16 @@ metadata:
     app: primer-embeddings
 spec:
   replicas: 1
-  strategy:
-    # The model cache is a ReadWriteOnce volume, so a surge replica could not
-    # mount it while the old pod still held it and the rollout would stall
-    # rather than proceed. The old pod goes first.
-    type: Recreate
+  # Left as a rolling update deliberately, though a ReadWriteOnce volume
+  # would normally argue for Recreate: the new pod mounts a different claim
+  # from the one the old pod holds, so there is nothing to contend for. That
+  # is what makes this rollout safe - bge keeps answering until Qwen3 passes
+  # its readiness probe, and a model that fails to load leaves the old pod
+  # serving rather than leaving nothing serving.
+  #
+  # Setting Recreate here was also rejected outright: Kubernetes has already
+  # defaulted `strategy.rollingUpdate` onto the live object, and the two
+  # cannot both be set.
   selector:
     matchLabels:
       app: primer-embeddings
