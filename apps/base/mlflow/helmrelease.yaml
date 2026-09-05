@@ -115,9 +115,11 @@ spec:
       requests:
         # Above what two workers actually settle at, not below it. A
         # request under steady-state usage is what lets the scheduler place
-        # a pod somewhere it cannot live.
+        # a pod somewhere it cannot live. Measured once it finally ran:
+        # 1952Mi idle, which is also the plainest evidence that the old
+        # 2Gi limit could never have held the chart's default of 4.
         cpu: 100m
-        memory: 1Gi
+        memory: 2Gi
       limits:
         # Raised from 2Gi, which OOM-killed this the moment the read-only
         # filesystem fix let it boot - the second fault of two, hidden
