@@ -59,8 +59,14 @@ spec:
             - --auto-truncate
             - --max-client-batch-size
             - "32"
+            # Counted in inputs, not HTTP requests: a POST /embed carrying
+            # 32 inputs enqueues 32 tasks against this, so any value below
+            # the client batch size above rejects every ingestion batch
+            # with a 429 before it is ever inferred. The floor is the index
+            # worker's 4 processes at 32 inputs each; the rest is room for
+            # searches during a full ingestion run.
             - --max-concurrent-requests
-            - "16"
+            - "256"
           env:
             - name: HUGGINGFACE_HUB_CACHE
               value: /data
