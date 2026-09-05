@@ -26,5 +26,4 @@ spec:
         namespace: flux-system
   values:
     args:
-      # Rationale: docs/decisions/metrics-server-tls.md.
       - --kubelet-insecure-tls

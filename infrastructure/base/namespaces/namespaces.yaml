@@ -24,7 +24,6 @@ kind: Namespace
 metadata:
   name: certificates
 ---
-# MetalLB speakers require host networking and NET_RAW/NET_ADMIN.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -34,7 +33,6 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 ---
-# Longhorn's manager, engine, and instance pods require privileged access.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -68,7 +66,6 @@ kind: Namespace
 metadata:
   name: cnpg-system
 ---
-# node-exporter requires hostNetwork and hostPath.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -83,8 +80,6 @@ kind: Namespace
 metadata:
   name: reflector
 ---
-# The GPU operator's device plugin, DCGM exporter, and validator need
-# privileged host access to the NVIDIA driver files and devices.
 apiVersion: v1
 kind: Namespace
 metadata:

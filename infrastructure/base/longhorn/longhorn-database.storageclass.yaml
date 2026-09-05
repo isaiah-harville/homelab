@@ -16,8 +16,6 @@ parameters:
   disableRevisionCounter: "true"
   fromBackup: ""
   fsType: ext4
-  # PostgreSQL already keeps three synchronous copies on separate nodes. A
-  # second three-way copy at the block layer would turn that into nine copies.
   numberOfReplicas: "1"
   staleReplicaTimeout: "30"
   unmapMarkSnapChainRemoved: ignored

@@ -25,27 +25,18 @@ spec:
         name: nvidia
         namespace: flux-system
   values:
-    # Talos is immutable: the driver and the container toolkit ship as system
-    # extensions (talos/omni/patches/nvidia-gpu.yaml), so the operator must not
-    # try to install either one. v26.3.1+ is required for this to work.
     driver:
       enabled: false
     toolkit:
       enabled: false
     hostPaths:
-      # Where the Talos extensions put the driver libraries and binaries.
       driverInstallDir: /usr/local
     devicePlugin:
       env:
-        # The device plugin writes a CDI spec pointing at the CDI hook. Its
-        # default (/usr/bin) is not where the Talos extension installs it.
         - name: NVIDIA_CDI_HOOK_PATH
           value: /usr/local/bin/nvidia-cdi-hook
-    # Node feature discovery labels the two GPU machines, and the operator only
-    # places operands on nodes carrying feature.node.kubernetes.io/pci-10de.present.
     nfd:
       enabled: true
-    # Neither GPU supports MIG (Turing / consumer-class Ampere).
     migManager:
       enabled: false
     dcgmExporter:
@@ -53,8 +44,6 @@ spec:
         enabled: true
         additionalLabels:
           release: kube-prometheus-stack
-    # Both GPU machines are control planes; allow-scheduling.yaml makes them
-    # schedulable, but the operands still need to tolerate any residual taint.
     daemonsets:
       tolerations:
         - key: nvidia.com/gpu

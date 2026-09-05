@@ -26,14 +26,10 @@ spec:
         namespace: flux-system
   values:
     defaultSettings:
-      # Only labeled nodes have dedicated, persistent Longhorn disks.
       createDefaultDiskLabeledNodes: true
-      # Mounted by talos/omni/patches/longhorn-disk.yaml.
       defaultDataPath: /var/mnt/longhorn
       storageReservedPercentageForDefaultDisk: 30
-      # Keep one replica per node and tolerate one node failure.
       defaultReplicaCount: 3
-      # Don't create a volume unless all replicas can land on distinct nodes.
       allowVolumeCreationWithDegradedAvailability: false
       replicaAutoBalance: least-effort
       replicaSoftAntiAffinity: false

@@ -7,7 +7,4 @@ metadata:
 spec:
   type: oci
   interval: 1h
-  # Published by the ORION repo's Release workflow on every v* tag. The chart
-  # version, its appVersion, and every ORION image tag are all the release tag,
-  # so upgrading the chart moves the whole app in one step.
   url: oci://ghcr.io/isaiah-harville/orion/charts

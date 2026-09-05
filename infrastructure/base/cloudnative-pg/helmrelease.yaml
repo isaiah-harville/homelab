@@ -20,7 +20,6 @@ spec:
   chart:
     spec:
       chart: cloudnative-pg
-      # Chart 0.29 tracks CNPG 1.30, the recommended line for Kubernetes 1.36.
       version: ">=0.29.0 <0.30.0"
       sourceRef:
         kind: HelmRepository

@@ -37,18 +37,14 @@ spec:
 
     template:
       spec:
-        # Run as the `terraform` SA (see terraform-rbac.yaml) so the kubernetes
-        # state backend can read/write the state Secret + lock Lease in-cluster.
         serviceAccountName: terraform
         containers:
           - name: runner
             image: ghcr.io/actions/actions-runner:latest
             command: ["/home/runner/run.sh"]
             env:
-              # Make Terraform's kubernetes backend use the pod ServiceAccount.
               - name: KUBE_IN_CLUSTER_CONFIG
                 value: "true"
-            # omni-terraform → OMNI_ENDPOINT, OMNI_SERVICE_ACCOUNT_KEY (provider auth).
             envFrom:
               - secretRef:
                   name: omni-terraform
