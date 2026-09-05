@@ -106,7 +106,11 @@ spec:
     # had noticed because the container had never started long enough to
     # allocate anything. Two is ample for a deployment with this many
     # users and halves the resident cost of serving it.
-    workers: 2
+    extraArgs:
+      # A string, and nested here rather than at the top level: the chart's
+      # values schema rejects a bare `workers`, though its values file
+      # documents one.
+      workers: "2"
     resources:
       requests:
         # Above what two workers actually settle at, not below it. A
