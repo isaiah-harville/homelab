@@ -100,9 +100,23 @@ spec:
     extraVolumeMounts:
       - name: prometheus-metrics
         mountPath: /mlflow/metrics
+    # The chart's default is 4, and each one is a whole MLflow app: the
+    # Flask server, the FastAPI wrapper and the OIDC auth plugin, loaded
+    # per process. Four of those did not fit the limit below, which nothing
+    # had noticed because the container had never started long enough to
+    # allocate anything. Two is ample for a deployment with this many
+    # users and halves the resident cost of serving it.
+    workers: 2
     resources:
       requests:
+        # Above what two workers actually settle at, not below it. A
+        # request under steady-state usage is what lets the scheduler place
+        # a pod somewhere it cannot live.
         cpu: 100m
-        memory: 512Mi
+        memory: 1Gi
       limits:
-        memory: 2Gi
+        # Raised from 2Gi, which OOM-killed this the moment the read-only
+        # filesystem fix let it boot - the second fault of two, hidden
+        # behind the first because a process that dies at import never
+        # reaches the memory it needs.
+        memory: 4Gi
