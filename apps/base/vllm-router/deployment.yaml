@@ -1,4 +1,3 @@
-# Operations: docs/operations/external-inference.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,7 +25,6 @@ spec:
             - "8001"
             - --service-discovery
             - static
-            # Repointed off vLLM, which is scaled to zero
             - --static-backends
             - "http://llama-ministral-3b-instruct.apps.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.apps.svc.cluster.local:8080"
             - --static-models

@@ -1,21 +1,4 @@
 ---
-# Ministral 3 3B Reasoning (2512), on the Quadro T1000.
-#
-# The same base model post-trained to think before answering, which is worth
-# a second card for the questions where the first answer is usually wrong -
-# maths, code, anything multi-step.
-#
-# Its reasoning is delimited by [THINK] ... [/THINK], which is Mistral's
-# syntax and not the <think> tags most reasoning models use. That matters
-# more than it looks: a client that strips <think> - Primer included - sees
-# nothing to strip here, so unless the server separates the thinking itself
-# it arrives as part of the answer, or not at all. The flags below are what
-# make the server do the separating.
-#
-# This is the second of the cluster's two GPUs, and there is no third: the
-# device plugin hands out whole cards, so this deployment and the instruct
-# one above are the entire GPU budget. vLLM used to hold this card and is now
-# scaled to zero, which is what freed it.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,10 +19,6 @@ spec:
         app: llama-ministral-3b-reasoning
     spec:
       enableServiceLinks: false
-      # Pinned to the T1000 by the card rather than the node name. Note this
-      # is Turing (SM75) - old enough that runtimes needing SM89 features
-      # refuse to start on it, which is a large part of why llama.cpp is
-      # what runs here.
       nodeSelector:
         nvidia.com/gpu.product: Quadro-T1000
       containers:
@@ -52,14 +31,9 @@ spec:
             - "8080"
             - -hf
             - unsloth/Ministral-3-3B-Reasoning-2512-GGUF:Q4_K_M
-            # Vision weights this deployment never uses; see the instruct
-            # deployment for the reasoning.
             - --no-mmproj
             - --alias
             - ministral-3-3b-reasoning
-            # Hand the thinking over already separated, in reasoning_content
-            # beside the content, which is the field Primer reads.
-            #
             # "deepseek" names the response shape rather than a model family:
             # it is the DeepSeek API's convention for carrying reasoning in
             # its own field, and every value other than "none" extracts. It
@@ -69,9 +43,6 @@ spec:
             # depend on the day its node last pulled.
             - --reasoning-format
             - deepseek
-            # Extraction is driven by the model's own chat template, which is
-            # where [THINK] is defined. Jinja is the current default, and is
-            # named here for the same reason as the line above.
             - --jinja
             - -ngl
             - "all"
@@ -81,10 +52,6 @@ spec:
             - q8_0
             - -ctv
             - q8_0
-            # One slot, unlike the instruct model. A reasoning model spends a
-            # long stretch of tokens thinking before the answer starts, so
-            # the whole context is better given to one request than halved
-            # between two that both then run out of room mid-thought.
             - -np
             - "1"
             - --metrics

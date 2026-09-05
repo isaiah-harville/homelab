@@ -1,19 +1,4 @@
 ---
-# Ministral 3 3B Instruct (2512), on the RTX A2000 Laptop.
-#
-# The general-purpose chat model. It gets the A2000 rather than the T1000
-# because the A2000 is Ampere (SM86) against the T1000's Turing (SM75), and
-# this is the model most questions are actually answered by.
-#
-# llama.cpp rather than vLLM: Mistral published this release as GGUF only -
-# there is no AWQ or GPTQ for -2512 - and at bf16 its 3.85B parameters need
-# roughly 7.7GB, which does not fit a 4GB card at all. Q4_K_M is ~2.3GB and
-# leaves room for a context window worth having.
-#
-# Weights come from unsloth rather than the `mistralai` repository of the
-# same name: the official one is gated, and a gated repository means this pod
-# cannot start without an HF token secret that nothing else in the cluster
-# needs. The unsloth conversions are ungated and are the same weights.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,8 +9,6 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    # One GPU per node and the pod holds it for its whole life, so a surge
-    # replica would sit Pending forever waiting for a card that never frees.
     type: Recreate
   selector:
     matchLabels:
@@ -40,9 +23,6 @@ spec:
       # as its own configuration. Off for the same reason vLLM has it off:
       # the next name collision would be found at 3am rather than here.
       enableServiceLinks: false
-      # Pinned to the A2000 by the card rather than by the node name, so
-      # replacing a laptop does not silently move the model onto the slower
-      # GPU. The label is published by the NVIDIA GPU operator's discovery.
       nodeSelector:
         nvidia.com/gpu.product: NVIDIA-RTX-A2000-Laptop-GPU
       containers:
@@ -53,45 +33,25 @@ spec:
             - "0.0.0.0"
             - --port
             - "8080"
-            # `-hf` downloads and caches the GGUF itself, so no init container
-            # and no image rebuild to change models. The tag after the colon
-            # selects the quantization.
             - -hf
             - unsloth/Ministral-3-3B-Instruct-2512-GGUF:Q4_K_M
-            # Ministral 3 is a vision model and `-hf` pulls the mmproj
-            # alongside the weights by default. Primer sends text, so the
-            # projector would be VRAM spent on a capability nothing uses.
             - --no-mmproj
-            # What `/v1/models` reports and what Primer stores against a
-            # conversation. Without it the id is the on-disk path, which is a
-            # cache filename nobody would recognise in a model picker.
             - --alias
             - ministral-3-3b-instruct
             - -ngl
             - "all"
-            # Rather than the model's native maximum, which is far larger than
-            # this card can hold a KV cache for. Primer stuffs retrieved
-            # passages into the prompt, so context is what matters most here.
             - -c
             - "16384"
-            # Quantized KV cache, which is what makes 16k fit beside the
-            # weights. Worth noting this is available here and is not on
-            # vLLM: vLLM's fp8 KV cache needs SM89+, and neither card is.
             - -ctk
             - q8_0
             - -ctv
             - q8_0
-            # Two slots. The context above is divided between them, so this
-            # is 8k each - more slots on a card this size buys concurrency
-            # by taking away the context that makes retrieval useful.
             - -np
             - "2"
             - --metrics
           env:
             - name: LLAMA_CACHE
               value: /models
-            # The same key the rest of the cluster's inference is behind, so
-            # a consumer needs one credential rather than one per runtime.
             - name: LLAMA_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -104,9 +64,6 @@ spec:
             httpGet:
               path: /health
               port: 8080
-            # First start downloads ~2.3GB of weights before loading them.
-            # /health answers 503 until the model is resident, so this is
-            # genuinely "can it serve", not "is the port open".
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 90
@@ -114,9 +71,6 @@ spec:
             httpGet:
               path: /health
               port: 8080
-            # Deliberately slack. A long prompt can keep the server busy, and
-            # restarting mid-generation would turn a slow answer into no
-            # answer and a fresh model load.
             periodSeconds: 30
             failureThreshold: 10
           resources:
@@ -124,8 +78,6 @@ spec:
               cpu: "1"
               memory: 2Gi
             limits:
-              # The device plugin hands out whole GPUs; there is no fractional
-              # request, so this pod owns the card it lands on.
               nvidia.com/gpu: 1
               memory: 8Gi
           volumeMounts:
@@ -145,8 +97,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   resources:
-    # One quantization is ~2.3GB; the headroom is so that trying a larger one
-    # does not mean resizing a volume first.
     requests:
       storage: 10Gi
   storageClassName: longhorn

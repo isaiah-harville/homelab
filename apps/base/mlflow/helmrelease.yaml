@@ -27,9 +27,6 @@ spec:
   values:
     fullnameOverride: mlflow
     replicaCount: 1
-    # The chart's default image (burakince/mlflow) bundles psycopg2 and boto3;
-    # the upstream ghcr.io/mlflow/mlflow image does not, which is why this chart
-    # is used instead of hand-rolled manifests.
     backendStore:
       databaseMigration: true
       databaseConnectionCheck: true
@@ -44,9 +41,6 @@ spec:
         usernameKey: username
         passwordKey: password
     artifactRoot:
-      # The server proxies artifact upload/download, so clients only ever talk
-      # to MLflow. No SeaweedFS access keys have to be handed out to laptops or
-      # training jobs, and the S3 endpoint stays cluster-internal.
       proxiedArtifactStorage: true
       s3:
         enabled: true
@@ -58,11 +52,6 @@ spec:
     extraEnvVars:
       MLFLOW_S3_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
       AWS_DEFAULT_REGION: us-east-1
-    # Authentik OIDC via the mlflow-oidc-auth plugin, not the ForwardAuth
-    # middleware: the plugin also issues personal access tokens, so the Python
-    # client can authenticate against the same identity without traversing a
-    # browser redirect. Access and per-experiment permissions follow Authentik
-    # group membership; the mapping is stored in the mlflow_auth database.
     oidcAuth:
       enabled: true
       discoveryUrl: https://auth.harville.dev/application/o/mlflow/.well-known/openid-configuration
@@ -79,8 +68,6 @@ spec:
         - MLflow Admins
       defaultPermission: READ
       sessionCookieSecure: true
-      # The redirect URI is derived from the forwarded headers, which is only
-      # trustworthy once traefik-internal's pod network is trusted.
       trustedProxies:
         - 10.244.0.0/16
       database:
@@ -94,10 +81,6 @@ spec:
             name: mlflow-postgres
             usernameKey: username
             passwordKey: password
-    # Ingress is a standalone manifest (ingress.yaml) so the `apps` Kustomization
-    # patches reach it. That skips the chart's host auto-detection, and an
-    # explicit allow-list would reject the kubelet's probes, which address the
-    # pod by IP. The service is LAN-only and behind basic auth.
     serverAllowedHosts:
       - "*"
     corsAllowedOrigins:

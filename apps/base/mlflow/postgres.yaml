@@ -14,10 +14,6 @@ spec:
       owner: mlflow
       secret:
         name: mlflow-postgres
-      # MLflow's basic-auth backend wants a database of its own, and CNPG only
-      # creates the single application database. postInitSQL runs as superuser
-      # against `postgres`, so this is the one place the second database can be
-      # created declaratively.
       postInitSQL:
         - CREATE DATABASE mlflow_auth OWNER mlflow;
   storage:
@@ -40,9 +36,6 @@ spec:
       number: 1
   monitoring:
     disableDefaultQueries: false
-  # Experiment metadata (runs, params, metrics, model registry) lives only here.
-  # The artifacts in S3 are meaningless without it, so it gets the same WAL
-  # archiving + nightly base backup treatment as the Authentik database.
   plugins:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
@@ -77,8 +70,6 @@ metadata:
   name: mlflow-postgres-nightly
   namespace: apps
 spec:
-  # Six-field cron (seconds first). 01:45, staggered off the Authentik backup
-  # at 01:30 so the two do not compete for the same SeaweedFS volume server.
   schedule: "0 45 1 * * *"
   backupOwnerReference: self
   cluster:

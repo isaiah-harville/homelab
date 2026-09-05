@@ -1,6 +1,4 @@
 ---
-# No Authentik ForwardAuth: the MLflow Python client cannot follow the browser
-# redirect flow. MLflow's own basic auth guards both the UI and the REST API.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

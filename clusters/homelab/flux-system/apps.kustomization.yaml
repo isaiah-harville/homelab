@@ -9,8 +9,6 @@ spec:
   path: ./clusters/homelab/apps
   prune: true
   wait: true
-  # Allow first-time stateful bootstraps (including Authentik and its database)
-  # to complete without racing the Kustomization timeout.
   timeout: 20m
   sourceRef:
     kind: GitRepository

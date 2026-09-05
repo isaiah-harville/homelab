@@ -1,8 +1,4 @@
 ---
-# In-cluster inference, replacing the standalone WSL box that used to serve
-# this. Sizing is dictated by the hardware: both GPUs in the cluster are 4GB
-# laptop parts (PCI 0x25b8 is the 4GB RTX A2000 Mobile, not the 8GB 0x25ba;
-# 0x1fb9 is the Quadro T1000 Mobile). See docs/operations/external-inference.md.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,8 +9,6 @@ metadata:
 spec:
   replicas: 0
   strategy:
-    # One GPU per node and the pod holds it for its whole life, so a surge
-    # replica would sit Pending forever waiting for a card that never frees.
     type: Recreate
   selector:
     matchLabels:
@@ -45,29 +39,15 @@ spec:
             - qwen2.5-3b-instruct
             - --port
             - "8000"
-            # 4-bit AWQ: the FP16 weights alone would not fit, let alone the
-            # KV cache. Marlin is the fast AWQ kernel on Ampere and Turing.
             - --quantization
             - awq_marlin
-            # CUDA graphs cost roughly a gigabyte to capture, which on a 4GB
-            # card is the difference between a usable context window and none.
-            # Costs throughput, buys context.
             - --enforce-eager
             - --gpu-memory-utilization
             - "0.92"
-            # Chosen to fit the remaining VRAM once weights are resident.
-            # Primer stuffs retrieved passages into the prompt, so context is
-            # what matters most here.
             - --max-model-len
             - "16384"
-            # NOT fp8. Native FP8 needs SM89+ (Ada) and both cards are older:
-            # the A2000 Mobile is SM86, the T1000 is SM75, so the Triton
-            # attention backend refuses to start. This doubles the per-token
-            # KV cost; --max-model-len is the knob that pays for it.
             - --kv-cache-dtype
             - auto
-            # A handful of concurrent requests is all this card can serve, and
-            # capping it keeps the KV cache from being the thing that OOMs.
             - --max-num-seqs
             - "4"
           env:
@@ -80,7 +60,6 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            # First start downloads ~2GB of weights and then loads them.
             initialDelaySeconds: 60
             periodSeconds: 15
             failureThreshold: 60
@@ -95,8 +74,6 @@ spec:
               cpu: "1"
               memory: 6Gi
             limits:
-              # The device plugin hands out whole GPUs; there is no fractional
-              # request, so this pod owns the card it lands on.
               nvidia.com/gpu: 1
               memory: 12Gi
           volumeMounts:
@@ -109,7 +86,6 @@ spec:
           persistentVolumeClaim:
             claimName: vllm-models
         - name: shm
-          # vLLM's default 64MB /dev/shm is not enough for its worker IPC.
           emptyDir:
             medium: Memory
             sizeLimit: 2Gi

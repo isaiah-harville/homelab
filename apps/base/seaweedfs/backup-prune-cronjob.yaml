@@ -1,5 +1,4 @@
 ---
-# Retention policy: docs/operations/backups.md.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -50,14 +49,9 @@ spec:
                 - -c
                 - |
                   set -eu
-                  # Prune Omni's etcd snapshots by age, but never touch
-                  # backups/config/: CNPG's base backups and WAL segments live
-                  # there and deleting any of them by age breaks the WAL chain
-                  # that point-in-time recovery depends on. CNPG prunes itself
-                  # via backup.retentionPolicy on the Cluster.
-                  #
-                  # --ignore matches the whole path including the alias, so the
-                  # pattern is fully qualified rather than relative.
+                  # Never touch backups/config/: CNPG's base backups and WAL segments
+                  # live there and deleting any of them by age breaks the WAL chain
+                  # that point-in-time recovery depends on.
                   mc find backup/backups/ \
                     --ignore "backup/backups/config/*" \
                     --older-than 76h \

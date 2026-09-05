@@ -17,7 +17,6 @@ resources:
   - ../../../infrastructure/base/nvidia-gpu-operator
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
-  # actions-runner-controller — self-hosted runner for the Terraform jobs.
   - ../../../infrastructure/base/actions-runner-controller
   - ./secrets/actions-runner-controller/github-config.yaml
   - ./secrets/actions-runner-controller/omni-terraform.yaml

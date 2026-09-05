@@ -1,34 +1,4 @@
 ---
-# Text Embeddings Inference, CPU-only and deliberately so: both GPUs are
-# spoken for by the llama.cpp chat models, and there is no third card.
-# Serves an OpenAI-compatible /v1/embeddings, which is all Primer asks for.
-#
-# Qwen3-Embedding-0.6B replaced bge-small-en-v1.5. It is a straight retrieval
-# upgrade and 1024-dimensional rather than 384, which is not a config change:
-# Primer's pgvector column is fixed at creation and the Haystack integration
-# is built with `recreate_table=False`, so every stored vector had to be
-# thrown away and rebuilt. See docs/apps/primer.md.
-#
-# Two things found by running this image before committing it, both of which
-# this manifest is shaped around:
-#
-#   1. TEI's CPU image prefers ONNX and `Qwen/Qwen3-Embedding-0.6B` publishes
-#      none, so it falls back to the Candle backend and downloads ~1.2GB of
-#      safetensors. Candle does support the architecture ("Starting Qwen3
-#      model on Cpu") - it is just slow to start and wants a far larger cache
-#      volume than bge's 2Gi.
-#   2. It was OOM-killed during warmup at TEI's default --max-batch-tokens.
-#      Warmup allocates against that number, and this is a 28-layer,
-#      1024-hidden model rather than 33M parameters. Hence both the higher
-#      memory ceiling and the bounded batch below.
-#   3. It was then OOM-killed again, five times, under the sustained load of
-#      a full library reindex - a different fault from the first with the
-#      same symptom. Warmup was already survivable; what was not was every
-#      queued request holding its input while four batches were in flight.
-#      Hence the raised ceiling and the shorter queue, and hence the memory
-#      request now being above the pod's idle footprint rather than below
-#      it. Sizing a request under what a process uses while doing nothing
-#      is what lets the scheduler put it somewhere it cannot live.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -59,12 +29,6 @@ spec:
             - --auto-truncate
             - --max-client-batch-size
             - "32"
-            # Counted in inputs, not HTTP requests: a POST /embed carrying
-            # 32 inputs enqueues 32 tasks against this, so any value below
-            # the client batch size above rejects every ingestion batch
-            # with a 429 before it is ever inferred. The floor is the index
-            # worker's 4 processes at 32 inputs each; the rest is room for
-            # searches during a full ingestion run.
             - --max-concurrent-requests
             - "256"
           env:
@@ -87,24 +51,9 @@ spec:
             periodSeconds: 30
           resources:
             requests:
-              # 18x the parameters of bge-small, and CPU is what it embeds
-              # on, so ingestion throughput is bounded by this number.
               cpu: "2"
-              # Measured, not estimated: this pod sits at ~4.4Gi with no
-              # traffic at all. The previous 3Gi was below its own idle
-              # footprint, which is not a small miscalculation - a request
-              # is what the scheduler packs a node by, so it was free to
-              # place this alongside other workloads on the basis that it
-              # needed less memory than it uses while doing nothing.
               memory: 6Gi
             limits:
-              # Raised from 8Gi, which this was OOM-killed against five
-              # times during a full reindex (exit 137). 8Gi looked generous
-              # next to bge-small and is not: idle is already 4.4Gi, so it
-              # allowed less than 2x for weights, the tokenizer workers and
-              # every in-flight batch together. The node has 128Gi and 7%
-              # of it requested, so headroom here costs nothing that
-              # anything else wanted.
               memory: 16Gi
           volumeMounts:
             - name: model-cache
@@ -117,21 +66,12 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  # A new claim rather than an expansion of `primer-embeddings-cache`, which
-  # is left behind to be deleted by hand. Longhorn grows every replica of a
-  # volume, and this storage class keeps three; one of the three disks is
-  # close enough to its over-provisioning limit that even +2Gi is refused,
-  # while a fresh claim is free to be scheduled onto the disks with room.
   name: primer-embeddings-model-cache
   namespace: apps
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
-    # bge-small's 2Gi does not hold this model's weights, which are ~1.2GB of
-    # safetensors. 4Gi is roughly triple what is actually stored - deliberate
-    # slack for a second model without a resize, and no more, because three
-    # replicas of it are scheduled whether or not they are used.
     requests:
       storage: 4Gi
   storageClassName: longhorn

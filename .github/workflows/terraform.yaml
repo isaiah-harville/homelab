@@ -21,7 +21,6 @@ permissions:
   pull-requests: write
 
 concurrency:
-  # One Terraform run at a time — state is shared.
   group: terraform-omni
   cancel-in-progress: false
 
@@ -33,7 +32,6 @@ jobs:
   plan:
     name: Plan
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    # The in-cluster runner can reach Omni and SeaweedFS over the LAN.
     runs-on: homelab
     steps:
       - name: Checkout
