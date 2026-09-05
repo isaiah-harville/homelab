@@ -71,8 +71,15 @@ spec:
             # maximum input length: an over-long chunk should be truncated
             # rather than fail the whole batch it arrived in.
             - --auto-truncate
+            # Primer's embedder sends 32 inputs per request - Haystack's
+            # default, which Primer does not currently override - so a lower
+            # ceiling here rejects every ingestion batch with a 422 and the
+            # document fails with nothing wrong on Primer's side. This bounds
+            # what one client may send in a request; what is actually batched
+            # for inference is --max-batch-tokens above, which is what the
+            # warmup allocation and the OOM were about.
             - --max-client-batch-size
-            - "16"
+            - "32"
             # Ingestion embeds in batches; the default of 1 leaves the CPU
             # idle between requests from the index worker.
             - --max-concurrent-requests
