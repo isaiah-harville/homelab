@@ -1,4 +1,3 @@
-# Install on the 256GB NVMe; reserve the 1TB NVMe for Longhorn.
 ---
 machine:
   install:

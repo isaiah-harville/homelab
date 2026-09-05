@@ -1,5 +1,3 @@
-# Claim the non-system disk and expose it to Longhorn with shared propagation.
-# Apply only to machines with a dedicated spare disk.
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig

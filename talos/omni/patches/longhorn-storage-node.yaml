@@ -1,4 +1,3 @@
-# Apply only with longhorn-disk.yaml; unlabeled nodes use no ephemeral storage.
 ---
 machine:
   nodeLabels:

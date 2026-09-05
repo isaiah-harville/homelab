@@ -1,9 +1,7 @@
-# Patch YAML is shared with the omnictl template.
 resource "omni_config_patch" "allow_scheduling" {
   name    = "allow-scheduling"
   cluster = omni_cluster.homelab.name
-  # Weight is identity: ../../docs/decisions/omni-resource-identity.md.
-  weight = 200
+  weight  = 200
   data   = file("${local.patch_dir}/allow-scheduling.yaml")
 }
 
@@ -17,8 +15,6 @@ resource "omni_config_patch" "controlplane_vip" {
   data = file("${local.patch_dir}/controlplane-vip.yaml")
 }
 
-# Trust Authentik-issued ID tokens for browser and kubelogin access to the
-# Kubernetes API. RBAC remains the authorization boundary.
 resource "omni_config_patch" "kubernetes_oidc" {
   name    = "kubernetes-oidc"
   cluster = omni_cluster.homelab.name
@@ -77,9 +73,6 @@ resource "omni_config_patch" "longhorn_storage_node" {
   data = file("${local.patch_dir}/longhorn-storage-node.yaml")
 }
 
-# Load the NVIDIA kernel modules on GPU machines. The modules themselves come
-# from the system extensions in extensions.tf; this patch is inert without
-# them.
 resource "omni_config_patch" "nvidia_gpu" {
   for_each = toset(local.gpu_nodes)
 

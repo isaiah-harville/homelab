@@ -1,4 +1,3 @@
-# Install on NVMe and reserve the rotational disk for Longhorn.
 ---
 machine:
   install:

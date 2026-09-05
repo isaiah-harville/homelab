@@ -2,15 +2,12 @@ resource "omni_cluster" "homelab" {
   name               = local.cluster_name
   talos_version      = local.talos_version
   kubernetes_version = local.k8s_version
-
-  # Provider gap: ../../docs/operations/backups.md.
 }
 
 resource "omni_machine_set" "control_plane" {
   cluster = omni_cluster.homelab.name
   role    = "controlplane"
 
-  # Preserve etcd quorum during lifecycle operations.
   update_strategy = {
     type            = "Rolling"
     max_parallelism = 1
@@ -31,8 +28,7 @@ resource "omni_machine_set_node" "control_plane" {
 
 resource "omni_machine_set" "workers" {
   cluster = omni_cluster.homelab.name
-  # Preserve the imported ID: ../../docs/decisions/omni-resource-identity.md.
-  role = "workers"
+  role    = "workers"
 
   update_strategy = {
     type            = "Rolling"

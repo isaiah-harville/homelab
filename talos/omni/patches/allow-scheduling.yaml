@@ -1,4 +1,3 @@
-# Longhorn's three replicas require at least three schedulable storage nodes.
 ---
 cluster:
   allowSchedulingOnControlPlanes: true

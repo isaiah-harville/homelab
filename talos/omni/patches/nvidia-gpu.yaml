@@ -1,6 +1,3 @@
-# Load the NVIDIA kernel modules shipped by the nonfree-kmod-nvidia-production
-# system extension. Apply only to machines with an NVIDIA GPU, alongside the
-# nvidia-container-toolkit-production extension.
 ---
 machine:
   kernel:

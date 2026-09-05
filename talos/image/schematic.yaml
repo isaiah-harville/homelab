@@ -1,4 +1,3 @@
-# Longhorn requires iSCSI and filesystem trim tools.
 # Create the Image Factory schematic ID with:
 #   curl -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics
 ---

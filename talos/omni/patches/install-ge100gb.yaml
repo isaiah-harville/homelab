@@ -1,4 +1,3 @@
-# Exclude small USB media from single-disk machines.
 ---
 machine:
   install:

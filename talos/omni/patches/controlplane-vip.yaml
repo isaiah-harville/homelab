@@ -1,5 +1,3 @@
-# The floating API VIP survives a control-plane failure.
-# Select the physical device because interface names differ between nodes.
 ---
 machine:
   network:
