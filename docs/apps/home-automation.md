@@ -202,6 +202,112 @@ code; factory-resetting is the alternative and drops the original fabric.
 
 ## Home Assistant dashboards and automation editors
 
+Dashboards, automations, scripts, and scenes are **UI-owned runtime state**,
+not Git artifacts. Build the household control panel in the browser with
+**Overview > Edit dashboard**, and add automations under
+**Settings > Automations & scenes**. `default_config` enables all of these
+editors, so nothing here needs hand-written YAML.
+
+This is a deliberate boundary rather than a gap. Home Assistant's UI editors
+write to `/config/.storage`, so a dashboard cannot be both drag-and-drop
+editable and owned by Flux: whichever wrote last would clobber the other. The
+same rule the rest of this repository follows applies here — Git owns
+infrastructure, persistent storage owns runtime state:
+
+| Owned by Git | Owned by the PVC |
+| --- | --- |
+| containers, images, resources, probes | dashboards and their layout |
+| storage classes and volume claims | automations, scripts, scenes |
+| radio endpoints and integrations wiring | paired-device registry, areas |
+| `configuration.yaml` base settings | tokens, users, `.storage` |
+
+Everything in the right-hand column lives on `home-assistant-config`, which
+uses `longhorn-retain` and is covered by the Longhorn snapshot schedule, so it
+survives pod restarts, rescheduling, and cluster upgrades. Those snapshots are
+the recovery path for a dashboard someone breaks — see the restore section
+below.
+
+To make the panel usable by everyone in the house, assign each device to a room
+under **Settings > Areas**; Home Assistant then groups controls by area
+automatically, and new lights or plugs appear without redesigning the
+dashboard. Create a Home Assistant user per person under **Settings > People**
+rather than sharing one login, and use the companion app for phone access.
+
+One-touch shortcuts, including future HVAC actions, are best built as a script
+(**Settings > Automations & scenes > Scripts**) and then added to the dashboard
+as a button, so the panel stays simple while the logic lives in one place.
+
+Git owns only the mounted base `configuration.yaml`. Do not copy UI-managed
+`.storage`, `automations.yaml`, `scripts.yaml`, or `scenes.yaml` into a
+ConfigMap or overwrite them during reconciliation.
+
+## MQTT credentials
+
+The broker runs with `allow_anonymous false`. Two identities exist, and each is
+stored twice — once as a hash the broker reads, once as the plaintext its
+client needs:
+
+| Secret | Holds |
+| --- | --- |
+| `mosquitto-passwd` | the broker's `passwd` file: `$7$` PBKDF2-SHA512 hashes for `homeassistant` and `zigbee2mqtt` |
+| `mosquitto-clients` | `HOMEASSISTANT_MQTT_USER`/`_PASSWORD` and `ZIGBEE2MQTT_MQTT_USER`/`_PASSWORD` |
+
+Zigbee2MQTT reads its pair straight from `mosquitto-clients`. Home Assistant's
+pair is entered once through the MQTT integration UI and then lives in
+`.storage`, so the secret is the record of what to type, not a live input.
+
+Both files are SOPS-encrypted and need `SOPS_AGE_KEY_FILE=.agekey`. The two
+secrets must be regenerated **together** — a hash and its plaintext are only
+meaningful as a pair, and the hash cannot be reversed to recover a lost
+password. To rotate, generate the passwd file with the broker's own tool and
+write both secrets in one pass:
+
+```bash
+export SOPS_AGE_KEY_FILE=.agekey
+docker run --rm --entrypoint sh eclipse-mosquitto:2.0.22 -c \
+  'touch /tmp/pf && chmod 600 /tmp/pf
+   mosquitto_passwd -b /tmp/pf homeassistant "$HA_PW" >/dev/null
+   mosquitto_passwd -b /tmp/pf zigbee2mqtt  "$Z2M_PW" >/dev/null
+   cat /tmp/pf'
+```
+
+then `sops set` the result into `mosquitto-passwd` and the matching plaintexts
+into `mosquitto-clients`. Changing either secret rolls the dependent
+Deployments, because their SOPS MACs are projected into pod annotations by the
+`replacements` in `clusters/homelab/apps/kustomization.yaml`. After rotating,
+re-enter the Home Assistant password in the MQTT integration.
+
+## Commission a Matter-over-Thread device
+
+Prerequisites: OTBR is `leader` or `router`, the Matter integration is
+connected, and the phone running the Home Assistant companion app is on the
+same LAN with IPv6 and mDNS reachable.
+
+1. Confirm the border router is carrying a Thread network:
+
+   ```bash
+   kubectl -n apps exec deployment/otbr -- wrap-ot-ctl state
+   kubectl -n apps exec deployment/otbr -- wrap-ot-ctl dataset active -x
+   ```
+
+2. In Home Assistant, check **Settings > Devices & services > Thread** shows
+   this OTBR as a preferred border router with a credential set. Matter
+   commissioning hands the device these Thread credentials, so a device cannot
+   join before they exist.
+3. **Settings > Devices & services > Add integration > Matter**, then scan the
+   device's Matter QR code or type its 11-digit pairing code with the companion
+   app. Keep the device close to the phone for commissioning; it moves to its
+   permanent location afterward.
+4. The device joins over Bluetooth for commissioning only, then switches to
+   Thread. Verify it afterwards with `wrap-ot-ctl childtable` or by confirming
+   the entity still responds once Bluetooth range is gone.
+
+A device already commissioned into another ecosystem must be shared via that
+ecosystem's "pair additional controller" flow, which yields a fresh pairing
+code; factory-resetting is the alternative and drops the original fabric.
+
+## Home Assistant dashboards and automation editors
+
 Home Assistant has two dashboard modes, and the split between them is what
 keeps dashboards in Git without Flux and the UI overwriting each other:
 

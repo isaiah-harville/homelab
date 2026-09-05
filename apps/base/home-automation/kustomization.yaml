@@ -6,7 +6,6 @@ resources:
   - mosquitto.yaml
   - zigbee2mqtt.yaml
   - home-assistant.yaml
-  - dashboards.yaml
   - matter-server.yaml
   - otbr.yaml
   - monitoring.yaml
