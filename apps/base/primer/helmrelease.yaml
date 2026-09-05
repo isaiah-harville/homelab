@@ -107,6 +107,31 @@ spec:
         # rewrite it, so `vectors.chunks` has to be dropped and rebuilt.
         dimensions: 1024
 
+    # Sizes chunks against the embedding model, which is what decides how
+    # much of a source a citation quotes back. Without it the parse worker
+    # splits on document structure and merges nothing adjacent, so a form or
+    # a statement is stored one line at a time: this library measured 2089
+    # chunks averaging 60 characters, and citations under an answer showed a
+    # couple of words each.
+    #
+    # Here rather than in `ingestion.chunkTokenizer` because the chart that
+    # models those values is not released yet (Primer#114). The chart derives
+    # the tokenizer from `inference.embeddings.model` above, which is already
+    # the right Hugging Face id, so both of these come back out on the first
+    # release that carries it - they are not a second place to keep in step.
+    #
+    # Every Primer workload gets these; only the parse worker reads them.
+    # Reindexing is what applies a change: chunks are decided at parse time,
+    # so documents already stored keep the passages they were split into.
+    extraEnv:
+      - name: PRIMER_CHUNK_TOKENIZER
+        value: Qwen/Qwen3-Embedding-0.6B
+      # A paragraph-sized passage, and far under the model's 32768-token
+      # input limit. TEI runs with --auto-truncate regardless, so a chunk
+      # that overruns is trimmed rather than failing its whole batch.
+      - name: PRIMER_MAX_CHUNK_TOKENS
+        value: "512"
+
     vectorStore:
       kind: pgvector
 
