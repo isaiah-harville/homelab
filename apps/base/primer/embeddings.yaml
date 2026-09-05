@@ -38,16 +38,6 @@ metadata:
     app: primer-embeddings
 spec:
   replicas: 1
-  # Left as a rolling update deliberately, though a ReadWriteOnce volume
-  # would normally argue for Recreate: the new pod mounts a different claim
-  # from the one the old pod holds, so there is nothing to contend for. That
-  # is what makes this rollout safe - bge keeps answering until Qwen3 passes
-  # its readiness probe, and a model that fails to load leaves the old pod
-  # serving rather than leaving nothing serving.
-  #
-  # Setting Recreate here was also rejected outright: Kubernetes has already
-  # defaulted `strategy.rollingUpdate` onto the live object, and the two
-  # cannot both be set.
   selector:
     matchLabels:
       app: primer-embeddings
@@ -58,45 +48,17 @@ spec:
     spec:
       containers:
         - name: tei
-          # Pinned rather than floating on `cpu-1.9`. TEI returned wrong
-          # vectors for Qwen3 until huggingface/text-embeddings-inference#648
-          # (merged before 1.8.0) - a bug that produces plausible embeddings
-          # and silently worse retrieval, which is the kind nobody notices.
-          # A model whose correctness depends on the server version should
-          # name the version it was verified against.
           image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3
           args:
             - --model-id
             - Qwen/Qwen3-Embedding-0.6B
             - --port
             - "8080"
-            # The model reports a 32768-token maximum, far more than any
-            # chunk Primer produces. Left at TEI's default this is what
-            # sizes the warmup allocation, and the warmup is what was killed.
             - --max-batch-tokens
             - "4096"
-            # Explicit, because the line above is now below the model's
-            # maximum input length: an over-long chunk should be truncated
-            # rather than fail the whole batch it arrived in.
             - --auto-truncate
-            # Primer's embedder sends 32 inputs per request - Haystack's
-            # default, which Primer does not currently override - so a lower
-            # ceiling here rejects every ingestion batch with a 422 and the
-            # document fails with nothing wrong on Primer's side. This bounds
-            # what one client may send in a request; what is actually batched
-            # for inference is --max-batch-tokens above, which is what the
-            # warmup allocation and the OOM were about.
             - --max-client-batch-size
             - "32"
-            # How many requests the router will hold before answering 429.
-            # Lowered from 64: the Candle backend reports it cannot batch
-            # more than 4 for this model ("Backend does not support a batch
-            # size > 4, forcing max_batch_requests=4"), so anything past
-            # that is queue rather than throughput - and a queued request
-            # still holds its tokenized input in memory, which is what the
-            # OOM below was made of. The only clients are the index worker
-            # (4 processes) and interactive searches, so 16 is queue depth
-            # nothing here can exhaust.
             - --max-concurrent-requests
             - "16"
           env:
@@ -109,9 +71,6 @@ spec:
             httpGet:
               path: /health
               port: 8080
-            # Much slacker than bge needed. First start downloads ~1.2GB and
-            # then loads and warms a 0.6B model on CPU; failing the pod
-            # partway through restarts the download from the beginning.
             initialDelaySeconds: 60
             periodSeconds: 15
             failureThreshold: 60

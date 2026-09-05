@@ -1,10 +1,6 @@
-# Apply with:  omnictl cluster template sync -f cluster-template.yaml
-# Validate:    omnictl cluster template validate -f cluster-template.yaml
-# Disk and Longhorn patches are assigned per machine because layouts differ.
 ---
 kind: Cluster
 name: homelab
-# Upgrade these versions deliberately through Omni.
 kubernetes:
   version: v1.36.3
 talos:
@@ -36,8 +32,6 @@ machines:
   - 9ba21500-a881-11e5-ae5a-d524518f0c00
   - 30393137-3436-584d-5135-343430303635
 ---
-# Storage nodes need both the disk and label patches.
-# Dell laptop: OS on the NVMe, Longhorn on the 1TB HDD.
 kind: Machine
 name: 4c4c4544-0030-5910-805a-c6c04f503133
 systemExtensions:
@@ -55,7 +49,6 @@ patches:
   - name: nvidia-gpu
     file: patches/nvidia-gpu.yaml
 ---
-# Dell laptop: OS on the 256GB NVMe, Longhorn on the 1TB NVMe.
 kind: Machine
 name: 4c4c4544-0039-4210-8046-b8c04f314a33
 systemExtensions:
@@ -73,8 +66,6 @@ patches:
   - name: nvidia-gpu
     file: patches/nvidia-gpu.yaml
 ---
-# Dell laptop: single 512GB NVMe. Share the system disk with Longhorn while
-# reserving 30% through Longhorn's default disk setting.
 kind: Machine
 name: 4c4c4544-0052-3610-8039-cac04f484733
 systemExtensions:
@@ -88,12 +79,6 @@ patches:
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
 ---
-# thinkcentre-01: use the 256GB SSD.
-# Single disk, so Longhorn shares it with the OS instead of a dedicated
-# volume.
-# label patch is what actually matters, telling Longhorn to use its default
-# data path on the root filesystem. Formalizes a 4th storage node so dl380
-# isn't a mandatory replica member of every volume.
 kind: Machine
 name: 9ba21500-a881-11e5-ae5a-d524518f0c00
 systemExtensions:
@@ -107,7 +92,6 @@ patches:
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
 ---
-# dl380: two 1TB HP RAID logical volumes — OS on sda (by wwid), Longhorn on sdb.
 kind: Machine
 name: 30393137-3436-584d-5135-343430303635
 systemExtensions:

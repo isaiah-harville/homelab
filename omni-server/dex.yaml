@@ -1,5 +1,3 @@
-# The local account remains available when the cluster and Authelia are down.
-# Enable the Authelia connector after its Dex client is configured.
 ---
 issuer: https://omni-dex.int.harville.dev:5556
 
@@ -24,26 +22,9 @@ staticClients:
     redirectURIs:
       - https://omni.int.harville.dev/oidc/consume
 
-# Break-glass local admin
 enablePasswordDB: true
 staticPasswords:
   - email: admin@int.harville.dev
     username: admin
     # htpasswd -bnBC 10 "" 'yourpassword' | tr -d ':\n'
     hash: "$2y$10$REPLACE_WITH_BCRYPT_HASH"
-
-# Authelia SSO
-# connectors:
-#   - type: oidc
-#     id: authelia
-#     name: Authelia
-#     config:
-#       issuer: https://auth.int.harville.dev
-#       clientID: dex
-#       clientSecret: <authelia-oidc-client-secret-for-dex>
-#       redirectURI: https://omni-dex.int.harville.dev:5556/callback
-#       scopes:
-#         - openid
-#         - profile
-#         - email
-#         - groups

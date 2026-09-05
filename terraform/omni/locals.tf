@@ -1,4 +1,3 @@
-# Keep this topology aligned with talos/omni/cluster-template.yaml.
 locals {
   cluster_name  = "homelab"
   talos_version = "1.13.5"
@@ -11,21 +10,18 @@ locals {
     "4c4c4544-0052-3610-8039-cac04f484733",
   ]
   worker_nodes = [
-    "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
-    "30393137-3436-584d-5135-343430303635", # dl380
+    "9ba21500-a881-11e5-ae5a-d524518f0c00",
+    "30393137-3436-584d-5135-343430303635",
   ]
 
-  # Patch names are identity: ../../docs/decisions/omni-resource-identity.md.
   install_patch = {
-    "4c4c4544-0030-5910-805a-c6c04f503133" = { file = "install-type-nvme.yaml", name = "install-nvme" } # 256GB NVMe OS
-    "4c4c4544-0039-4210-8046-b8c04f314a33" = { file = "install-le400gb.yaml", name = "install-256" }    # 256GB NVMe OS
-    "4c4c4544-0052-3610-8039-cac04f484733" = { file = "install-ge100gb.yaml", name = "install-single" } # 512GB NVMe OS
-    "9ba21500-a881-11e5-ae5a-d524518f0c00" = { file = "install-ge100gb.yaml", name = "install-single" } # 256GB SSD OS
-    "30393137-3436-584d-5135-343430303635" = { file = "install-dl380.yaml", name = "install-dl380" }    # OS on sda by wwid
+    "4c4c4544-0030-5910-805a-c6c04f503133" = { file = "install-type-nvme.yaml", name = "install-nvme" }
+    "4c4c4544-0039-4210-8046-b8c04f314a33" = { file = "install-le400gb.yaml", name = "install-256" }
+    "4c4c4544-0052-3610-8039-cac04f484733" = { file = "install-ge100gb.yaml", name = "install-single" }
+    "9ba21500-a881-11e5-ae5a-d524518f0c00" = { file = "install-ge100gb.yaml", name = "install-single" }
+    "30393137-3436-584d-5135-343430303635" = { file = "install-dl380.yaml", name = "install-dl380" }
   }
 
-  # Dedicated disks are claimed as Talos UserVolumes. Root-disk nodes only
-  # need the kubelet bind mount and the Longhorn disk-creation label.
   dedicated_storage_nodes = [
     "4c4c4544-0030-5910-805a-c6c04f503133",
     "4c4c4544-0039-4210-8046-b8c04f314a33",
@@ -37,8 +33,6 @@ locals {
   ]
   storage_nodes = concat(local.dedicated_storage_nodes, local.root_storage_nodes)
 
-  # Machines with a discrete NVIDIA GPU. Confirm with:
-  #   talosctl get pcidevices | grep -i nvidia
   gpu_nodes = [
     "4c4c4544-0030-5910-805a-c6c04f503133",
     "4c4c4544-0039-4210-8046-b8c04f314a33",
