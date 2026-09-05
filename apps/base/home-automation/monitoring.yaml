@@ -1,0 +1,41 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: home-automation
+  namespace: apps
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: home-automation
+      rules:
+        - alert: HomeAutomationWorkloadUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="apps",
+              deployment=~"home-assistant|matter-server|mosquitto|otbr|zigbee2mqtt"
+            } < 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.deployment }} is unavailable"
+            description: >-
+              The home-automation Deployment has had no available replica for
+              15 minutes. OTBR and Zigbee2MQTT are expected to remain
+              unavailable while their MR4U endpoint uses the port-0 sentinel.
+        - alert: HomeAutomationContainerRestarting
+          expr: |
+            increase(kube_pod_container_status_restarts_total{
+              namespace="apps",
+              container=~"home-assistant|matter-server|mosquitto|otbr|zigbee2mqtt"
+            }[30m]) > 3
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.container }} is restarting repeatedly"
+            description: >-
+              The smart-home container restarted more than three times in the
+              last 30 minutes.

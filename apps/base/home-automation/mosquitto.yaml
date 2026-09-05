@@ -1,0 +1,121 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: apps
+data:
+  mosquitto.conf: |
+    listener 1883
+    # The broker is cluster-internal (no Ingress, no LoadBalancer), but an
+    # anonymous MQTT broker is a bad default: anything that lands in the apps
+    # namespace could publish arbitrary device commands. Credentials live in
+    # the SOPS-encrypted mosquitto-passwd secret.
+    allow_anonymous false
+    password_file /mosquitto/secrets/passwd
+    persistence true
+    persistence_location /mosquitto/data/
+    autosave_interval 60
+    autosave_on_changes true
+    persistent_client_expiration 14d
+    max_queued_messages 1000
+    max_queued_bytes 10485760
+    log_dest stdout
+    log_type error
+    log_type warning
+    log_type notice
+    log_type information
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-data
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: apps
+  labels:
+    app: mosquitto
+spec:
+  replicas: 1
+  # Single RWO volume: the old pod has to release it before the new one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1883
+        runAsGroup: 1883
+        # Makes the 0440 password file and the persistence volume readable by
+        # the mosquitto user.
+        fsGroup: 1883
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2.0.22
+          ports:
+            - name: mqtt
+              containerPort: 1883
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config/mosquitto.conf
+              subPath: mosquitto.conf
+            - name: secrets
+              mountPath: /mosquitto/secrets
+              readOnly: true
+            - name: data
+              mountPath: /mosquitto/data
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-config
+        - name: secrets
+          secret:
+            secretName: mosquitto-passwd
+            defaultMode: 0440
+        - name: data
+          persistentVolumeClaim:
+            claimName: mosquitto-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: apps
+spec:
+  selector:
+    app: mosquitto
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: mqtt

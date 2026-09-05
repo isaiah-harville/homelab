@@ -1,0 +1,169 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otbr-config
+  namespace: apps
+data:
+  RCP_USE_TCP: "1"
+  RCP_HOST: slzb-mr4u.home.arpa
+  # Replace 0 with the configured EFR32MG26 Thread RCP endpoint.
+  RCP_PORT: "0"
+  RCP_TTY: /tmp/ttyOTBR
+  RCP_BAUDRATE: "460800"
+  # Network RCP mode normally does not use UART hardware flow control. Keep
+  # this configurable if the installed firmware requires it.
+  OTBR_RCP_ADDITIONAL_ARGS: ""
+  # thinkcentre-01's physical LAN interface, verified with
+  #   talosctl -n 10.1.10.149 get links
+  # It carries both 10.1.10.149/24 and the LAN's global IPv6 /64, which is what
+  # Thread border routing needs to advertise on-mesh prefixes to the LAN.
+  OTBR_BACKBONE_IF: eno1
+  OTBR_THREAD_IF: wpan0
+  OTBR_REST_LISTEN_ADDRESS: 0.0.0.0
+  OTBR_REST_LISTEN_PORT: "8081"
+  OTBR_LOG_LEVEL_INT: "6"
+  OTBR_WEB_ENABLE: "0"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: otbr-data
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otbr
+  namespace: apps
+  labels: &labels
+    app: otbr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: *labels
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: home.harville.dev/otbr
+                    operator: In
+                    values: ["true"]
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [thinkcentre-01]
+      initContainers:
+        - name: validate-host-and-radio
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -ec
+            - |
+              test "${RCP_PORT}" -ge 1 && test "${RCP_PORT}" -le 65535 || {
+                echo "Set otbr-config RCP_PORT to the MR4U EFR32MG26 Thread endpoint" >&2
+                exit 1
+              }
+              test -d "/sys/class/net/${OTBR_BACKBONE_IF}" || {
+                echo "OTBR_BACKBONE_IF=${OTBR_BACKBONE_IF} does not exist on this node" >&2
+                exit 1
+              }
+              test -c /dev/net/tun || {
+                echo "/dev/net/tun is not present; OTBR cannot create ${OTBR_THREAD_IF}" >&2
+                exit 1
+              }
+              test "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" = 1 || {
+                echo "IPv6 forwarding is off; apply the otbr-host Talos patch" >&2
+                exit 1
+              }
+          envFrom:
+            - configMapRef:
+                name: otbr-config
+          volumeMounts:
+            - name: tun
+              mountPath: /dev/net/tun
+      containers:
+        - name: otbr
+          image: docker.io/bnutzer/otbr-tcp:sha-a04da0c@sha256:881514caacf0829ffac7edca44f538010af0c098e9f817b939612e66a21f4004
+          envFrom:
+            - configMapRef:
+                name: otbr-config
+          ports:
+            - name: rest
+              containerPort: 8081
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [IPC_LOCK, NET_ADMIN]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/thread
+            - name: tun
+              mountPath: /dev/net/tun
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          startupProbe:
+            exec:
+              command: [wrap-ot-ctl, state]
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [wrap-ot-ctl, state]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: [wrap-ot-ctl, state]
+            periodSeconds: 30
+            failureThreshold: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: otbr-data
+        - name: tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otbr
+  namespace: apps
+spec:
+  selector:
+    app: otbr
+  ports:
+    - name: rest
+      port: 8081
+      targetPort: rest

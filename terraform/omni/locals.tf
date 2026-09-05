@@ -14,6 +14,9 @@ locals {
     "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
     "30393137-3436-584d-5135-343430303635", # dl380
   ]
+  otbr_nodes = [
+    "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
+  ]
 
   # Patch names are identity: ../../docs/decisions/omni-resource-identity.md.
   install_patch = {
