@@ -21,6 +21,14 @@
 #      Warmup allocates against that number, and this is a 28-layer,
 #      1024-hidden model rather than 33M parameters. Hence both the higher
 #      memory ceiling and the bounded batch below.
+#   3. It was then OOM-killed again, five times, under the sustained load of
+#      a full library reindex - a different fault from the first with the
+#      same symptom. Warmup was already survivable; what was not was every
+#      queued request holding its input while four batches were in flight.
+#      Hence the raised ceiling and the shorter queue, and hence the memory
+#      request now being above the pod's idle footprint rather than below
+#      it. Sizing a request under what a process uses while doing nothing
+#      is what lets the scheduler put it somewhere it cannot live.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -80,10 +88,17 @@ spec:
             # warmup allocation and the OOM were about.
             - --max-client-batch-size
             - "32"
-            # Ingestion embeds in batches; the default of 1 leaves the CPU
-            # idle between requests from the index worker.
+            # How many requests the router will hold before answering 429.
+            # Lowered from 64: the Candle backend reports it cannot batch
+            # more than 4 for this model ("Backend does not support a batch
+            # size > 4, forcing max_batch_requests=4"), so anything past
+            # that is queue rather than throughput - and a queued request
+            # still holds its tokenized input in memory, which is what the
+            # OOM below was made of. The only clients are the index worker
+            # (4 processes) and interactive searches, so 16 is queue depth
+            # nothing here can exhaust.
             - --max-concurrent-requests
-            - "64"
+            - "16"
           env:
             - name: HUGGINGFACE_HUB_CACHE
               value: /data
@@ -110,12 +125,22 @@ spec:
               # 18x the parameters of bge-small, and CPU is what it embeds
               # on, so ingestion throughput is bounded by this number.
               cpu: "2"
-              memory: 3Gi
+              # Measured, not estimated: this pod sits at ~4.4Gi with no
+              # traffic at all. The previous 3Gi was below its own idle
+              # footprint, which is not a small miscalculation - a request
+              # is what the scheduler packs a node by, so it was free to
+              # place this alongside other workloads on the basis that it
+              # needed less memory than it uses while doing nothing.
+              memory: 6Gi
             limits:
-              # 3Gi was sized for bge-small and is what the OOM kill above
-              # hit. Weights, the tokenizer workers and a warmup batch all
-              # have to fit under this.
-              memory: 8Gi
+              # Raised from 8Gi, which this was OOM-killed against five
+              # times during a full reindex (exit 137). 8Gi looked generous
+              # next to bge-small and is not: idle is already 4.4Gi, so it
+              # allowed less than 2x for weights, the tokenizer workers and
+              # every in-flight batch together. The node has 128Gi and 7%
+              # of it requested, so headroom here costs nothing that
+              # anything else wanted.
+              memory: 16Gi
           volumeMounts:
             - name: model-cache
               mountPath: /data
