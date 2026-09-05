@@ -1,0 +1,47 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: orion
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: orion
+      version: ">=0.2.0 <=5.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: orion
+        namespace: flux-system
+      interval: 10m
+  values:
+    ingress:
+      enabled: false
+    persistence:
+      enabled: true
+      accessMode: ReadWriteMany
+      size: 15Gi
+    api:
+      replicaCount: 2
+    nexrad:
+      env:
+        # NEXRAD's own publish latency dominates frame age: measured against
+        # the archive, the median station's newest volume is already ~9 min
+        # old, and 90% of stations are within ~15 min. Holding the cutoff a
+        # further 10 min back (the 600s default) therefore bought nothing --
+        # 360s selects the same 126 stations about 2.6 min sooner.
+        ORION_NEXRAD_INGEST_LAG_SECONDS: "360"
+    gui:
+      env:
+        VITE_API_URL: https://orion.harville.dev/api

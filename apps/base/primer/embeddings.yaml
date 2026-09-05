@@ -1,0 +1,155 @@
+---
+# Text Embeddings Inference, CPU-only and deliberately so: both GPUs are
+# spoken for by the llama.cpp chat models, and there is no third card.
+# Serves an OpenAI-compatible /v1/embeddings, which is all Primer asks for.
+#
+# Qwen3-Embedding-0.6B replaced bge-small-en-v1.5. It is a straight retrieval
+# upgrade and 1024-dimensional rather than 384, which is not a config change:
+# Primer's pgvector column is fixed at creation and the Haystack integration
+# is built with `recreate_table=False`, so every stored vector had to be
+# thrown away and rebuilt. See docs/apps/primer.md.
+#
+# Two things found by running this image before committing it, both of which
+# this manifest is shaped around:
+#
+#   1. TEI's CPU image prefers ONNX and `Qwen/Qwen3-Embedding-0.6B` publishes
+#      none, so it falls back to the Candle backend and downloads ~1.2GB of
+#      safetensors. Candle does support the architecture ("Starting Qwen3
+#      model on Cpu") - it is just slow to start and wants a far larger cache
+#      volume than bge's 2Gi.
+#   2. It was OOM-killed during warmup at TEI's default --max-batch-tokens.
+#      Warmup allocates against that number, and this is a 28-layer,
+#      1024-hidden model rather than 33M parameters. Hence both the higher
+#      memory ceiling and the bounded batch below.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: primer-embeddings
+  namespace: apps
+  labels:
+    app: primer-embeddings
+spec:
+  replicas: 1
+  # Left as a rolling update deliberately, though a ReadWriteOnce volume
+  # would normally argue for Recreate: the new pod mounts a different claim
+  # from the one the old pod holds, so there is nothing to contend for. That
+  # is what makes this rollout safe - bge keeps answering until Qwen3 passes
+  # its readiness probe, and a model that fails to load leaves the old pod
+  # serving rather than leaving nothing serving.
+  #
+  # Setting Recreate here was also rejected outright: Kubernetes has already
+  # defaulted `strategy.rollingUpdate` onto the live object, and the two
+  # cannot both be set.
+  selector:
+    matchLabels:
+      app: primer-embeddings
+  template:
+    metadata:
+      labels:
+        app: primer-embeddings
+    spec:
+      containers:
+        - name: tei
+          # Pinned rather than floating on `cpu-1.9`. TEI returned wrong
+          # vectors for Qwen3 until huggingface/text-embeddings-inference#648
+          # (merged before 1.8.0) - a bug that produces plausible embeddings
+          # and silently worse retrieval, which is the kind nobody notices.
+          # A model whose correctness depends on the server version should
+          # name the version it was verified against.
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3
+          args:
+            - --model-id
+            - Qwen/Qwen3-Embedding-0.6B
+            - --port
+            - "8080"
+            # The model reports a 32768-token maximum, far more than any
+            # chunk Primer produces. Left at TEI's default this is what
+            # sizes the warmup allocation, and the warmup is what was killed.
+            - --max-batch-tokens
+            - "4096"
+            # Explicit, because the line above is now below the model's
+            # maximum input length: an over-long chunk should be truncated
+            # rather than fail the whole batch it arrived in.
+            - --auto-truncate
+            - --max-client-batch-size
+            - "16"
+            # Ingestion embeds in batches; the default of 1 leaves the CPU
+            # idle between requests from the index worker.
+            - --max-concurrent-requests
+            - "64"
+          env:
+            - name: HUGGINGFACE_HUB_CACHE
+              value: /data
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            # Much slacker than bge needed. First start downloads ~1.2GB and
+            # then loads and warms a 0.6B model on CPU; failing the pod
+            # partway through restarts the download from the beginning.
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+          resources:
+            requests:
+              # 18x the parameters of bge-small, and CPU is what it embeds
+              # on, so ingestion throughput is bounded by this number.
+              cpu: "2"
+              memory: 3Gi
+            limits:
+              # 3Gi was sized for bge-small and is what the OOM kill above
+              # hit. Weights, the tokenizer workers and a warmup batch all
+              # have to fit under this.
+              memory: 8Gi
+          volumeMounts:
+            - name: model-cache
+              mountPath: /data
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: primer-embeddings-model-cache
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # A new claim rather than an expansion of `primer-embeddings-cache`, which
+  # is left behind to be deleted by hand. Longhorn grows every replica of a
+  # volume, and this storage class keeps three; one of the three disks is
+  # close enough to its over-provisioning limit that even +2Gi is refused,
+  # while a fresh claim is free to be scheduled onto the disks with room.
+  name: primer-embeddings-model-cache
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    # bge-small's 2Gi does not hold this model's weights, which are ~1.2GB of
+    # safetensors. 4Gi is roughly triple what is actually stored - deliberate
+    # slack for a second model without a resize, and no more, because three
+    # replicas of it are scheduled whether or not they are used.
+    requests:
+      storage: 4Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: primer-embeddings
+  namespace: apps
+  labels:
+    app: primer-embeddings
+spec:
+  selector:
+    app: primer-embeddings
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

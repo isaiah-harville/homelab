@@ -13,6 +13,8 @@ resources:
   - ../../../infrastructure/base/flux-operator
   - ../../../infrastructure/base/cloudnative-pg
   - ../../../infrastructure/base/cnpg-barman-plugin
+  - ../../../infrastructure/base/rabbitmq-operator
+  - ../../../infrastructure/base/nvidia-gpu-operator
   - ./secrets/cert-manager/cloudflare-api-token.yaml
   - ./secrets/monitoring/cluster-user-auth.yaml
   # actions-runner-controller — self-hosted runner for the Terraform jobs.

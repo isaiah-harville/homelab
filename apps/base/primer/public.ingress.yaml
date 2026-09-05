@@ -1,0 +1,35 @@
+---
+# Written by hand rather than taken from the chart (ingress.enabled=false) for
+# two reasons: the chart emits nginx-only annotations, and a standalone
+# manifest is what the `apps` Kustomization patches reach for the shared TLS
+# secret and the websecure entrypoint.
+#
+# The backend is the oauth2-proxy service, never web or control directly.
+# Every Primer service is ClusterIP, so the authenticated path is the only way in.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: primer-public
+  namespace: apps
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: apps-primer-strip-identity@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: AI
+    gethomepage.dev/name: Primer
+    gethomepage.dev/description: Cited answers over your own documents
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=primer
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [primer.harville.dev]
+  rules:
+    - host: primer.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: primer-auth
+                port:
+                  number: 4180

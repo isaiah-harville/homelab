@@ -57,6 +57,11 @@ spec:
     grafana:
       deploymentStrategy:
         type: Recreate
+      # Keep anonymous Viewer access deterministic for the LAN-only ingress.
+      # These environment variables override any stale generated grafana.ini.
+      env:
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       initChownData:
         enabled: false
       grafana.ini:
@@ -72,6 +77,9 @@ spec:
           auto_sign_up: true
           headers: "Name:X-authentik-name Email:X-authentik-email Groups:X-authentik-groups"
           enable_login_token: false
+        auth.anonymous:
+          enabled: true
+          org_role: Viewer
         security:
           cookie_secure: true
           cookie_samesite: strict
@@ -141,19 +149,4 @@ spec:
       service:
         type: ClusterIP
       ingress:
-        enabled: true
-        ingressClassName: traefik-internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Observability
-          gethomepage.dev/name: Grafana
-          gethomepage.dev/description: Dashboards and alerting
-          gethomepage.dev/pod-selector: app.kubernetes.io/name=grafana
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
-        hosts:
-          - grafana.int.harville.dev
-        tls:
-          - hosts:
-              - grafana.int.harville.dev
-            secretName: harville-wildcard-shared-tls
+        enabled: false

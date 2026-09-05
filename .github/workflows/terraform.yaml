@@ -48,7 +48,7 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Init
-        run: terraform init -input=false
+        run: terraform init -upgrade -input=false
 
       - name: Validate
         run: terraform validate
@@ -70,7 +70,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Init
-        run: terraform init -input=false
+        run: terraform init -upgrade -input=false
 
       - name: Apply
         run: terraform apply -input=false -auto-approve

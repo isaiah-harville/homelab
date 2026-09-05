@@ -39,4 +39,20 @@ locals {
     "9ba21500-a881-11e5-ae5a-d524518f0c00",
   ]
   storage_nodes = concat(local.dedicated_storage_nodes, local.root_storage_nodes)
+
+  # Machines with a discrete NVIDIA GPU. Confirm with:
+  #   talosctl get pcidevices | grep -i nvidia
+  gpu_nodes = [
+    "4c4c4544-0030-5910-805a-c6c04f503133",
+    "4c4c4544-0039-4210-8046-b8c04f314a33",
+  ]
+
+  base_extensions = [
+    "siderolabs/iscsi-tools",
+    "siderolabs/util-linux-tools",
+  ]
+  gpu_extensions = concat(local.base_extensions, [
+    "siderolabs/nonfree-kmod-nvidia-production",
+    "siderolabs/nvidia-container-toolkit-production",
+  ])
 }

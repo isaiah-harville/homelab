@@ -135,7 +135,7 @@ spec:
               mountPath: /gluetun
       containers:
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.2.3_v2.0.14-ls472 # {"$imagepolicy": "flux-system:qbittorrent"}
+          image: lscr.io/linuxserver/qbittorrent:5.2.3_v2.0.14-ls474 # {"$imagepolicy": "flux-system:qbittorrent"}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

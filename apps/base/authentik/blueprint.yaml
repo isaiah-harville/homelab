@@ -19,10 +19,6 @@ data:
         attrs:
           crontab: "*/2 * * * *"
       - model: authentik_core.group
-        id: open-webui-users
-        identifiers:
-          name: Open WebUI Users
-      - model: authentik_core.group
         id: seaweedfs-admins
         identifiers:
           name: SeaweedFS Admins
@@ -59,6 +55,10 @@ data:
         identifiers:
           name: Harbor Users
       - model: authentik_core.group
+        id: primer-users
+        identifiers:
+          name: Primer Users
+      - model: authentik_core.group
         id: mlflow-users
         identifiers:
           name: MLflow Users
@@ -66,33 +66,68 @@ data:
         id: mlflow-admins
         identifiers:
           name: MLflow Admins
-      - model: authentik_providers_proxy.proxyprovider
-        id: webui-provider
+      # KeyOf only resolves backwards - an entry can reference one that
+      # came before it in the document, never one that comes later - so this
+      # has to be defined before primer-provider, its first use, rather than
+      # grouped with the property mappings further down where every other
+      # provider using it already comes after it.
+      - model: authentik_providers_oauth2.scopemapping
+        id: groups-scope
         identifiers:
-          name: Open WebUI Provider
+          name: Homelab groups
+        attrs:
+          scope_name: groups
+          description: Kubernetes RBAC group membership
+          expression: |
+            return {"groups": [group.name for group in request.user.ak_groups.all()]}
+      # Primer authenticates through its own oauth2-proxy rather than the
+      # ForwardAuth middleware: it reads oauth2-proxy's X-Auth-Request-*
+      # headers, which only that proxy sets from a verified session.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: primer-provider
+        identifiers:
+          name: Primer Provider
         attrs:
           authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-          mode: forward_single
-          external_host: https://webui.harville.dev
+          client_type: confidential
+          client_id: primer
+          client_secret: !Env [PRIMER_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          # oauth2-proxy uses exactly one callback path, so this is pinned
+          # rather than host-matched.
+          redirect_uris:
+            - matching_mode: strict
+              url: https://primer.harville.dev/oauth2/callback
+              redirect_uri_type: authorization
       - model: authentik_core.application
         identifiers:
-          slug: open-webui
+          slug: primer
         attrs:
-          name: Open WebUI
-          provider: !KeyOf webui-provider
-          meta_launch_url: https://webui.harville.dev
+          name: Primer
+          provider: !KeyOf primer-provider
+          meta_launch_url: https://primer.harville.dev
           policy_engine_mode: any
       - model: authentik_policies.policybinding
         identifiers:
-          target: !Find [authentik_core.application, [slug, open-webui]]
+          target: !Find [authentik_core.application, [slug, primer]]
           order: 0
         attrs:
-          group: !KeyOf open-webui-users
+          group: !KeyOf primer-users
       - model: authentik_policies.policybinding
         identifiers:
-          target: !Find [authentik_core.application, [slug, open-webui]]
+          target: !Find [authentik_core.application, [slug, primer]]
           order: 1
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
@@ -225,14 +260,14 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           mode: forward_single
-          external_host: https://grafana.int.harville.dev
+          external_host: https://grafana.harville.dev
       - model: authentik_core.application
         identifiers:
           slug: grafana
         attrs:
           name: Grafana
           provider: !KeyOf grafana-provider
-          meta_launch_url: https://grafana.int.harville.dev
+          meta_launch_url: https://grafana.harville.dev
           policy_engine_mode: any
       - model: authentik_policies.policybinding
         identifiers:
@@ -348,15 +383,6 @@ data:
           order: 0
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
-      - model: authentik_providers_oauth2.scopemapping
-        id: groups-scope
-        identifiers:
-          name: Homelab groups
-        attrs:
-          scope_name: groups
-          description: Kubernetes RBAC group membership
-          expression: |
-            return {"groups": [group.name for group in request.user.ak_groups.all()]}
       - model: authentik_providers_oauth2.oauth2provider
         id: shelfmark-provider
         identifiers:
@@ -781,7 +807,6 @@ data:
             authentik_host: https://auth.harville.dev
             authentik_host_browser: https://auth.harville.dev
           providers:
-            - !KeyOf webui-provider
             - !KeyOf seaweedfs-provider
             - !KeyOf openvitae-provider
             - !KeyOf flux-provider

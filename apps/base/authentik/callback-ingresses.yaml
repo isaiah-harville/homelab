@@ -10,6 +10,7 @@ spec:
     - hosts:
         - webui.harville.dev
         - isaiah.harville.dev
+        - grafana.harville.dev
   rules:
     - host: webui.harville.dev
       http:
@@ -22,6 +23,16 @@ spec:
                 port:
                   name: http
     - host: isaiah.harville.dev
+      http:
+        paths:
+          - path: /outpost.goauthentik.io/
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  name: http
+    - host: grafana.harville.dev
       http:
         paths:
           - path: /outpost.goauthentik.io/
@@ -44,7 +55,6 @@ spec:
         - seaweedfs.int.harville.dev
         - flux.int.harville.dev
         - longhorn.int.harville.dev
-        - grafana.int.harville.dev
   rules:
     - host: seaweedfs.int.harville.dev
       http:
@@ -67,16 +77,6 @@ spec:
                 port:
                   name: http
     - host: longhorn.int.harville.dev
-      http:
-        paths:
-          - path: /outpost.goauthentik.io/
-            pathType: Prefix
-            backend:
-              service:
-                name: authentik-server
-                port:
-                  name: http
-    - host: grafana.int.harville.dev
       http:
         paths:
           - path: /outpost.goauthentik.io/

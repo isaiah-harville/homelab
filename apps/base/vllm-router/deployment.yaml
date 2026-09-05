@@ -26,12 +26,13 @@ spec:
             - "8001"
             - --service-discovery
             - static
+            # Repointed off vLLM, which is scaled to zero
             - --static-backends
-            - http://10.1.10.20:8000
+            - "http://llama-ministral-3b-instruct.apps.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.apps.svc.cluster.local:8080"
             - --static-models
-            - qwen3-8b
+            - "ministral-3-3b-instruct,ministral-3-3b-reasoning"
             - --static-model-types
-            - chat
+            - "chat,chat"
             - --routing-logic
             - roundrobin
             - --log-stats

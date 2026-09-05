@@ -11,11 +11,13 @@ resources:
   - authentik.helmrepository.yaml
   - cloudnative-pg.helmrepository.yaml
   - headlamp.helmrepository.yaml
-  - open-webui.helmrepository.yaml
   - seaweedfs.helmrepository.yaml
   - harbor.helmrepository.yaml
   - metrics-server.helmrepository.yaml
   - actions-runner-controller.helmrepository.yaml
   - community-charts.helmrepository.yaml
+  - orion.helmrepository.yaml
+  - nvidia.helmrepository.yaml
+  - primer.helmrepository.yaml
   - flux-operator.ocirepository.yaml
   - flux-operator-mcp.ocirepository.yaml

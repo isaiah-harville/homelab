@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: Orion
     gethomepage.dev/description: Public Orion app
-    gethomepage.dev/pod-selector: app=orion
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=orion
 spec:
   ingressClassName: traefik-public
   tls:
@@ -22,13 +22,13 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: orion
+                name: orion-gui
                 port:
                   name: gui
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: orion
+                name: orion-api
                 port:
                   name: api

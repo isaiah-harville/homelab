@@ -9,6 +9,7 @@ Examples:
 - `cloudnative-pg/`: PostgreSQL operator, metrics, and Grafana dashboard
 - `flux-operator/`: Flux status UI and read-only in-cluster MCP server
 - `actions-runner-controller/`: in-cluster GitHub Actions runner
+- `nvidia-gpu-operator/`: schedulable GPUs on the two NVIDIA nodes
 - `sources/`: Flux source objects consumed by releases elsewhere in the repo
 - `namespaces/`: shared namespace definitions
 

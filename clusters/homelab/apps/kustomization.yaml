@@ -22,6 +22,9 @@ resources:
   - ./secrets/mlflow.yaml
   - ./secrets/mosquitto-passwd.yaml
   - ./secrets/mosquitto-clients.yaml
+  - ./secrets/primer-rabbitmq.yaml
+  - ./secrets/primer-oidc.yaml
+  - ./secrets/primer-s3.yaml
   - ../../../apps/base/authentik
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
@@ -30,20 +33,22 @@ resources:
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/releases/swing-thoughts
-  - ../../../apps/releases/pigeon
+  - ../../../apps/base/pigeon
   - ../../../apps/releases/runway
   - ../../../apps/base/pigeon-relay
   - ../../../apps/releases/orion
   - ../../../apps/base/admin
   - ../../../apps/releases/openvitae
   - ../../../apps/base/lucerna
-  - ../../../apps/base/openwebui
   - ../../../apps/base/seaweedfs
   - ../../../apps/base/harbor
+  - ../../../apps/base/vllm
   - ../../../apps/base/vllm-router
+  - ../../../apps/base/llama-cpp
   - ../../../apps/base/searxng
   - ../../../apps/base/mlflow
   - ../../../apps/base/home-automation
+  - ../../../apps/base/primer
 patches:
   - target:
       kind: Ingress
@@ -331,5 +336,19 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.template.metadata.annotations.mosquitto-clients-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: primer-oidc
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: authentik
+          namespace: apps
+        fieldPaths:
+          - spec.values.global.podAnnotations.primer-oidc-mac
         options:
           create: true

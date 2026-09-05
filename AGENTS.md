@@ -122,7 +122,7 @@ instance.
 
 1. Create `apps/base/<name>/` with:
    - `helmrelease.yaml` — `HelmRelease` in namespace `apps`, with the standard
-     `install`/`upgrade` remediation block (copy from `apps/base/openwebui/helmrelease.yaml`).
+     `install`/`upgrade` remediation block (copy from `apps/base/primer/helmrelease.yaml`).
      Every HelmRelease sets both `install.crds` and `upgrade.crds` to
      `CreateReplace`; this lets Flux update CRDs shipped in a chart's `crds/`
      directory instead of Helm's default upgrade behavior silently skipping
@@ -180,8 +180,8 @@ external deployment.
   Authentik outage. Normal access still uses Headlamp's native Authentik OIDC flow
   and per-user Kubernetes RBAC; see `docs/operations/authentication.md`.
 - **Homepage** dashboard discovery: `gethomepage.dev/*` annotations on the Ingress.
-- Open WebUI only has the authenticated public route `webui.harville.dev`; do
-  not recreate the redundant `webui.int.harville.dev` route.
+- Primer only has the authenticated public route `primer.harville.dev`; do not
+  add an internal duplicate.
 
 ## TLS / certificates
 
@@ -274,27 +274,39 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **authentik** — HA SSO/OIDC/ForwardAuth provider. Git-managed blueprints own
   application/provider configuration; Omni/Dex remains independent.
 - **homepage** — dashboard, auto-populated from `gethomepage.dev/*` ingress annotations.
-- **searxng** — self-hosted metasearch; backs Open WebUI's web-search
-  (`http://searxng:8080`, see `apps/base/openwebui`).
+- **searxng** — self-hosted metasearch (`http://searxng:8080`). Deployed but
+  currently unwired: it backed Open WebUI's web search, and Primer does not use
+  it.
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
 - **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **harbor** — container registry, public at `harbor.harville.dev`.
-- **vllm** — OpenAI-compatible inference at `vllm.int.harville.dev` (API-key auth),
-  wired into Open WebUI. See "GPU / vLLM" below.
+- **vllm-router** — OpenAI-compatible inference at `vllm.int.harville.dev`
+  (API-key auth), consumed by Primer. See "GPU / vLLM" below.
+- **primer** — cited answers over private document libraries, public at
+  `primer.harville.dev`. See `docs/apps/primer.md`.
 
-## GPU / vLLM (external, not a cluster node)
+## GPU / vLLM
 
-There are **no GPU nodes in the cluster** — the Talos cluster is CPU-only. GPU
-inference runs on a **standalone WSL box** (`harvi-desktop`, `10.1.10.20`) that is
-**not** a Talos node. vLLM runs on that box directly and serves an OpenAI-compatible
-API on `10.1.10.20:8000`.
+Two cluster nodes have a discrete NVIDIA GPU: `talos-h5j-x2r` (Quadro T1000
+Mobile) and `talos-6t5-q1d` (RTX A2000 Mobile), both control planes. Talos is
+immutable, so the driver arrives as the `nonfree-kmod-nvidia-production` and
+`nvidia-container-toolkit-production` system extensions plus
+`talos/omni/patches/nvidia-gpu.yaml`; the NVIDIA GPU operator
+(`infrastructure/base/nvidia-gpu-operator/`) runs with its driver and toolkit
+containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
+needs manual labelling. Details in `talos/README.md`.
 
-Inside the cluster, `apps/base/vllm-router` (the vLLM Production Stack router) points
-at that box as a **static external backend** and exposes it at `vllm.int.harville.dev`
-(so Open WebUI sees the model). Today it fronts a single backend (`qwen3-8b`); add
-more `--static-backends` entries to fan out to additional external endpoints.
+Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`), which
+is what sizes everything: `apps/base/vllm` serves `Qwen2.5-3B-Instruct-AWQ` at
+4-bit with `--enforce-eager` and an fp8 KV cache, fronted by
+`apps/base/vllm-router`. The old WSL box (`harvi-desktop`, `10.1.10.20`) is
+gone. See `docs/operations/external-inference.md`.
+
+Embeddings deliberately stay on CPU (`apps/base/primer/embeddings.yaml`,
+`bge-small-en-v1.5`): the model is 33M parameters, and keeping it off the card
+leaves the whole GPU for chat.
 
 ## Ops cheatsheet
 

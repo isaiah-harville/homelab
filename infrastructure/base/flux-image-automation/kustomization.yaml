@@ -8,4 +8,5 @@ resources:
   - lmstack-router.yaml
   - nginx.yaml
   - pigeon-relay.yaml
+  - pigeon-website.yaml
   - automation.yaml

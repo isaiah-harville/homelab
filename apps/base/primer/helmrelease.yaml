@@ -1,0 +1,118 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: primer
+  namespace: apps
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: primer
+      version: ">=0.1.0 <1.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: primer
+        namespace: flux-system
+  values:
+    fullnameOverride: primer
+
+    # oauth2-proxy against Authentik. Not the shared ForwardAuth middleware:
+    # Primer reads oauth2-proxy's X-Auth-Request-* headers specifically, and
+    # the proxy is what overwrites them from the verified session.
+    auth:
+      mode: oidc
+      oidc:
+        issuerUrl: https://auth.harville.dev/application/o/primer/
+        clientId: primer
+        existingSecret: primer-oidc
+        clientSecretKey: client-secret
+        cookieSecretKey: cookie-secret
+        scopes: openid profile email groups
+        emailDomains:
+          - "*"
+
+    # Ingress is a standalone manifest (public.ingress.yaml): the chart's
+    # header stripping is nginx-only and has to be re-expressed as a Traefik
+    # middleware, and the `apps` Kustomization patches only reach manifests
+    # it owns. See middleware.yaml — that rule is load-bearing.
+    ingress:
+      enabled: false
+      # oauth2-proxy builds --redirect-url from this even with the ingress
+      # resource itself disabled - it has no other way to know its own
+      # public hostname. Leaving it at the chart's placeholder default
+      # (primer.example.com) breaks every login with a redirect_uri
+      # mismatch, since Authentik's provider is pinned to the real host.
+      host: primer.harville.dev
+
+    # CNPG generates this secret and puts a ready-made connection URI in it,
+    # so no password is managed by hand. Primer normalizes the scheme onto
+    # asyncpg itself, so the plain postgresql:// URI is what it wants.
+    postgresql:
+      existingSecret: primer-postgres-app
+      urlKey: uri
+
+    rabbitmq:
+      existingSecret: primer-rabbitmq
+      urlKey: broker-url
+
+    sourceStore:
+      url: s3://primer-sources
+      # Mounted whole into Control and the two ingestion workers - the only
+      # services that open a source object - so this secret carries the
+      # endpoint and region alongside the credentials. SeaweedFS is not AWS,
+      # and fsspec needs FSSPEC_S3_ENDPOINT_URL to find it.
+      existingSecret: primer-s3
+
+    inference:
+      # Behind vllm-router rather than a model server directly, so a backend
+      # can be added or replaced without rewiring every consumer. The name is
+      # now historical - what it fronts is llama.cpp, not vLLM.
+      #
+      # The router fans out across both deployments, so this one URL offers
+      # the instruct model and the reasoning model both, and `model` below is
+      # only which of them a new conversation starts on. Anything outside the
+      # cluster is added from Primer's own settings page instead.
+      chat:
+        baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
+        model: ministral-3-3b-instruct
+        existingSecret: vllm-api-key
+        apiKeyKey: VLLM_API_KEY
+      embeddings:
+        baseUrl: http://primer-embeddings.apps.svc.cluster.local:8080/v1
+        model: Qwen/Qwen3-Embedding-0.6B
+        # Must match the model. Changing either invalidates every stored
+        # vector and forces a full reindex - and more than that, the pgvector
+        # column is fixed at creation and the Haystack integration will not
+        # rewrite it, so `vectors.chunks` has to be dropped and rebuilt.
+        dimensions: 1024
+
+    vectorStore:
+      kind: pgvector
+
+    workers:
+      parse:
+        modelCache:
+          enabled: true
+          size: 4Gi
+          storageClass: longhorn
+      # The chart's celery command sets no --concurrency, so Celery falls
+      # back to the node's CPU count rather than anything the container is
+      # actually sized for - 16 prefork workers on this node against a 2Gi
+      # default limit, which OOMs on startup before doing any work. Belongs
+      # in the chart (a concurrency knob wired to --concurrency); this is
+      # the values-only workaround until that lands.
+      index:
+        resources:
+          requests: { cpu: 100m, memory: 1Gi }
+          limits: { memory: 4Gi }

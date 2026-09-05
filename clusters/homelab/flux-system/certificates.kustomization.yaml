@@ -5,7 +5,7 @@ metadata:
   name: certificates
   namespace: flux-system
 spec:
-  interval: 10m
+  interval: 5m
   path: ./infrastructure/base/certificates
   prune: true
   wait: true

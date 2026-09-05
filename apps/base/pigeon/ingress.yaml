@@ -3,7 +3,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pigeon
-  namespace: apps
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Public

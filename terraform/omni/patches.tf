@@ -88,3 +88,18 @@ resource "omni_config_patch" "otbr_host" {
   }
   data = file("${local.patch_dir}/otbr-host.yaml")
 }
+
+# Load the NVIDIA kernel modules on GPU machines. The modules themselves come
+# from the system extensions in extensions.tf; this patch is inert without
+# them.
+resource "omni_config_patch" "nvidia_gpu" {
+  for_each = toset(local.gpu_nodes)
+
+  name    = "nvidia-gpu"
+  cluster = omni_cluster.homelab.name
+  weight  = 403
+  selector = {
+    cluster_machine = each.value
+  }
+  data = file("${local.patch_dir}/nvidia-gpu.yaml")
+}

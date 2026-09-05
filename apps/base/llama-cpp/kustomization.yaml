@@ -1,0 +1,19 @@
+---
+# llama.cpp inference, one deployment per model.
+#
+# Separate from `apps/base/vllm` rather than folded into it, because the two
+# runtimes are chosen for different reasons and the choice is per-model: vLLM
+# wants a quantization someone published (AWQ, GPTQ), and llama.cpp wants a
+# GGUF. Ministral 3 ships GGUF and nothing else, which is why it is here.
+#
+# One subdirectory per model, and the directory is named after the model. Two
+# models on two 4GB cards is the whole of this cluster's GPU capacity, so the
+# thing an operator most needs to see at a glance is which model is deployed
+# and which card it is pinned to - a directory listing answers that, a single
+# file full of Deployments does not.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+resources:
+  - ministral-3-3b-instruct-2512
+  - ministral-3-3b-reasoning-2512

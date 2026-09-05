@@ -5,7 +5,7 @@ metadata:
   name: swing-thoughts
   namespace: flux-system
 spec:
-  interval: 10m
+  interval: 5m
   path: ./SwingThoughtsWebsite/deploy/k8s
   prune: true
   wait: true
