@@ -28,10 +28,20 @@ spec:
     fullnameOverride: primer
 
     # oauth2-proxy against Authentik. Not the shared ForwardAuth middleware:
-    # Primer reads oauth2-proxy's X-Auth-Request-* headers specifically, and
-    # the proxy is what overwrites them from the verified session.
+    # Primer reads the X-Forwarded-User/-Email/-Groups family, which is what
+    # --pass-user-headers sets on the request in reverse-proxy mode, and the
+    # proxy overwrites them from the verified session rather than appending.
+    # (X-Auth-Request-* is the other pattern - it belongs to the separate
+    # auth_request / ForwardAuth flow, which this is not.)
     auth:
       mode: oidc
+      # Who may open Primer's settings page and change which inference
+      # providers this deployment answers from. Unset means nobody - the
+      # chart's safe default - and that reads as the page being broken for
+      # its own administrator. The name is matched exactly against the
+      # groups Authentik asserts, and the groups scope mapping sends group
+      # *names*, so this is "Primer Admins" and not the blueprint's id.
+      adminGroup: Primer Admins
       oidc:
         issuerUrl: https://auth.harville.dev/application/o/primer/
         clientId: primer

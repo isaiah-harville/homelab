@@ -59,6 +59,10 @@ data:
         identifiers:
           name: Primer Users
       - model: authentik_core.group
+        id: primer-admins
+        identifiers:
+          name: Primer Admins
+      - model: authentik_core.group
         id: mlflow-users
         identifiers:
           name: MLflow Users
@@ -129,6 +133,12 @@ data:
         identifiers:
           target: !Find [authentik_core.application, [slug, primer]]
           order: 1
+        attrs:
+          group: !KeyOf primer-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, primer]]
+          order: 2
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_proxy.proxyprovider
