@@ -3,9 +3,14 @@
 #
 # The same base model post-trained to think before answering, which is worth
 # a second card for the questions where the first answer is usually wrong -
-# maths, code, anything multi-step. It emits its reasoning in <think> blocks;
-# Primer splits those out and shows them under a disclosure rather than in
-# the answer, so no prompt-side suppression is wanted here.
+# maths, code, anything multi-step.
+#
+# Its reasoning is delimited by [THINK] ... [/THINK], which is Mistral's
+# syntax and not the <think> tags most reasoning models use. That matters
+# more than it looks: a client that strips <think> - Primer included - sees
+# nothing to strip here, so unless the server separates the thinking itself
+# it arrives as part of the answer, or not at all. The flags below are what
+# make the server do the separating.
 #
 # This is the second of the cluster's two GPUs, and there is no third: the
 # device plugin hands out whole cards, so this deployment and the instruct
@@ -52,6 +57,22 @@ spec:
             - --no-mmproj
             - --alias
             - ministral-3-3b-reasoning
+            # Hand the thinking over already separated, in reasoning_content
+            # beside the content, which is the field Primer reads.
+            #
+            # "deepseek" names the response shape rather than a model family:
+            # it is the DeepSeek API's convention for carrying reasoning in
+            # its own field, and every value other than "none" extracts. It
+            # is stated rather than left to the "auto" default because that
+            # default has changed across llama.cpp releases and this image
+            # tag is a rolling one - what a deployment relies on should not
+            # depend on the day its node last pulled.
+            - --reasoning-format
+            - deepseek
+            # Extraction is driven by the model's own chat template, which is
+            # where [THINK] is defined. Jinja is the current default, and is
+            # named here for the same reason as the line above.
+            - --jinja
             - -ngl
             - "all"
             - -c
