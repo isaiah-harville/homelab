@@ -10,8 +10,8 @@ metadata:
   namespace: apps
 data:
   # Radio 2 / CC2674P10 is reserved for Zigbee. Replace port 0 with the
-  # endpoint shown by the configured MR3U; never point this at Radio 1.
-  serial_port: tcp://slzb-mr3u.home.arpa:0
+  # endpoint shown by the configured MR4U; never point this at Radio 1.
+  serial_port: tcp://slzb-mr4u.home.arpa:0
   serial_adapter: zstack
   serial_baudrate: "115200"
 ---
@@ -57,7 +57,7 @@ spec:
             - |
               case "${SERIAL_PORT}" in
                 tcp://*:0)
-                  echo "Set zigbee2mqtt-adapter serial_port to the MR3U CC2674P10 Zigbee endpoint" >&2
+                  echo "Set zigbee2mqtt-adapter serial_port to the MR4U CC2674P10 Zigbee endpoint" >&2
                   exit 1
                   ;;
                 tcp://*:*) ;;

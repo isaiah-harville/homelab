@@ -24,7 +24,7 @@ spec:
             description: >-
               The home-automation Deployment has had no available replica for
               15 minutes. OTBR and Zigbee2MQTT are expected to remain
-              unavailable while their MR3U endpoint uses the port-0 sentinel.
+              unavailable while their MR4U endpoint uses the port-0 sentinel.
         - alert: HomeAutomationContainerRestarting
           expr: |
             increase(kube_pod_container_status_restarts_total{

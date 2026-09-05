@@ -6,16 +6,19 @@ metadata:
   namespace: apps
 data:
   RCP_USE_TCP: "1"
-  RCP_HOST: slzb-mr3u.home.arpa
-  # Replace 0 with the configured EFR32MG24 Thread RCP endpoint.
+  RCP_HOST: slzb-mr4u.home.arpa
+  # Replace 0 with the configured EFR32MG26 Thread RCP endpoint.
   RCP_PORT: "0"
   RCP_TTY: /tmp/ttyOTBR
   RCP_BAUDRATE: "460800"
   # Network RCP mode normally does not use UART hardware flow control. Keep
   # this configurable if the installed firmware requires it.
   OTBR_RCP_ADDITIONAL_ARGS: ""
-  # Replace with thinkcentre-01's physical LAN interface after verification.
-  OTBR_BACKBONE_IF: change-me
+  # thinkcentre-01's physical LAN interface, verified with
+  #   talosctl -n 10.1.10.149 get links
+  # It carries both 10.1.10.149/24 and the LAN's global IPv6 /64, which is what
+  # Thread border routing needs to advertise on-mesh prefixes to the LAN.
+  OTBR_BACKBONE_IF: eno1
   OTBR_THREAD_IF: wpan0
   OTBR_REST_LISTEN_ADDRESS: 0.0.0.0
   OTBR_REST_LISTEN_PORT: "8081"
@@ -79,16 +82,21 @@ spec:
             - -ec
             - |
               test "${RCP_PORT}" -ge 1 && test "${RCP_PORT}" -le 65535 || {
-                echo "Set otbr-config RCP_PORT to the MR3U EFR32MG24 Thread endpoint" >&2
+                echo "Set otbr-config RCP_PORT to the MR4U EFR32MG26 Thread endpoint" >&2
                 exit 1
               }
-              test "${OTBR_BACKBONE_IF}" != change-me || {
-                echo "Set otbr-config OTBR_BACKBONE_IF to thinkcentre-01's LAN interface" >&2
+              test -d "/sys/class/net/${OTBR_BACKBONE_IF}" || {
+                echo "OTBR_BACKBONE_IF=${OTBR_BACKBONE_IF} does not exist on this node" >&2
                 exit 1
               }
-              test -c /dev/net/tun
-              test -d "/sys/class/net/${OTBR_BACKBONE_IF}"
-              test "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" = 1
+              test -c /dev/net/tun || {
+                echo "/dev/net/tun is not present; OTBR cannot create ${OTBR_THREAD_IF}" >&2
+                exit 1
+              }
+              test "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" = 1 || {
+                echo "IPv6 forwarding is off; apply the otbr-host Talos patch" >&2
+                exit 1
+              }
           envFrom:
             - configMapRef:
                 name: otbr-config
