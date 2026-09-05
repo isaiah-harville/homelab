@@ -94,23 +94,6 @@ spec:
       useServicePort: true
       labels:
         release: kube-prometheus-stack
-    # `serviceMonitor.enabled` above makes the chart pass
-    # `--expose-prometheus=/mlflow/metrics`, and then mounts nothing there.
-    # The container runs with a read-only root filesystem, so MLflow's
-    # `os.makedirs` for that directory raises at import and the process
-    # dies before it ever binds a port:
-    #
-    #   OSError: [Errno 30] Read-only file system: '/mlflow/metrics'
-    #
-    # Which is why no release of this chart has ever succeeded here - the
-    # first install failed on 2026-08-02 and every upgrade since inherited
-    # it, leaving pods with four thousand restarts and a HelmRelease that
-    # fails the health check for the whole `apps` Kustomization.
-    #
-    # An emptyDir rather than relaxing readOnlyRootFilesystem: only this
-    # one path needs writing, and prometheus_client's multiprocess mode
-    # wants a directory that starts empty for each process group anyway,
-    # which is exactly what an emptyDir gives every pod.
     extraVolumes:
       - name: prometheus-metrics
         emptyDir: {}
