@@ -34,6 +34,21 @@ data:
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
+
+    lovelace:
+      # The default Overview stays UI-editable and lives in .storage, so the
+      # normal "Edit dashboard" workflow keeps working. Dashboards listed below
+      # are YAML mode: Git owns them, and Home Assistant renders them read-only.
+      # That split is deliberate — a UI-editable dashboard cannot be tracked in
+      # Git without the UI and Flux overwriting each other.
+      mode: storage
+      dashboards:
+        control-panel:
+          mode: yaml
+          title: Control
+          icon: mdi:home-heart
+          show_in_sidebar: true
+          filename: dashboards/control.yaml
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -110,6 +125,9 @@ spec:
               mountPath: /config/configuration.yaml
               subPath: configuration.yaml
               readOnly: true
+            - name: dashboards
+              mountPath: /config/dashboards
+              readOnly: true
           resources:
             requests:
               cpu: 200m
@@ -142,6 +160,9 @@ spec:
         - name: configuration
           configMap:
             name: home-assistant-configuration
+        - name: dashboards
+          configMap:
+            name: home-assistant-dashboards
 ---
 apiVersion: v1
 kind: Service

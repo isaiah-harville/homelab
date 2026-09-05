@@ -2,15 +2,30 @@
 
 ## Architecture and service names
 
-The production Thread border router is OTBR in Kubernetes. The SLZB-MR4U
-provides two independent network radios; it does not run OTBR and does not use
-multiprotocol firmware.
+Everything below runs in the `apps` namespace. The production Thread border
+router is OTBR in Kubernetes. The SLZB-MR4U is Ethernet/PoE attached and
+provides two independent radios — a TI CC2674P10 and a Silicon Labs EFR32MG26.
+It does not run OTBR for us, and it must not run single-radio multiprotocol
+firmware: Zigbee and Thread each own a radio outright so the two stacks never
+contend.
 
-```text
-SLZB-MR4U Radio 2 (CC2674P10) -- TCP --> Zigbee2MQTT --> Mosquitto
-SLZB-MR4U Radio 1 (EFR32MG26)  -- TCP --> Kubernetes OTBR
-                                                   |
-Home Assistant ---------------- Matter Server -----+--- LAN/Thread devices
+```mermaid
+flowchart TD
+  subgraph MR4U["SLZB-MR4U (Ethernet/PoE, slzb-mr4u.home.arpa)"]
+    ZR["CC2674P10 radio<br/>Zigbee coordinator"]
+    TR["EFR32MG26 radio<br/>Thread RCP"]
+  end
+
+  ZR -->|"TCP serial"| Z2M["Zigbee2MQTT"]
+  Z2M <-->|"MQTT 1883"| MOS["Mosquitto"]
+  MOS -->|"MQTT discovery"| HA["Home Assistant"]
+
+  TR -->|"TCP Spinel"| OTBR["OTBR<br/>hostNetwork, thinkcentre-01"]
+  OTBR -->|"Thread / LAN IPv6"| MS["Matter Server"]
+  MS -->|"WebSocket 5580"| HA
+
+  ZD["Zigbee devices<br/>plugs, leak + contact sensors"] -.->|"802.15.4"| ZR
+  TD["Matter-over-Thread devices<br/>locks, future accessories"] -.->|"802.15.4"| TR
 ```
 
 | Interface | Address |
@@ -29,8 +44,9 @@ these ports to Home Assistant and cluster-node sources.
 
 ## Before enabling the MR4U workloads
 
-The committed port `0` values and `change-me` interface are deliberate startup
-blocks. Before changing them:
+The committed port `0` values are deliberate startup blocks: the init
+containers refuse to start rather than connect to an unknown radio. Before
+changing them:
 
 1. Give the MR4U a stable DHCP reservation and make
    `slzb-mr4u.home.arpa` resolve from every cluster node.
@@ -40,14 +56,23 @@ blocks. Before changing them:
    the rolling machine update.
 4. Verify the node has the `home.harville.dev/otbr=true` label, IPv6 forwarding,
    `/dev/net/tun`, LAN multicast, and an IPv6 default route.
-5. Determine the physical LAN interface name on `thinkcentre-01` through Talos
-   or Kubernetes node diagnostics.
+
+`OTBR_BACKBONE_IF` is already resolved to `eno1`, verified with
+`talosctl -n 10.1.10.149 get links` and `... get addresses`: on `thinkcentre-01`
+that interface holds both `10.1.10.149/24` and the LAN's global IPv6 `/64`,
+which is what border routing needs in order to advertise on-mesh prefixes.
+Re-check it if the node's hardware changes.
 
 ## MR4U radio allocation and firmware modes
 
-- Radio 2, CC2674P10: Zigbee coordinator using the Zigbee2MQTT `zstack`
-  adapter.
-- Radio 1, EFR32MG26: dedicated OpenThread RCP connected to Kubernetes OTBR.
+- CC2674P10: Zigbee coordinator, driven by the Zigbee2MQTT `zstack` adapter.
+- EFR32MG26: dedicated OpenThread RCP, driven by Kubernetes OTBR.
+
+SMLIGHT's published material does not state which chip the firmware presents as
+"Radio 1" versus "Radio 2", and the numbering has differed across models and
+firmware revisions. Read the chip name and its TCP port off the MR4U's own UI
+and match on the **chipset**, never on the radio number. Pointing Zigbee2MQTT at
+the EFR32MG26 is the specific mistake this warning exists to prevent.
 
 Keep Zigbee and Thread on separate radios. Do not install single-radio
 multiprotocol firmware. Do not enable the MR4U's beta built-in OTBR while the
@@ -61,7 +86,7 @@ Edit `apps/base/home-automation/zigbee2mqtt.yaml`:
 zigbee2mqtt-adapter.data.serial_port
 ```
 
-Replace `tcp://slzb-mr4u.home.arpa:0` with the exact Radio 2 Zigbee endpoint
+Replace `tcp://slzb-mr4u.home.arpa:0` with the exact CC2674P10 Zigbee endpoint
 shown by the MR4U. Leave `serial_adapter: zstack`; change `serial_baudrate` only
 if the installed Radio 2 firmware requires it. Port 0 intentionally leaves the
 init container unavailable rather than connecting to an unknown radio.
@@ -85,8 +110,9 @@ otbr-config.data.OTBR_BACKBONE_IF
 Set `RCP_PORT` to the exact EFR32MG26 Thread RCP endpoint exposed by the MR4U
 and `OTBR_BACKBONE_IF` to the physical LAN interface on `thinkcentre-01`.
 Confirm the baud rate and any Spinel/UART arguments against the installed RCP
-firmware. The init container rejects port 0, `change-me`, a missing TUN device,
-an unknown interface, or disabled IPv6 forwarding.
+firmware. The init container rejects port 0, a missing TUN device, an unknown
+backbone interface, or disabled IPv6 forwarding, and names the check that
+failed in its logs.
 
 Do not initialize a second Thread network if one already exists. Preserve the
 active Thread dataset in `otbr-data`, and export its active TLV before upgrades
@@ -109,25 +135,165 @@ These integrations depend only on the MQTT, Matter WebSocket, and standard
 OTBR REST interfaces. Home Assistant does not depend on the OTBR container's
 TCP bridge, pseudo-TTY, or Kubernetes implementation details.
 
+## MQTT credentials
+
+The broker runs with `allow_anonymous false`. Two identities exist, and each is
+stored twice — once as a hash the broker reads, once as the plaintext its
+client needs:
+
+| Secret | Holds |
+| --- | --- |
+| `mosquitto-passwd` | the broker's `passwd` file: `$7$` PBKDF2-SHA512 hashes for `homeassistant` and `zigbee2mqtt` |
+| `mosquitto-clients` | `HOMEASSISTANT_MQTT_USER`/`_PASSWORD` and `ZIGBEE2MQTT_MQTT_USER`/`_PASSWORD` |
+
+Zigbee2MQTT reads its pair straight from `mosquitto-clients`. Home Assistant's
+pair is entered once through the MQTT integration UI and then lives in
+`.storage`, so the secret is the record of what to type, not a live input.
+
+Both files are SOPS-encrypted and need `SOPS_AGE_KEY_FILE=.agekey`. The two
+secrets must be regenerated **together** — a hash and its plaintext are only
+meaningful as a pair, and the hash cannot be reversed to recover a lost
+password. To rotate, generate the passwd file with the broker's own tool and
+write both secrets in one pass:
+
+```bash
+export SOPS_AGE_KEY_FILE=.agekey
+docker run --rm --entrypoint sh eclipse-mosquitto:2.0.22 -c \
+  'touch /tmp/pf && chmod 600 /tmp/pf
+   mosquitto_passwd -b /tmp/pf homeassistant "$HA_PW" >/dev/null
+   mosquitto_passwd -b /tmp/pf zigbee2mqtt  "$Z2M_PW" >/dev/null
+   cat /tmp/pf'
+```
+
+then `sops set` the result into `mosquitto-passwd` and the matching plaintexts
+into `mosquitto-clients`. Changing either secret rolls the dependent
+Deployments, because their SOPS MACs are projected into pod annotations by the
+`replacements` in `clusters/homelab/apps/kustomization.yaml`. After rotating,
+re-enter the Home Assistant password in the MQTT integration.
+
+## Commission a Matter-over-Thread device
+
+Prerequisites: OTBR is `leader` or `router`, the Matter integration is
+connected, and the phone running the Home Assistant companion app is on the
+same LAN with IPv6 and mDNS reachable.
+
+1. Confirm the border router is carrying a Thread network:
+
+   ```bash
+   kubectl -n apps exec deployment/otbr -- wrap-ot-ctl state
+   kubectl -n apps exec deployment/otbr -- wrap-ot-ctl dataset active -x
+   ```
+
+2. In Home Assistant, check **Settings > Devices & services > Thread** shows
+   this OTBR as a preferred border router with a credential set. Matter
+   commissioning hands the device these Thread credentials, so a device cannot
+   join before they exist.
+3. **Settings > Devices & services > Add integration > Matter**, then scan the
+   device's Matter QR code or type its 11-digit pairing code with the companion
+   app. Keep the device close to the phone for commissioning; it moves to its
+   permanent location afterward.
+4. The device joins over Bluetooth for commissioning only, then switches to
+   Thread. Verify it afterwards with `wrap-ot-ctl childtable` or by confirming
+   the entity still responds once Bluetooth range is gone.
+
+A device already commissioned into another ecosystem must be shared via that
+ecosystem's "pair additional controller" flow, which yields a fresh pairing
+code; factory-resetting is the alternative and drops the original fabric.
+
 ## Home Assistant dashboards and automation editors
 
-`default_config` enables Home Assistant's native Lovelace dashboards, device
-and entity pages, automation editor, script editor, and scene editor. Use
-**Overview > Edit dashboard** and **Settings > Automations & scenes** for normal
-configuration. UI-owned state, integrations, dashboards, automations, scripts,
-and scenes persist on `home-assistant-config` under `/config` and `.storage`.
+Home Assistant has two dashboard modes, and the split between them is what
+keeps dashboards in Git without Flux and the UI overwriting each other:
 
-Git owns only the mounted base `configuration.yaml`. Do not copy UI-managed
-`.storage`, `automations.yaml`, `scripts.yaml`, or `scenes.yaml` into the
-ConfigMap or overwrite them during reconciliation.
+| | Storage mode | YAML mode |
+| --- | --- | --- |
+| Edited via | the UI's **Edit dashboard** button | this repository |
+| Stored in | `/config/.storage` on the PVC | `home-assistant-dashboards` ConfigMap |
+| Tracked by Git | no | yes |
+| Editable in the UI | yes | no, by design |
 
-## THIRDREALITY pairing and naming workflow
+The default **Overview** stays in storage mode, so the familiar UI editing
+workflow is untouched. The **Control** dashboard is YAML mode and is defined in
+`apps/base/home-automation/dashboards.yaml`, mounted read-only at
+`/config/dashboards/control.yaml`. Editing it means editing that file: Flux
+updates the ConfigMap, the kubelet syncs it into the pod within about a minute,
+and a browser reload shows the change. No Home Assistant restart is needed.
 
-Factory-reset each THIRDREALITY device, open a short Zigbee2MQTT permit-join
-window, pair one device, and wait for interview completion. Give it a stable
-location-based name such as `kitchen_motion_north`, then disable permit-join.
-Verify manufacturer, link quality, battery, and expected entities in both
-Zigbee2MQTT and Home Assistant before pairing the next device.
+The Control dashboard is built on Home Assistant's **Areas** strategy, so it is
+populated by assigning devices to areas under **Settings > Areas** rather than
+by listing entity IDs. That is deliberate: it renders correctly before anything
+is paired, and adding lights or plugs later makes them appear without a
+dashboard rewrite. When a hand-built view is wanted, add it to that file using
+the real entity IDs from **Settings > Devices & services > Entities**; the file
+carries a worked example. Household one-touch shortcuts should call a `script.`
+entity, so the script stays UI-editable while the button stays in Git.
+
+Automations, scripts, and scenes remain UI-owned and persist on
+`home-assistant-config` under `/config` and `.storage`. Git owns only the
+mounted base `configuration.yaml` and the YAML dashboards. Do not copy
+UI-managed `.storage`, `automations.yaml`, `scripts.yaml`, or `scenes.yaml`
+into a ConfigMap or overwrite them during reconciliation.
+
+## Pair a Zigbee device
+
+Pair one device at a time; a joining device is interviewed over the air and
+overlapping joins are the usual cause of half-configured devices.
+
+1. Open <https://zigbee2mqtt.int.harville.dev>.
+2. **Permit join** -> select a short window. Prefer joining *through* the
+   nearest mains-powered router rather than the coordinator when a device will
+   live far from the MR4U.
+3. Factory-reset the device and trigger its join:
+   - **THIRDREALITY Smart Plug Gen3** — hold the button until the LED blinks.
+   - **THIRDREALITY Water Leak Sensor** — press the reset button until the LED
+     blinks.
+4. Wait for the interview to finish. A device that shows no model or endpoints
+   has not completed interview; leave it powered and near the mesh.
+5. Rename it to its permanent friendly name, then turn permit-join **off**.
+6. Confirm the matching entities appeared in Home Assistant via MQTT discovery.
+
+Friendly names are the stable identity used by automations, so set them once,
+at pairing time, from the device's actual location. Do not record device IEEE
+addresses here before the devices have joined.
+
+| Device | Friendly name |
+| --- | --- |
+| Leak sensor, washing machine | `leak_washing_machine` |
+| Leak sensor, water heater | `leak_water_heater` |
+| Leak sensor, dishwasher | `leak_dishwasher` |
+| Leak sensor, refrigerator | `leak_refrigerator` |
+| Smart Plug Gen3 | name for where it ends up, e.g. `plug_laundry_room` |
+| Front door contact | `contact_front_door` |
+| Back door contact | `contact_back_door` |
+
+The Smart Plug Gen3 is mains powered and therefore a Zigbee router. Place it
+between the MR4U and the battery-powered sensors that report weak link quality;
+routing is then negotiated by the mesh. Do not try to pin routes by hand.
+
+## Inspect the Zigbee mesh
+
+In the Zigbee2MQTT UI:
+
+- **Devices** — every joined device, its model, power source, and whether it is
+  a Router or End Device.
+- **Devices > LQI** — link quality per device. Low values on a battery sensor
+  usually mean it needs a nearer router, not a new sensor.
+- **Map** — the router/parent topology, rendered from a live scan. Battery
+  devices appear attached to whichever router currently parents them.
+- The coordinator's own state, firmware, and channel are on **Settings >
+  About**.
+
+From the CLI:
+
+```bash
+# Coordinator health, radio connection, and joined-device announcements.
+kubectl -n apps logs deployment/zigbee2mqtt
+
+# Full device list, including link quality, as retained MQTT state.
+kubectl -n apps exec deployment/mosquitto -- \
+  mosquitto_sub -h 127.0.0.1 -u zigbee2mqtt -P "$MQTT_PW" \
+  -t 'zigbee2mqtt/bridge/devices' -C 1
+```
 
 ## HomeKit Device and HomeKit Bridge
 
@@ -162,8 +328,8 @@ Before moving devices to an IoT VLAN, explicitly permit:
   discovery/commissioning traffic;
 - required mDNS reflection and SSDP/UPnP discovery between trusted and IoT
   networks;
-- `thinkcentre-01` to the MR4U Thread RCP TCP endpoint;
-- Zigbee2MQTT pods to the MR4U Zigbee TCP endpoint;
+- `thinkcentre-01` to the MR4U EFR32MG26 Thread RCP TCP endpoint;
+- Zigbee2MQTT pods to the MR4U CC2674P10 Zigbee TCP endpoint;
 - Home Assistant to the UniFi Protect controller and required cloud endpoints;
 - Home Assistant and cluster nodes to Matter Server TCP 5580 and OTBR TCP 8081.
 
