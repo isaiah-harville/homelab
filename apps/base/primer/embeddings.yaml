@@ -39,6 +39,21 @@ spec:
             # is a reindex, not a hot swap.
             - --model-id
             - onnx-community/Qwen3-Embedding-0.6B-ONNX
+            # Required here and not on Qwen's own repo, which ships a
+            # `1_Pooling/config.json` for TEI to read; the ONNX export does
+            # not, and TEI refuses to start rather than guess:
+            #
+            #   Error: The `--pooling` arg is not set and we could not find
+            #   a pooling configuration (`1_Pooling/config.json`)
+            #
+            # Which is the behaviour you want, because the wrong answer
+            # here is not an error. Qwen3-Embedding pools the last token
+            # (`"pooling_mode_lasttoken": true` in that file upstream), and
+            # mean pooling over it would return plausible vectors that
+            # retrieve badly - the same silent-degradation failure the
+            # pinned image version above exists to avoid.
+            - --pooling
+            - last-token
             - --port
             - "8080"
             - --max-batch-tokens
