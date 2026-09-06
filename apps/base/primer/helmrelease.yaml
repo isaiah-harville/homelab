@@ -107,6 +107,35 @@ spec:
         # rewrite it, so `vectors.chunks` has to be dropped and rebuilt.
         dimensions: 1024
 
+      # A cross-encoder reads the question and a passage together, which a
+      # vector search cannot: its two embeddings were made without knowing
+      # about each other. So the search fetches twenty and this reads them
+      # properly and keeps the best.
+      #
+      # No /v1 on this one, unlike the embedding URL above. Primer posts
+      # straight to `{baseUrl}/rerank`, which is where TEI serves it.
+      rerank:
+        baseUrl: http://primer-reranker.apps.svc.cluster.local:8080
+        model: BAAI/bge-reranker-base
+        # Measured at 0.17-0.27s for ten passages on this deployment, so a
+        # shortlist of twenty costs well under a second per question.
+        candidates: 20
+
+      # Passages scoring below this are dropped, even when that leaves an
+      # answer with nothing behind it - which is the point. Before this, a
+      # question the library could not answer still came back with a full set
+      # of passages, and the model was handed them as evidence.
+      #
+      # Measured against this deployment's reranker rather than guessed. A
+      # question the corpus cannot answer tops out at 0.0003; the weakest
+      # genuine answer measured 0.143. 0.02 sits about sixty times above the
+      # first and seven times below the second.
+      #
+      # It reads the reranker's score because one is configured above. Take
+      # the reranker away and this number is meaningless - cosine from
+      # Qwen3-Embedding runs about 0.19 to 0.69 - so the two move together.
+      minScore: "0.02"
+
     vectorStore:
       kind: pgvector
 
