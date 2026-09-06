@@ -54,10 +54,13 @@ spec:
             - BAAI/bge-reranker-base
             - --port
             - "8080"
-            # A rerank request carries the question joined to each passage,
-            # so a sequence here is longer than a chunk on its own.
+            # Warmup allocates against this number, so it is what an OOM
+            # at startup is usually made of - 8192 was tried here and was
+            # killed on load. The model caps a sequence at 512 tokens
+            # anyway, so this is eight of them in a batch, and a shortlist
+            # larger than that is simply inferred in more passes.
             - --max-batch-tokens
-            - "8192"
+            - "4096"
             # A passage longer than the model's 512 positions is trimmed
             # rather than failing the shortlist it arrived in.
             - --auto-truncate
@@ -95,12 +98,16 @@ spec:
               # once per chunk - so this asks for less CPU than the
               # embedding server, which carries whole ingestion runs.
               cpu: "1"
-              memory: 2Gi
+              memory: 3Gi
             limits:
-              # Under half the embedder's, because the model is under half
-              # the size. Set from that ratio rather than measured; if this
-              # is OOM-killed the number was optimistic, not the design.
-              memory: 6Gi
+              # 6Gi was set from the parameter ratio against the embedding
+              # server and was OOM-killed on load, seventeen times. Model
+              # size is not what decides this: the warmup batch is, and the
+              # 8192 max-batch-tokens above it was paired with made that
+              # batch twice the embedder's while the ceiling was a third.
+              # Both are corrected; this keeps room to spare rather than
+              # finding the edge again.
+              memory: 10Gi
           volumeMounts:
             - name: model-cache
               mountPath: /data
