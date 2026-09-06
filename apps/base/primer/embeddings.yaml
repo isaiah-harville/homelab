@@ -20,8 +20,25 @@ spec:
         - name: tei
           image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3
           args:
+            # The ONNX export rather than Qwen's own repo, which publishes
+            # no ONNX at all. TEI prefers its ONNX Runtime backend and only
+            # falls back to Candle when a repo has none - and that fallback
+            # is the whole performance story here: measured on the Candle
+            # path, this server embeds ~1 chunk/sec and gets no faster with
+            # larger batches or more concurrent clients (8 clients take 8x
+            # as long as one). The weights, tokenizer and config are the
+            # same model at the same 1024 dimensions; only the runtime
+            # differs, so pgvector is untouched.
+            #
+            # Deliberately the fp32 `onnx/model.onnx`, not one of the int8
+            # or q4 variants in the same repo. Those change the vectors
+            # materially, and quantization damage to retrieval quality is
+            # the kind nobody notices.
+            #
+            # Changing the runtime does shift the vectors slightly, so this
+            # is a reindex, not a hot swap.
             - --model-id
-            - Qwen/Qwen3-Embedding-0.6B
+            - onnx-community/Qwen3-Embedding-0.6B-ONNX
             - --port
             - "8080"
             - --max-batch-tokens
@@ -73,7 +90,11 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 4Gi
+      # 4Gi held the Candle safetensors with room to spare. The ONNX build
+      # is bigger - model.onnx_data alone is 2.09GB - and lands beside them
+      # rather than replacing them, which left 2.8GB free against a ~2.1GB
+      # download. 10Gi is slack enough that this is not revisited.
+      storage: 10Gi
   storageClassName: longhorn
 ---
 apiVersion: v1
