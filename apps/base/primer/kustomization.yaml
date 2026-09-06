@@ -6,6 +6,7 @@ resources:
   - postgres.yaml
   - rabbitmq.yaml
   - embeddings.yaml
+  - reranker.yaml
   - middleware.yaml
   - helmrelease.yaml
   - public.ingress.yaml
