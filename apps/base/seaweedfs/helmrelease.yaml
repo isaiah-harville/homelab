@@ -6,17 +6,6 @@ metadata:
   namespace: apps
 spec:
   interval: 30m
-  # Flux defaults this to 5 minutes, and every 4.45.0 upgrade has failed on
-  # it: revisions 16 and 18 both timed out with all five workloads still
-  # 'InProgress', then rolled back cleanly to 4.43.0. Nothing was broken -
-  # the rendered diff between the two versions is an image bump plus one
-  # new filer flag - there was simply never enough time. Five workloads
-  # pull a new image and four of them are StatefulSets rolling one pod at a
-  # time, each detaching and reattaching a Longhorn volume.
-  #
-  # The rollback is what made this look chronic rather than slow: it
-  # restored 4.43.0 every time, so the next reconcile found the same
-  # upgrade to do and the same five minutes to do it in.
   timeout: 20m
   install:
     crds: CreateReplace
