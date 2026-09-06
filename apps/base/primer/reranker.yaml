@@ -72,6 +72,19 @@ spec:
             # embedding server - a shortlist of 20 costs 20 against this.
             - --max-concurrent-requests
             - "256"
+            # Sized from the node otherwise, which on a 72-core machine
+            # means 64 of them - and each holds its own tokenizer. This
+            # model is XLM-RoBERTa, whose SentencePiece vocabulary is about
+            # 250k entries, so those copies are not free the way Qwen's BPE
+            # is on the embedding server beside it. That is what was still
+            # being OOM-killed after the batch was already corrected: the
+            # process reached "Ready", bound its port, and died afterwards
+            # rather than during warmup.
+            #
+            # Four is ample. Reranking happens once per search over a
+            # shortlist, not once per chunk over an ingestion run.
+            - --tokenization-workers
+            - "4"
           env:
             - name: HUGGINGFACE_HUB_CACHE
               value: /data
