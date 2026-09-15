@@ -118,7 +118,10 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
-              add: [IPC_LOCK, NET_ADMIN]
+              # NET_RAW: raw ICMPv6/MLD sockets for border routing.
+              # SETUID/SETGID/SETPCAP: the bundled dbus-daemon drops to its own
+              # user at startup and exits without them.
+              add: [IPC_LOCK, NET_ADMIN, NET_RAW, SETUID, SETGID, SETPCAP]
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
