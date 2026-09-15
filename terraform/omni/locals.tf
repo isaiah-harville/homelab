@@ -11,7 +11,6 @@ locals {
   ]
   worker_nodes = [
     "9ba21500-a881-11e5-ae5a-d524518f0c00",
-    "30393137-3436-584d-5135-343430303635",
   ]
   otbr_nodes = [
     "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
@@ -22,13 +21,11 @@ locals {
     "4c4c4544-0039-4210-8046-b8c04f314a33" = { file = "install-le400gb.yaml", name = "install-256" }
     "4c4c4544-0052-3610-8039-cac04f484733" = { file = "install-ge100gb.yaml", name = "install-single" }
     "9ba21500-a881-11e5-ae5a-d524518f0c00" = { file = "install-ge100gb.yaml", name = "install-single" }
-    "30393137-3436-584d-5135-343430303635" = { file = "install-dl380.yaml", name = "install-dl380" }
   }
 
   dedicated_storage_nodes = [
     "4c4c4544-0030-5910-805a-c6c04f503133",
     "4c4c4544-0039-4210-8046-b8c04f314a33",
-    "30393137-3436-584d-5135-343430303635",
   ]
   root_storage_nodes = [
     "4c4c4544-0052-3610-8039-cac04f484733",

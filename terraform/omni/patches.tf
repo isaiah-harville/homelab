@@ -2,7 +2,7 @@ resource "omni_config_patch" "allow_scheduling" {
   name    = "allow-scheduling"
   cluster = omni_cluster.homelab.name
   weight  = 200
-  data   = file("${local.patch_dir}/allow-scheduling.yaml")
+  data    = file("${local.patch_dir}/allow-scheduling.yaml")
 }
 
 resource "omni_config_patch" "controlplane_vip" {

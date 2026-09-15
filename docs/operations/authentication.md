@@ -36,8 +36,7 @@ one replica.
 The `authentik-postgres` CloudNativePG cluster has three instances. PostgreSQL
 uses quorum synchronous replication (`ANY 1`) and required hostname
 anti-affinity, so an acknowledged write exists on the primary and at least one
-standby. Workloads may schedule on control-plane nodes and do not depend on the
-frequently unavailable `dl380` worker.
+standby. Workloads may schedule on control-plane nodes.
 
 Each instance has a retained 5 GiB Longhorn volume using the
 `longhorn-database` StorageClass. That class deliberately uses one block replica:

@@ -1,6 +1,0 @@
-# Select the OS disk by WWID because both RAID volumes are otherwise identical.
----
-machine:
-  install:
-    diskSelector:
-      wwid: naa.600508b1001cc4a32cd8e93d0af5a2cb
