@@ -65,6 +65,30 @@ the node running the pod (`kubectl -n apps get pod -o wide`). Changes to these
 settings are held as pending until confirmed in the UI within five minutes, so
 make them from that direct address.
 
+## Public access and Authentik sign-in
+
+`https://home-assistant.harville.dev` (traefik-public, behind the Cloudflare
+proxy) serves the companion apps away from home; `external_url` points at it.
+It deliberately has **no** ForwardAuth: the apps authenticate their background
+connections with Home Assistant's own tokens, which cannot follow Authentik's
+browser redirect.
+
+Sign-in goes through Authentik instead, via the
+[hass-oidc-auth](https://github.com/christiaangoossens/hass-oidc-auth) custom
+integration, installed from a pinned, checksum-verified release by the
+`install-auth-oidc` init container:
+
+- Authentik application `home-assistant`: public OIDC client (PKCE, no
+  secret), callback `https://<host>/auth/oidc/callback` for both hosts.
+- `authentik Admins` sign in as Home Assistant administrators; members of
+  `Home Assistant Users` sign in as regular users; anyone else is rejected.
+- The login page offers "Login with Authentik" plus the built-in username and
+  password as the alternative — keep that local owner account as break-glass
+  access for when Authentik is down.
+
+In the iOS app, add the server as `https://home-assistant.harville.dev` and
+choose Authentik on the login screen.
+
 ## Before enabling the MR4U workloads
 
 A port of `0` is a deliberate startup block: the init containers refuse to

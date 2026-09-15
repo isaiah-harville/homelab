@@ -1,7 +1,8 @@
 ---
 # No ForwardAuth: Home Assistant has its own login, and the companion apps plus
 # webhook endpoints authenticate with long-lived tokens that cannot traverse
-# Authentik's browser redirect.
+# Authentik's browser redirect. Sign-in goes through Authentik via OIDC instead
+# (auth_oidc in home-assistant.yaml).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -30,6 +31,30 @@ spec:
     - hosts:
         - home-assistant.int.harville.dev
       secretName: placeholder
+---
+# Public entry point for the companion apps away from home; same backend and
+# the same OIDC sign-in as the internal host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home-assistant-public
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: home-assistant.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home-assistant
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - home-assistant.harville.dev
+      secretName: harville-wildcard-shared-tls
 ---
 # The Zigbee2MQTT frontend has no authentication of its own, so it sits behind
 # Authentik. Nothing but a browser talks to it.

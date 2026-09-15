@@ -70,6 +70,10 @@ data:
         id: mlflow-admins
         identifiers:
           name: MLflow Admins
+      - model: authentik_core.group
+        id: home-assistant-users
+        identifiers:
+          name: Home Assistant Users
       # KeyOf only resolves backwards - an entry can reference one that
       # came before it in the document, never one that comes later - so this
       # has to be defined before primer-provider, its first use, rather than
@@ -823,6 +827,55 @@ data:
           order: 2
         attrs:
           user: !KeyOf jellyfin-ldap-bind-user
+      # Home Assistant signs in through the hass-oidc-auth integration rather
+      # than ForwardAuth: the iOS app authenticates its background connections
+      # with Home Assistant's own tokens, which cannot follow a browser
+      # redirect. Public client + PKCE, so there is no secret to leak.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: home-assistant-provider
+        identifiers:
+          name: Home Assistant Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: home-assistant
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://home-assistant.harville.dev/auth/oidc/callback
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://home-assistant.int.harville.dev/auth/oidc/callback
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: home-assistant
+        attrs:
+          name: Home Assistant
+          provider: !KeyOf home-assistant-provider
+          meta_launch_url: https://home-assistant.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, home-assistant]]
+          order: 0
+        attrs:
+          group: !KeyOf home-assistant-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, home-assistant]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_outposts.outpost
         identifiers:
           name: Jellyfin LDAP Outpost
