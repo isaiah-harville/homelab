@@ -9,9 +9,9 @@ metadata:
   name: zigbee2mqtt-adapter
   namespace: apps
 data:
-  # Radio 2 / CC2674P10 is reserved for Zigbee. Replace port 0 with the
-  # endpoint shown by the configured MR4U; never point this at Radio 1.
-  serial_port: tcp://slzb-mr4u.home.arpa:0
+  # CC2674P10 (Z-Stack) is reserved for Zigbee. 7638 answered a ZNP SYS_PING
+  # on 2026-09-15; 6638 is the EFR32MG26 and must never be used here.
+  serial_port: tcp://slzb.int.harville.dev:7638
   serial_adapter: zstack
   serial_baudrate: "115200"
 ---

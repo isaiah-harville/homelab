@@ -6,9 +6,9 @@ metadata:
   namespace: apps
 data:
   RCP_USE_TCP: "1"
-  RCP_HOST: slzb-mr4u.home.arpa
-  # Replace 0 with the configured EFR32MG26 Thread RCP endpoint.
-  RCP_PORT: "0"
+  RCP_HOST: slzb.int.harville.dev
+  # EFR32MG26 socket (identified on 2026-09-15; the CC2674P10 is on 7638).
+  RCP_PORT: "6638"
   RCP_TTY: /tmp/ttyOTBR
   RCP_BAUDRATE: "460800"
   # Network RCP mode normally does not use UART hardware flow control. Keep
@@ -46,7 +46,10 @@ metadata:
   labels: &labels
     app: otbr
 spec:
-  replicas: 1
+  # Parked: the EFR32MG26 still runs EmberZNet Zigbee NCP firmware (it answers
+  # ASH, not Spinel). Flash OpenThread RCP firmware from the MR4U UI, then set
+  # this back to 1.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

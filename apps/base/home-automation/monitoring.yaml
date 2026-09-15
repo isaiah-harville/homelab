@@ -15,16 +15,21 @@ spec:
             kube_deployment_status_replicas_available{
               namespace="apps",
               deployment=~"home-assistant|matter-server|mosquitto|otbr|zigbee2mqtt"
-            } < 1
+            }
+              < on (namespace, deployment)
+            kube_deployment_spec_replicas{
+              namespace="apps",
+              deployment=~"home-assistant|matter-server|mosquitto|otbr|zigbee2mqtt"
+            }
           for: 15m
           labels:
             severity: warning
           annotations:
             summary: "{{ $labels.deployment }} is unavailable"
             description: >-
-              The home-automation Deployment has had no available replica for
-              15 minutes. OTBR and Zigbee2MQTT are expected to remain
-              unavailable while their MR4U endpoint uses the port-0 sentinel.
+              The home-automation Deployment has had fewer available replicas
+              than desired for 15 minutes. A Deployment deliberately scaled to
+              zero does not alert.
         - alert: HomeAutomationContainerRestarting
           expr: |
             increase(kube_pod_container_status_restarts_total{

@@ -11,7 +11,7 @@ contend.
 
 ```mermaid
 flowchart TD
-  subgraph MR4U["SLZB-MR4U (Ethernet/PoE, slzb-mr4u.home.arpa)"]
+  subgraph MR4U["SLZB-MR4U (Ethernet/PoE, slzb.int.harville.dev)"]
     ZR["CC2674P10 radio<br/>Zigbee coordinator"]
     TR["EFR32MG26 radio<br/>Thread RCP"]
   end
@@ -44,12 +44,12 @@ these ports to Home Assistant and cluster-node sources.
 
 ## Before enabling the MR4U workloads
 
-The committed port `0` values are deliberate startup blocks: the init
-containers refuse to start rather than connect to an unknown radio. Before
-changing them:
+A port of `0` is a deliberate startup block: the init containers refuse to
+start rather than connect to an unknown radio. Before pointing a workload at a
+radio:
 
 1. Give the MR4U a stable DHCP reservation and make
-   `slzb-mr4u.home.arpa` resolve from every cluster node.
+   `slzb.int.harville.dev` resolve from every cluster node.
 2. Configure each radio independently in the MR4U UI and record the endpoints
    it reports. Do not infer ports from another SMLIGHT model.
 3. Apply the Omni/Terraform machine patch to `thinkcentre-01`; let Omni perform
@@ -86,10 +86,11 @@ Edit `apps/base/home-automation/zigbee2mqtt.yaml`:
 zigbee2mqtt-adapter.data.serial_port
 ```
 
-Replace `tcp://slzb-mr4u.home.arpa:0` with the exact CC2674P10 Zigbee endpoint
-shown by the MR4U. Leave `serial_adapter: zstack`; change `serial_baudrate` only
-if the installed Radio 2 firmware requires it. Port 0 intentionally leaves the
-init container unavailable rather than connecting to an unknown radio.
+The committed endpoint is `tcp://slzb.int.harville.dev:7638`, the CC2674P10
+Zigbee socket (it answers a Z-Stack `SYS_PING`; 6638 is the EFR32MG26). Leave
+`serial_adapter: zstack`; change `serial_baudrate` only if the installed
+CC2674P10 firmware requires it. Setting the port back to 0 makes the init
+container refuse to start rather than connect to an unknown radio.
 
 After Flux reconciles, open the Zigbee2MQTT UI, enable permit-join for a short
 window, pair one device at a time, assign a stable friendly name, disable
@@ -107,8 +108,11 @@ otbr-config.data.OTBR_RCP_ADDITIONAL_ARGS
 otbr-config.data.OTBR_BACKBONE_IF
 ```
 
-Set `RCP_PORT` to the exact EFR32MG26 Thread RCP endpoint exposed by the MR4U
-and `OTBR_BACKBONE_IF` to the physical LAN interface on `thinkcentre-01`.
+`RCP_PORT` is `6638`, the EFR32MG26 socket. As of 2026-09-15 that radio still
+runs EmberZNet Zigbee NCP firmware (it answers an ASH reset, not Spinel), so the
+OTBR Deployment is committed at `replicas: 0`. Flash OpenThread RCP firmware to
+the EFR32MG26 from the MR4U UI, then set `replicas: 1`.
+`OTBR_BACKBONE_IF` is the physical LAN interface on `thinkcentre-01`.
 Confirm the baud rate and any Spinel/UART arguments against the installed RCP
 firmware. The init container rejects port 0, a missing TUN device, an unknown
 backbone interface, or disabled IPv6 forwarding, and names the check that
@@ -358,8 +362,9 @@ state from compatible points to avoid invalidating commissioned devices.
 
 OTBR is eligible only on `thinkcentre-01`; rebooting, draining, or losing that
 node interrupts Thread border routing. The PVC and `Recreate` strategy prevent
-normal concurrent OTBR instances. Zigbee2MQTT and OTBR intentionally remain
-unavailable while their port 0 sentinels are present. Zigbee devices can
+normal concurrent OTBR instances. Zigbee2MQTT and OTBR refuse to start while
+their MR4U port is 0, and OTBR stays scaled to zero until the EFR32MG26 runs
+OpenThread RCP firmware. Zigbee devices can
 continue local mesh behavior during controller downtime, but Home Assistant
 events and commands stop. Existing Thread devices may continue local mesh
 traffic, but border routing and new commissioning stop when OTBR is down.
@@ -376,7 +381,7 @@ a second independent Thread network.
 3. Enable MR4U OTBR and import the same active Thread dataset. Do not create a
    new dataset and do not recommission devices preemptively.
 4. Change only Home Assistant's OpenThread Border Router integration URL to
-   `http://slzb-mr4u.home.arpa:<OTBR_PORT>`; Matter Server continues using LAN
+   `http://slzb.int.harville.dev:<OTBR_PORT>`; Matter Server continues using LAN
    IPv6 and its existing WebSocket URL.
 5. Verify the dataset identity, OTBR role, existing Matter/Thread devices, and
    automations before deleting or archiving Kubernetes OTBR state.
