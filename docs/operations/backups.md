@@ -69,6 +69,27 @@ When changing retention:
 3. Verify the CronJob can authenticate to the backup bucket.
 4. Confirm recent snapshots remain after a manual job run.
 
+## Home automation
+
+The home-automation stack has five `longhorn-retain` PVCs:
+
+- `otbr-data`: active Thread operational dataset and OTBR state.
+- `matter-server-data`: Matter fabric, credentials, and commissioned nodes.
+- `zigbee2mqtt-data`: Zigbee network key, device database, names, and backups.
+- `mosquitto-data`: broker database and retained MQTT messages.
+- `home-assistant-config`: Home Assistant database, `.storage`, dashboards,
+  integrations, automations, scripts, scenes, and HomeKit pairing state.
+
+Restore them in that order: OTBR, Matter Server, Zigbee2MQTT, Mosquitto, then
+Home Assistant. Restore the Thread and Matter volumes from compatible recovery
+points; restoring only one can invalidate device commissioning state.
+
+The default recurring-job group retains seven daily Longhorn snapshots. These
+are local recovery points, not off-cluster disaster recovery. Loss of the
+cluster or its storage disks can therefore lose all five volumes. Export and
+protect the Thread dataset separately before an OTBR migration, and do not
+create a replacement Thread network during recovery.
+
 ## Terraform state
 
 Terraform state uses the Kubernetes backend. If the state Secret is lost, Omni

@@ -91,6 +91,8 @@ patches:
     file: patches/longhorn-root-disk.yaml
   - name: longhorn-storage-node
     file: patches/longhorn-storage-node.yaml
+  - name: otbr-host
+    file: patches/otbr-host.yaml
 ---
 kind: Machine
 name: 30393137-3436-584d-5135-343430303635

@@ -20,6 +20,8 @@ resources:
   - ./secrets/qbittorrent.yaml
   - ./secrets/media-auth.yaml
   - ./secrets/mlflow.yaml
+  - ./secrets/mosquitto-passwd.yaml
+  - ./secrets/mosquitto-clients.yaml
   - ./secrets/primer-rabbitmq.yaml
   - ./secrets/primer-oidc.yaml
   - ./secrets/primer-s3.yaml
@@ -45,6 +47,7 @@ resources:
   - ../../../apps/base/llama-cpp
   - ../../../apps/base/searxng
   - ../../../apps/base/mlflow
+  - ../../../apps/base/home-automation
   - ../../../apps/base/primer
 patches:
   - target:
@@ -297,6 +300,42 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.values.global.podAnnotations.mlflow-oidc-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: mosquitto-passwd
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: mosquitto
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.mosquitto-passwd-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: mosquitto-clients
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: Deployment
+          name: zigbee2mqtt
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.mosquitto-clients-mac
+        options:
+          create: true
+      - select:
+          kind: Deployment
+          name: mosquitto
+          namespace: apps
+        fieldPaths:
+          - spec.template.metadata.annotations.mosquitto-clients-mac
         options:
           create: true
   - source:

@@ -1,0 +1,157 @@
+---
+# Home Assistant writes UI-driven configuration into /config/.storage, not into
+# configuration.yaml, so configuration.yaml can safely be owned by Git and
+# mounted read-only. Integrations added through the UI (including the MQTT
+# broker) are unaffected; only YAML-level settings belong here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-configuration
+  namespace: apps
+data:
+  configuration.yaml: |
+    default_config:
+
+    homeassistant:
+      name: Home
+      time_zone: America/Chicago
+      external_url: "https://home-assistant.int.harville.dev"
+      internal_url: "https://home-assistant.int.harville.dev"
+
+    http:
+      # Requests arrive from a traefik-internal pod, so without this Home
+      # Assistant sees every client as the same proxy IP and rejects the
+      # forwarded host with a 400. The CIDR must cover the cluster pod network
+      # (Talos default podSubnets).
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.244.0.0/16
+      ip_ban_enabled: true
+      login_attempts_threshold: 10
+
+    # These are edited by Home Assistant's own UI editors, so they live on the
+    # PVC rather than in this ConfigMap.
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-config
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-assistant
+  namespace: apps
+  labels:
+    app: home-assistant
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: home-assistant
+  template:
+    metadata:
+      labels:
+        app: home-assistant
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # configuration.yaml !includes these; Home Assistant refuses to start if
+        # a referenced file is missing. Create them empty once, then leave them
+        # alone so the UI editors keep their contents.
+        - name: seed-includes
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              for f in automations.yaml scripts.yaml scenes.yaml; do
+                [ -e "/config/$f" ] || printf '[]\n' > "/config/$f"
+              done
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      containers:
+        - name: home-assistant
+          image: ghcr.io/home-assistant/home-assistant:2026.8.2
+          ports:
+            - name: http
+              containerPort: 8123
+          env:
+            - name: TZ
+              value: America/Chicago
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: configuration
+              mountPath: /config/configuration.yaml
+              subPath: configuration.yaml
+              readOnly: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            # Home Assistant's first boot installs integration requirements and
+            # can take several minutes.
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            failureThreshold: 5
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: home-assistant-config
+        - name: configuration
+          configMap:
+            name: home-assistant-configuration
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-assistant
+  namespace: apps
+spec:
+  selector:
+    app: home-assistant
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http

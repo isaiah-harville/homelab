@@ -20,3 +20,4 @@ site/
 
 __pycache__/
 *.pyc
+docs/superpowers

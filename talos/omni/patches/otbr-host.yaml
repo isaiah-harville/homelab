@@ -1,0 +1,14 @@
+# OTBR needs host routing and a scheduling capability label. Talos already
+# exposes /dev/net/tun; the pod maps that character device explicitly.
+---
+machine:
+  nodeLabels:
+    home.harville.dev/otbr: "true"
+  sysctls:
+    net.ipv4.ip_forward: "1"
+    net.ipv6.conf.all.forwarding: "1"
+    net.ipv6.conf.default.forwarding: "1"
+    net.ipv6.conf.all.accept_ra: "2"
+    net.ipv6.conf.default.accept_ra: "2"
+    net.ipv6.conf.all.accept_ra_rt_info_max_plen: "64"
+    net.ipv6.conf.default.accept_ra_rt_info_max_plen: "64"

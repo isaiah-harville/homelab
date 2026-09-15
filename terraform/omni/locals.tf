@@ -13,6 +13,9 @@ locals {
     "9ba21500-a881-11e5-ae5a-d524518f0c00",
     "30393137-3436-584d-5135-343430303635",
   ]
+  otbr_nodes = [
+    "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
+  ]
 
   install_patch = {
     "4c4c4544-0030-5910-805a-c6c04f503133" = { file = "install-type-nvme.yaml", name = "install-nvme" }
