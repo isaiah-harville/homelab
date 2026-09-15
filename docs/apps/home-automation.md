@@ -108,10 +108,10 @@ otbr-config.data.OTBR_RCP_ADDITIONAL_ARGS
 otbr-config.data.OTBR_BACKBONE_IF
 ```
 
-`RCP_PORT` is `6638`, the EFR32MG26 socket. As of 2026-09-15 that radio still
-runs EmberZNet Zigbee NCP firmware (it answers an ASH reset, not Spinel), so the
-OTBR Deployment is committed at `replicas: 0`. Flash OpenThread RCP firmware to
-the EFR32MG26 from the MR4U UI, then set `replicas: 1`.
+`RCP_PORT` is `6638`, the EFR32MG26 socket. That radio is in the MR4U's
+**Thread to remote OTBR** mode, which runs OpenThread RCP firmware
+(`SL-OPENTHREAD/2.7.2.0` as of 2026-09-15). Never switch it to "Thread+OTBR
+running on device": that starts a second border router on the same radio.
 `OTBR_BACKBONE_IF` is the physical LAN interface on `thinkcentre-01`.
 Confirm the baud rate and any Spinel/UART arguments against the installed RCP
 firmware. The init container rejects port 0, a missing TUN device, an unknown
@@ -363,8 +363,7 @@ state from compatible points to avoid invalidating commissioned devices.
 OTBR is eligible only on `thinkcentre-01`; rebooting, draining, or losing that
 node interrupts Thread border routing. The PVC and `Recreate` strategy prevent
 normal concurrent OTBR instances. Zigbee2MQTT and OTBR refuse to start while
-their MR4U port is 0, and OTBR stays scaled to zero until the EFR32MG26 runs
-OpenThread RCP firmware. Zigbee devices can
+their MR4U port is 0. Zigbee devices can
 continue local mesh behavior during controller downtime, but Home Assistant
 events and commands stop. Existing Thread devices may continue local mesh
 traffic, but border routing and new commissioning stop when OTBR is down.

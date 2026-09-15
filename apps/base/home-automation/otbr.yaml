@@ -46,10 +46,7 @@ metadata:
   labels: &labels
     app: otbr
 spec:
-  # Parked: the EFR32MG26 still runs EmberZNet Zigbee NCP firmware (it answers
-  # ASH, not Spinel). Flash OpenThread RCP firmware from the MR4U UI, then set
-  # this back to 1.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
