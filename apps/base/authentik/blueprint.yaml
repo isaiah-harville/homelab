@@ -393,6 +393,30 @@ data:
           order: 0
         attrs:
           group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: zigbee2mqtt-provider
+        identifiers:
+          name: Zigbee2MQTT Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://zigbee2mqtt.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: zigbee2mqtt
+        attrs:
+          name: Zigbee2MQTT
+          provider: !KeyOf zigbee2mqtt-provider
+          meta_launch_url: https://zigbee2mqtt.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, zigbee2mqtt]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       - model: authentik_providers_oauth2.oauth2provider
         id: shelfmark-provider
         identifiers:
@@ -826,3 +850,4 @@ data:
             - !KeyOf qbittorrent-provider
             - !KeyOf prowlarr-provider
             - !KeyOf radarr-provider
+            - !KeyOf zigbee2mqtt-provider
