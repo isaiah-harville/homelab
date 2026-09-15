@@ -8,6 +8,7 @@ resources:
   - ./secrets/authentik-social.yaml
   - ./secrets/swing-thoughts-auth.yaml
   - ./secrets/seaweedfs-s3-config.yaml
+  - ./secrets/seaweedfs-admin.yaml
   - ./secrets/omni-backup-s3-creds.yaml
   - ./secrets/harbor-secrets.yaml
   - ./secrets/harbor-oidc.yaml
@@ -278,6 +279,20 @@ replacements:
           namespace: apps
         fieldPaths:
           - spec.values.podAnnotations.mlflow-s3-mac
+        options:
+          create: true
+  - source:
+      kind: Secret
+      name: seaweedfs-s3-config
+      namespace: apps
+      fieldPath: sops.mac
+    targets:
+      - select:
+          kind: HelmRelease
+          name: seaweedfs
+          namespace: apps
+        fieldPaths:
+          - spec.values.s3.podAnnotations.seaweedfs-s3-config-mac
         options:
           create: true
   - source:

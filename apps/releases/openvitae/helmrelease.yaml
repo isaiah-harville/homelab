@@ -41,8 +41,12 @@ spec:
       targetPath: postgres.auth.password
     - kind: Secret
       name: openvitae-secrets
-      valuesKey: minioRootPassword
-      targetPath: minio.auth.rootPassword
+      valuesKey: s3AccessKey
+      targetPath: externalS3.accessKey
+    - kind: Secret
+      name: openvitae-secrets
+      valuesKey: s3SecretKey
+      targetPath: externalS3.secretKey
   values:
     api:
       image:
@@ -57,16 +61,20 @@ spec:
         email: isaiah@harville.dev
       # Authentik protects /admin and /api; the public CV and S3 host stay anonymous.
       mode: proxy
+    # MinIO no longer publishes images; objects live in the shared SeaweedFS.
     minio:
-      auth:
-        rootUser: openvitae
+      enabled: false
+    externalS3:
+      endpointUrl: http://seaweedfs-s3.apps.svc.cluster.local:8333
       bucket: openvitae
+    # Presigned links are opened by the visitor's browser; s3-ingress.yaml
+    # exposes only this bucket on the public host.
+    publicS3Url: https://openvitae-s3.harville.dev
     # This chart renders its own Ingress, outside the repo-wide Ingress patches.
     ingress:
       enabled: true
       className: traefik-public
       host: isaiah.harville.dev
-      s3Host: openvitae-s3.harville.dev
       tls:
         enabled: true
         secretName: harville-wildcard-shared-tls

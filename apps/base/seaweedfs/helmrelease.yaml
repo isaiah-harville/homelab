@@ -83,6 +83,7 @@ spec:
         - name: general
         - name: backups
         - name: mlflow
+        - name: openvitae
       resources:
         requests:
           cpu: 50m
@@ -92,6 +93,11 @@ spec:
     admin:
       enabled: true
       replicas: 1
+      # weed admin >=4.46 refuses a non-loopback bind without auth.
+      secret:
+        existingSecret: seaweedfs-admin
+        userKey: username
+        pwKey: password
       data:
         type: persistentVolumeClaim
         size: 2Gi

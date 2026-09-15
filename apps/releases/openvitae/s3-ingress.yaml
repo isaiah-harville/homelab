@@ -1,0 +1,24 @@
+---
+# Presigned headshot/PDF URLs point here. Only the openvitae bucket path is
+# routed, so the rest of SeaweedFS S3 (backups, tfstate, ...) stays internal.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openvitae-s3
+  namespace: apps
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [openvitae-s3.harville.dev]
+      secretName: harville-wildcard-shared-tls
+  rules:
+    - host: openvitae-s3.harville.dev
+      http:
+        paths:
+          - path: /openvitae
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweedfs-s3
+                port:
+                  number: 8333

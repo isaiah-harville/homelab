@@ -22,43 +22,49 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           containers:
-            - name: mc-prune
-              image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+            - name: rclone-prune
+              image: rclone/rclone:1.75.1@sha256:45401ad7410db1d67ffdb58e19059ad20b0d8e0285a60e38bbec55cc1019c7a5
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop:
                     - ALL
               env:
-                - name: MC_CONFIG_DIR
-                  value: /tmp/.mc
-                - name: ACCESS_KEY
+                # Configure the remote entirely from env; there is no config file
+                # and the non-root user has no writable home.
+                - name: HOME
+                  value: /tmp
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RCLONE_CONFIG_BACKUP_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_BACKUP_PROVIDER
+                  value: SeaweedFS
+                - name: RCLONE_CONFIG_BACKUP_ENDPOINT
+                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
+                - name: RCLONE_CONFIG_BACKUP_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
                       name: omni-backup-s3-creds
                       key: accessKey
-                - name: SECRET_KEY
+                - name: RCLONE_CONFIG_BACKUP_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       name: omni-backup-s3-creds
                       key: secretKey
-                - name: MC_HOST_backup
-                  value: http://$(ACCESS_KEY):$(SECRET_KEY)@seaweedfs-s3.apps.svc.cluster.local:8333
               command:
-                - sh
-                - -c
-                - |
-                  set -eu
-                  # Never touch backups/config/: CNPG's base backups and WAL segments
-                  # live there and deleting any of them by age breaks the WAL chain
-                  # that point-in-time recovery depends on.
-                  mc find backup/backups/ \
-                    --ignore "backup/backups/config/*" \
-                    --older-than 76h \
-                    --exec "mc rm --force {}"
+                - rclone
+                - delete
+                # Never touch backups/config/: CNPG's base backups and WAL segments
+                # live there and deleting any of them by age breaks the WAL chain
+                # that point-in-time recovery depends on.
+                - backup:backups/
+                - --exclude=/config/**
+                - --min-age=76h
+                - --verbose
               resources:
                 requests:
                   cpu: 10m
-                  memory: 32Mi
-                limits:
                   memory: 64Mi
+                limits:
+                  memory: 128Mi
