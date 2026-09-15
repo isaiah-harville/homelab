@@ -18,19 +18,9 @@ data:
       external_url: "https://home-assistant.int.harville.dev"
       internal_url: "https://home-assistant.int.harville.dev"
 
-    http:
-      # Requests arrive from traefik-internal, so without this Home Assistant
-      # sees every client as the same proxy IP and rejects the forwarded host
-      # with a 400. Home Assistant is hostNetwork, so a Traefik pod on the same
-      # node connects from its pod IP (Talos default podSubnets) while one on
-      # another node is masqueraded to that node's LAN IP. Nodes use DHCP, so
-      # trust the whole node VLAN rather than individual addresses.
-      use_x_forwarded_for: true
-      trusted_proxies:
-        - 10.244.0.0/16
-        - 10.1.10.0/24
-      ip_ban_enabled: true
-      login_attempts_threshold: 10
+    # No http: block. Home Assistant now owns the HTTP settings in .storage
+    # (Settings > System > Network) and ignores them here; the reverse proxy
+    # values it needs are in docs/apps/home-automation.md.
 
     # These are edited by Home Assistant's own UI editors, so they live on the
     # PVC rather than in this ConfigMap.

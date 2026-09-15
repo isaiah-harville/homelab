@@ -42,6 +42,29 @@ port 8081 are consequently reachable on their scheduled nodes' LAN addresses
 even though neither has an Ingress. Future UniFi firewall rules must restrict
 these ports to Home Assistant and cluster-node sources.
 
+## Home Assistant reverse proxy settings
+
+Home Assistant keeps its HTTP settings in `.storage` and ignores an `http:`
+block in `configuration.yaml`, so these are set once in **Settings > System >
+Network** and survive on the `home-assistant-config` PVC:
+
+| Setting | Value |
+| --- | --- |
+| Use X-Forwarded-For | on |
+| Trusted proxies | `10.244.0.0/16`, `10.1.10.0/24` |
+| IP ban / login attempts threshold | on / `10` |
+
+Home Assistant is `hostNetwork`, so a traefik-internal pod on the same node
+connects from its pod IP while one on another node is masqueraded to that
+node's LAN IP; nodes use DHCP, so the whole node VLAN is trusted. Without both
+ranges, requests through `https://home-assistant.int.harville.dev` get a 400.
+
+If the proxy settings are lost (a fresh PVC), the domain returns 400 and the
+UI is only reachable directly at `http://<node IP>:8123`, where `<node IP>` is
+the node running the pod (`kubectl -n apps get pod -o wide`). Changes to these
+settings are held as pending until confirmed in the UI within five minutes, so
+make them from that direct address.
+
 ## Before enabling the MR4U workloads
 
 A port of `0` is a deliberate startup block: the init containers refuse to
