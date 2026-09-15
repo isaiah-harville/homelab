@@ -84,6 +84,7 @@ spec:
         - name: backups
         - name: mlflow
         - name: openvitae
+        - name: primer-sources
       resources:
         requests:
           cpu: 50m
