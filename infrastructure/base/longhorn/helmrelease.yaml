@@ -28,7 +28,9 @@ spec:
     defaultSettings:
       createDefaultDiskLabeledNodes: true
       defaultDataPath: /var/mnt/longhorn
-      storageReservedPercentageForDefaultDisk: 30
+      # Only applies when Longhorn creates a disk; existing disks keep their
+      # own spec.disks[].storageReserved, which was patched to match.
+      storageReservedPercentageForDefaultDisk: 20
       defaultReplicaCount: 3
       allowVolumeCreationWithDegradedAvailability: false
       replicaAutoBalance: least-effort
