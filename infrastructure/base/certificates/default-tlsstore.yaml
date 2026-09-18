@@ -1,0 +1,13 @@
+---
+# Traefik serves this certificate to any TLS router that names no secret of
+# its own, so an app Ingress only needs `tls: [{hosts: [...]}]` and never has
+# to reach into another namespace for the wildcard. Kept beside the
+# Certificate so the secret it names is always local. There must be only one
+# TLSStore called `default` across the cluster; both Traefik instances read it.
+apiVersion: traefik.io/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+spec:
+  defaultCertificate:
+    secretName: harville-wildcard-shared-tls

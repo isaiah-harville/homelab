@@ -1,0 +1,36 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reloader
+  namespace: reloader
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: reloader
+      version: ">=2.2.0 <3.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: stakater
+        namespace: flux-system
+  values:
+    reloader:
+      # Roll any workload whose Secret or ConfigMap changes, with no
+      # per-workload annotation. That covers chart-rendered Deployments too,
+      # and reflected Secrets, which a SOPS-hash annotation can't reach.
+      # Scoped to namespaces that opt in with the label below, so
+      # infrastructure never restarts on its own.
+      autoReloadAll: true
+      namespaceSelector: reloader.stakater.com/enabled=true
+      # Mark the pod template with an annotation rather than injecting an
+      # env var, so Flux and Helm see no drift in the container spec.
+      reloadStrategy: annotations

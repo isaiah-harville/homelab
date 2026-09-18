@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - cert-manager.helmrepository.yaml
   - emberstack.helmrepository.yaml
+  - stakater.helmrepository.yaml
   - longhorn.helmrepository.yaml
   - metallb.helmrepository.yaml
   - prometheus-community.helmrepository.yaml
