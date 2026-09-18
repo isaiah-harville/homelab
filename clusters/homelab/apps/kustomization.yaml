@@ -10,8 +10,6 @@ resources:
   - ./secrets/seaweedfs-s3-config.yaml
   - ./secrets/seaweedfs-admin.yaml
   - ./secrets/omni-backup-s3-creds.yaml
-  - ./secrets/harbor-secrets.yaml
-  - ./secrets/harbor-oidc.yaml
   - ./secrets/config-backup-s3.yaml
   - ./secrets/vllm-api-key.yaml
   - ./secrets/pigeon-relay-apns.yaml
@@ -42,7 +40,6 @@ resources:
   - ../../../apps/releases/openvitae
   - ../../../apps/base/lucerna
   - ../../../apps/base/seaweedfs
-  - ../../../apps/base/harbor
   - ../../../apps/base/vllm
   - ../../../apps/base/vllm-router
   - ../../../apps/base/llama-cpp
@@ -185,28 +182,6 @@ replacements:
           name: authentik-ldap
         fieldPaths:
           - spec.template.metadata.annotations.media-auth-mac
-        options:
-          create: true
-  - source:
-      kind: Secret
-      name: harbor-oidc
-      namespace: apps
-      fieldPath: sops.mac
-    targets:
-      - select:
-          kind: HelmRelease
-          name: harbor
-          namespace: apps
-        fieldPaths:
-          - spec.values.core.podAnnotations.harbor-oidc-mac
-        options:
-          create: true
-      - select:
-          kind: HelmRelease
-          name: authentik
-          namespace: apps
-        fieldPaths:
-          - spec.values.global.podAnnotations.harbor-oidc-mac
         options:
           create: true
   - source:

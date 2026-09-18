@@ -12,7 +12,6 @@ resources:
   - cloudnative-pg.helmrepository.yaml
   - headlamp.helmrepository.yaml
   - seaweedfs.helmrepository.yaml
-  - harbor.helmrepository.yaml
   - metrics-server.helmrepository.yaml
   - actions-runner-controller.helmrepository.yaml
   - community-charts.helmrepository.yaml

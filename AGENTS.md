@@ -169,7 +169,7 @@ external deployment.
   - `traefik.ingress.kubernetes.io/router.entrypoints: websecure`
   - `tls[0].secretName: harville-wildcard-shared-tls`
   > **Important:** these patches only touch Ingress manifests *in the repo*. They do
-  > **not** affect Ingresses rendered by a HelmRelease at runtime (e.g. Harbor) — for
+  > **not** affect Ingresses rendered by a HelmRelease at runtime (e.g. Headlamp) — for
   > those, set ingress class / TLS secret / entrypoint annotation **in the chart values**.
 - **Authentik SSO** on an internal app: annotation
   `traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd`.
@@ -281,7 +281,6 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
-- **harbor** — container registry, public at `harbor.harville.dev`.
 - **vllm-router** — OpenAI-compatible inference at `vllm.int.harville.dev`
   (API-key auth), consumed by Primer. See "GPU / vLLM" below.
 - **primer** — cited answers over private document libraries, public at
