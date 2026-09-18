@@ -12,6 +12,12 @@ spec:
     synchronous:
       method: any
       number: 1
+    parameters:
+      # A replication slot for a replica that is down pins WAL on the primary
+      # indefinitely; unbounded, that filled authentik's 5Gi volume and took
+      # the primary down with it. Past this cap the slot is dropped and the
+      # replica re-syncs from the WAL archive instead.
+      max_slot_wal_keep_size: 4GB
     # pgvector is mounted as a read-only ImageVolume rather than baked into a
     # custom Postgres image, so the extension upgrades independently of the
     # server. Needs CNPG >= 1.27 and PostgreSQL 18's extension_control_path.

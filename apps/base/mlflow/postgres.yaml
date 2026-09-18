@@ -34,6 +34,12 @@ spec:
     synchronous:
       method: any
       number: 1
+    parameters:
+      # A replication slot for a replica that is down pins WAL on the primary
+      # indefinitely; unbounded, that filled authentik's 5Gi volume and took
+      # the primary down with it. Past this cap the slot is dropped and the
+      # replica re-syncs from the WAL archive instead.
+      max_slot_wal_keep_size: 2GB
   monitoring:
     disableDefaultQueries: false
   plugins:

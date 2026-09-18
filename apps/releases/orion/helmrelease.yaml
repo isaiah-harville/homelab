@@ -25,6 +25,34 @@ spec:
         name: orion
         namespace: flux-system
       interval: 10m
+  # The chart sets no spread, so both API replicas could land on one node and
+  # fall over together. Force one per node.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: "orion-api"
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: _
+              spec:
+                template:
+                  spec:
+                    topologySpreadConstraints:
+                      - maxSkew: 1
+                        topologyKey: kubernetes.io/hostname
+                        whenUnsatisfiable: DoNotSchedule
+                        labelSelector:
+                          matchLabels:
+                            app.kubernetes.io/instance: orion
+                        # Spread each component against its own current pods
+                        # only, so old ReplicaSet pods don't block a rollout.
+                        matchLabelKeys:
+                          - app.kubernetes.io/component
+                          - pod-template-hash
   values:
     ingress:
       enabled: false

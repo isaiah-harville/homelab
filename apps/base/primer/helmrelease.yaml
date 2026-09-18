@@ -24,6 +24,34 @@ spec:
         kind: HelmRepository
         name: primer
         namespace: flux-system
+  # The chart sets no spread for its replicated services, so both replicas could
+  # land on one node and fall over together. Force one per node.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: "primer-(auth|chat|control|retrieval|web)"
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: _
+              spec:
+                template:
+                  spec:
+                    topologySpreadConstraints:
+                      - maxSkew: 1
+                        topologyKey: kubernetes.io/hostname
+                        whenUnsatisfiable: DoNotSchedule
+                        labelSelector:
+                          matchLabels:
+                            app.kubernetes.io/instance: primer
+                        # Spread each component against its own current pods
+                        # only, so old ReplicaSet pods don't block a rollout.
+                        matchLabelKeys:
+                          - app.kubernetes.io/component
+                          - pod-template-hash
   values:
     fullnameOverride: primer
 
