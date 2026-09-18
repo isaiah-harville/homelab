@@ -6,14 +6,14 @@ this repository deploys it at `https://primer.harville.dev`. It replaced Open
 WebUI.
 
 The chart ships no database, no broker, and no model server, so most of what is
-in `apps/base/primer/` exists to supply those:
+in `apps/primer/primer/app/` exists to supply those:
 
 | Piece | Where it comes from |
 | --- | --- |
 | PostgreSQL + pgvector | `postgres.yaml` — CNPG cluster, pgvector as an ImageVolume extension |
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
 | Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `Qwen3-Embedding-0.6B` |
-| Chat models | `apps/base/llama-cpp/<model>`, one llama.cpp deployment each, fronted by `vllm-router` |
+| Chat models | `apps/inference/llama-cpp/app/<model>`, one llama.cpp deployment each, fronted by `vllm-router` |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
 
@@ -54,16 +54,16 @@ secret rather than in the `HelmRelease`. SeaweedFS is not AWS, and
 Rotating the credential means editing both files together:
 
 ```bash
-sops clusters/homelab/apps/secrets/seaweedfs-s3-config.yaml
-sops clusters/homelab/apps/secrets/primer-s3.yaml
+sops apps/seaweedfs/seaweedfs/app/seaweedfs-s3-config.sops.yaml
+sops apps/primer/primer/app/primer-s3.sops.yaml
 ```
 
 SeaweedFS creates the bucket on first write.
 
 ## Credentials this repository does manage
 
-`primer-rabbitmq` and `primer-oidc` are SOPS-encrypted in
-`clusters/homelab/apps/secrets/`. Both were generated at random on first
+`primer-rabbitmq` is SOPS-encrypted in `apps/primer/primer/app/`, and
+`primer-oidc` (shared with Authentik) in `clusters/homelab/apps/secrets/`. Both were generated at random on first
 commit and can be rotated by re-encrypting them.
 
 `primer-rabbitmq` is read from two directions: the RabbitMQ Cluster Operator

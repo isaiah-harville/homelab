@@ -8,14 +8,16 @@ ciphertext and SOPS metadata.
 Run SOPS from the repository root so it discovers `.sops.yaml`:
 
 ```bash
-sops clusters/homelab/apps/secrets/example.yaml
+sops apps/<namespace>/<app>/app/example.sops.yaml
 ```
 
-For a new manifest, create the Kubernetes Secret under a `secrets/` directory
-and encrypt it before staging:
+For a new manifest, write the Kubernetes Secret as `<name>.sops.yaml` in the
+app's `app/` directory (or, if apps in several namespaces need it, in
+`clusters/homelab/apps/secrets/` with reflector annotations) and encrypt it
+before staging:
 
 ```bash
-sops --encrypt --in-place clusters/homelab/apps/secrets/example.yaml
+sops --encrypt --in-place apps/<namespace>/<app>/app/example.sops.yaml
 ```
 
 Confirm that values under `data` or `stringData` are encrypted before

@@ -53,6 +53,12 @@ spec:
       enabled: true
       isDefaultClass: false
       name: traefik-public
+    # Routers that name no entrypoint attach to websecure only; plain HTTP is
+    # redirected before routing (additionalArguments below). Replaces the old
+    # per-Ingress `router.entrypoints: websecure` patch.
+    ports:
+      websecure:
+        asDefault: true
     additionalArguments:
       - "--entrypoints.web.http.redirections.entryPoint.to=:443"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"

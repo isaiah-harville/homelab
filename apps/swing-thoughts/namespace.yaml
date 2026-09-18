@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: swing-thoughts
+  labels:
+    reloader.stakater.com/enabled: "true"

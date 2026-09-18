@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-settings
+data:
+  settings.yml: |
+    use_default_settings: true
+    server:
+      secret_key: "f15abf08ab8654ec5f8f7e05fe87eb8e19bc7985ddc12bd838f26278c2e04887"
+      limiter: false
+      image_proxy: false
+    search:
+      formats:
+        - html
+        - json

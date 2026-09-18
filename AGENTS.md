@@ -22,8 +22,7 @@ talos/               Talos image schematic + Omni cluster template + machine-con
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
 infrastructure/base/ Cluster plumbing: traefik, cert-manager, metallb, longhorn, monitoring, reflector, sources
-apps/base/           Reusable app building blocks (HelmRelease + ingress + kustomization)
-apps/releases/       Apps deployed from their OWN external git repos (see below)
+apps/<ns>/<app>/     One folder per app, grouped by namespace: ks.yaml + app/ (see below)
 ```
 
 ## Provisioning: Talos + Omni
@@ -118,11 +117,28 @@ kustomization flux-system` confirmed the root object was not managed by Flux.
 Do not recreate generated bootstrap manifests alongside the operator-owned
 instance.
 
+## App layout
+
+```
+apps/<namespace>/
+  kustomization.yaml     # namespace.yaml + each <app>/ks.yaml
+  namespace.yaml         # Pod Security + reloader labels live here
+  <app>/
+    ks.yaml              # the app's own Flux Kustomization (flux-system)
+    app/                 # what it applies: manifests, kustomization.yaml, *.sops.yaml
+```
+
+`clusters/homelab/apps/kustomization.yaml` lists the namespace folders plus the
+shared secrets in `./secrets`. The root `apps` Flux Kustomization only creates
+namespaces and the per-app Kustomizations (`wait: false`); each app then
+reconciles, health-checks and fails on its own, so one broken app doesn't hold
+back changes to the rest.
+
 ## Adding an app (the common task)
 
-1. Create `apps/base/<name>/` with:
-   - `helmrelease.yaml` — `HelmRelease` in namespace `apps`, with the standard
-     `install`/`upgrade` remediation block (copy from `apps/base/primer/helmrelease.yaml`).
+1. Create `apps/<namespace>/<name>/app/` with:
+   - `helmrelease.yaml` — `HelmRelease` with the standard `install`/`upgrade`
+     remediation block (copy from `apps/primer/primer/app/helmrelease.yaml`).
      Every HelmRelease sets both `install.crds` and `upgrade.crds` to
      `CreateReplace`; this lets Flux update CRDs shipped in a chart's `crds/`
      directory instead of Helm's default upgrade behavior silently skipping
@@ -131,32 +147,31 @@ instance.
      chart's next breaking version. Avoid `*` and exact patch pins. Stateful
      systems and `0.x` charts may deliberately use a narrower minor-version
      boundary when their upstream upgrade process requires review.
-   - `kustomization.yaml` — `namespace: apps`, lists the resources.
+   - `kustomization.yaml` listing the resources. Leave namespaces out of the
+     manifests; `targetNamespace` in `ks.yaml` sets them.
    - `ingress.yaml` (optional) — standalone Ingress (see conventions below).
-2. If the chart is from a new Helm repo, add a `HelmRepository` under
+   - `<secret>.sops.yaml` for secrets only this app uses.
+2. Add `apps/<namespace>/<name>/ks.yaml` (copy a sibling's): `path` to `app/`,
+   `targetNamespace`, and `decryption` if `app/` has SOPS files. Add
+   `dependsOn` only for a real ordering need.
+3. New namespace? Add `apps/<namespace>/{namespace.yaml,kustomization.yaml}` and
+   list the folder in `clusters/homelab/apps/kustomization.yaml`.
+4. If the chart is from a new Helm repo, add a `HelmRepository` under
    `infrastructure/base/sources/` and register it in that dir's `kustomization.yaml`.
-3. Register the app dir (and any secret files) in `clusters/homelab/apps/kustomization.yaml`.
 
-## Apps from external repos (`apps/releases/`)
+## Apps from external repos
 
-Most apps in this directory are reconciled from their **own GitHub repositories**.
-The common pattern under `apps/releases/<name>/` is:
+Some apps (`swing-thoughts`) are reconciled from their **own GitHub
+repositories**. Their `app/` holds:
 
 - `gitrepository.yaml` — a Flux `GitRepository` (in `flux-system`) for the app's repo.
-- `release.kustomization.yaml` — a Flux `Kustomization` whose `spec.path` points at a
-  deploy dir **inside that external repo** (not this one), `dependsOn` infra +
-  certificates. This is why `orion`, `pigeon`, and `swing-thoughts` show up as
-  top-level entries in `flux get kustomizations -A`.
-- `ingress.yaml` — the Ingress lives here (so it gets the `apps` Ingress patches).
+- `release.kustomization.yaml` — a Flux `Kustomization` named `<app>-upstream`
+  whose `spec.path` points at a deploy dir **inside that external repo**.
+- `ingress.yaml` — the Ingress lives here, not upstream.
 
-`openvitae` is the exception: its directory contains a `GitRepository` and an
-in-repo `HelmRelease` that loads the chart from that source. It does not create a
-child Flux Kustomization or a separate repository-defined Ingress.
-
-All release directories are registered in
-`clusters/homelab/apps/kustomization.yaml`. For the common pattern, the parent
-creates the GitRepository and child Kustomization, and the child reconciles the
-external deployment.
+Because `app/` spans namespaces, these `ks.yaml` files set no `targetNamespace`;
+each manifest names its own. `openvitae` is similar but ships a Helm chart, so
+its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 
 ## Ingress conventions
 
@@ -164,13 +179,10 @@ external deployment.
   Reaches the LAN via the traefik-internal LoadBalancer at **10.1.10.251**.
 - **Public** services: `ingressClassName: traefik-public`, host `*.harville.dev`.
   LoadBalancer at **10.1.10.252**.
-- The `apps` Kustomization (`clusters/homelab/apps/kustomization.yaml`) auto-patches
-  every repo-defined Ingress in namespace `apps` with:
-  - `traefik.ingress.kubernetes.io/router.entrypoints: websecure`
-  - `tls[0].secretName: harville-wildcard-shared-tls`
-  > **Important:** these patches only touch Ingress manifests *in the repo*. They do
-  > **not** affect Ingresses rendered by a HelmRelease at runtime (e.g. Headlamp) — for
-  > those, set ingress class / TLS secret / entrypoint annotation **in the chart values**.
+- TLS: give the Ingress `tls: [{hosts: [...]}]` and **no** `secretName`. The
+  `default` TLSStore (`infrastructure/base/certificates/`) serves the wildcard
+  certificate, and `websecure` is Traefik's only default entrypoint; plain HTTP
+  redirects to HTTPS. This applies to chart-rendered Ingresses too.
 - **Authentik SSO** on an internal app: annotation
   `traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd`.
   Don't put forwardauth in front of services that authenticate themselves via API
@@ -238,20 +250,23 @@ privileged workload's namespace, or Talos baseline will block its pods.
 ## Secrets (SOPS + age)
 
 - Encrypted with **SOPS/age**; recipient public key is in `.sops.yaml`. The creation
-  rule matches files under `secrets/` or `sops/` dirs and encrypts `^(data|stringData)$`.
+  rule matches files under `secrets/` dirs and `*.sops.yaml`, and encrypts `^(data|stringData)$`.
 - To add a secret: write the plaintext `Secret` manifest under
   `clusters/homelab/.../secrets/`, then `sops --encrypt --in-place <file>` (run from repo
   root so `.sops.yaml` is picked up). The age **private** key is not in Git; the
   cluster has a copy in the `sops-age` Secret. Keep a secure external backup for
   cluster recovery. Local decryption requires that identity.
-- yamllint/pre-commit excludes `secrets/` and `sops/` dirs.
+- yamllint/pre-commit excludes `secrets/` dirs and `*.sops.yaml`.
 - During a cluster rebuild, restore the `sops-age` Secret in `flux-system` before
   reconciling `infra` or `apps`; both Kustomizations require it for decryption.
-- **Rollout-on-secret-change:** `clusters/homelab/apps/kustomization.yaml` has a
-  `replacements` block that copies the `authentik-core` Secret's `sops.mac` into
-  a pod annotation on the Authentik HelmRelease. Because the MAC changes whenever
-  the secret content changes, editing the secret rolls both server and worker
-  pods. Reuse this pattern for any app that reads secrets only at startup.
+- **Where secrets live:** a secret used by one app is `<name>.sops.yaml` in that
+  app's `app/`. A secret several namespaces need lives once in
+  `clusters/homelab/apps/secrets/` (namespace `flux-system`) and reflector copies
+  it to the namespaces listed in its `reflection-auto-namespaces` annotation.
+- **Rollout-on-secret-change:** Reloader restarts any Deployment/StatefulSet
+  whose Secret or ConfigMap changes, in namespaces labeled
+  `reloader.stakater.com/enabled: "true"` (set in each `namespace.yaml`). No
+  per-app wiring needed.
 
 ## Networking (MetalLB)
 
@@ -298,12 +313,12 @@ containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
 needs manual labelling. Details in `talos/README.md`.
 
 Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`), which
-is what sizes everything: `apps/base/vllm` serves `Qwen2.5-3B-Instruct-AWQ` at
+is what sizes everything: `apps/inference/vllm/app` serves `Qwen2.5-3B-Instruct-AWQ` at
 4-bit with `--enforce-eager` and an fp8 KV cache, fronted by
-`apps/base/vllm-router`. The old WSL box (`harvi-desktop`, `10.1.10.20`) is
+`apps/inference/vllm-router/app`. The old WSL box (`harvi-desktop`, `10.1.10.20`) is
 gone. See `docs/operations/external-inference.md`.
 
-Embeddings deliberately stay on CPU (`apps/base/primer/embeddings.yaml`,
+Embeddings deliberately stay on CPU (`apps/primer/primer/app/embeddings.yaml`,
 `bge-small-en-v1.5`): the model is 33M parameters, and keeping it off the card
 leaves the whole GPU for chat.
 

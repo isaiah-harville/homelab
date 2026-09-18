@@ -29,5 +29,5 @@ spec:
     push:
       branch: main
   update:
-    path: ./apps/base
+    path: ./apps
     strategy: Setters

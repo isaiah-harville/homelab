@@ -51,6 +51,29 @@ jobs:
       - name: Render manifests
         run: kubectl kustomize "${{ matrix.path }}" >/dev/null
 
+  render-apps:
+    name: Render apps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.31.0
+
+      # clusters/homelab/apps only renders the per-app Flux Kustomizations, so
+      # render each app's own directory too.
+      - name: Render every app
+        run: |
+          set -e
+          for ks in $(find apps -name ks.yaml | sort); do
+            echo "::group::$(dirname "$ks")"
+            kubectl kustomize "$(dirname "$ks")/app" >/dev/null
+            echo "::endgroup::"
+          done
+
   repo-hygiene:
     name: Repo Hygiene
     runs-on: ubuntu-latest
@@ -79,15 +102,15 @@ jobs:
             exit 1
           fi
 
-      - name: Git repositories belong in apps/releases or Flux bootstrap
+      - name: Git repositories belong to an app or Flux bootstrap
         run: |
           bad="$(
             rg -l '^kind: GitRepository$' apps infrastructure clusters |
-            grep -v '^apps/releases/' |
+            grep -v '^apps/[^/]*/[^/]*/app/' |
             grep -v '^clusters/.*/flux-system/gotk-sync.yaml$' || true
           )"
           if [ -n "$bad" ]; then
-            echo "GitRepository manifests found outside apps/releases or Flux bootstrap:"
+            echo "GitRepository manifests found outside an app directory or Flux bootstrap:"
             echo "$bad"
             exit 1
           fi

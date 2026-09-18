@@ -144,7 +144,7 @@ EOF
 
 The `omni-backup` seaweedfs identity (scoped to `Read/Write/List/Tagging` on
 the `backups` bucket only) lives in
-`clusters/homelab/apps/secrets/seaweedfs-s3-config.yaml` (SOPS-encrypted).
+`apps/seaweedfs/seaweedfs/app/seaweedfs-s3-config.sops.yaml` (SOPS-encrypted).
 After editing `compose.yaml` to add the flag, redeploy on the omni host:
 `docker compose up -d`. Backups land under `s3://backups/omni/...` in
 seaweedfs; list them with `omnictl etcd-backup list --cluster homelab` (or the

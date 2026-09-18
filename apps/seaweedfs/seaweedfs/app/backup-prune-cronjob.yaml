@@ -1,0 +1,69 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: seaweedfs-backup-prune
+spec:
+  schedule: "0 7 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rclone-prune
+              image: rclone/rclone:1.75.1@sha256:45401ad7410db1d67ffdb58e19059ad20b0d8e0285a60e38bbec55cc1019c7a5
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                # Configure the remote entirely from env; there is no config file
+                # and the non-root user has no writable home.
+                - name: HOME
+                  value: /tmp
+                - name: RCLONE_CONFIG
+                  value: /dev/null
+                - name: RCLONE_CONFIG_BACKUP_TYPE
+                  value: s3
+                - name: RCLONE_CONFIG_BACKUP_PROVIDER
+                  value: SeaweedFS
+                - name: RCLONE_CONFIG_BACKUP_ENDPOINT
+                  value: http://seaweedfs-s3.apps.svc.cluster.local:8333
+                - name: RCLONE_CONFIG_BACKUP_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: omni-backup-s3-creds
+                      key: accessKey
+                - name: RCLONE_CONFIG_BACKUP_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: omni-backup-s3-creds
+                      key: secretKey
+              command:
+                - rclone
+                - delete
+                # Never touch backups/config/: CNPG's base backups and WAL segments
+                # live there and deleting any of them by age breaks the WAL chain
+                # that point-in-time recovery depends on.
+                - backup:backups/
+                - --exclude=/config/**
+                - --min-age=76h
+                - --verbose
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi

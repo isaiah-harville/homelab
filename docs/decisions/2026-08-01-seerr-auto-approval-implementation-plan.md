@@ -22,7 +22,7 @@
 ### Task 1: Declarative Seerr auto-approval
 
 **Files:**
-- Modify: `apps/base/media-stack/scripts/seerr_prepare.py`
+- Modify: `apps/media/media-stack/app/scripts/seerr_prepare.py`
 - Temporary test: `/private/tmp/test_seerr_prepare.py`
 
 **Interfaces:**
@@ -42,7 +42,7 @@ import subprocess
 import tempfile
 
 
-script = Path("apps/base/media-stack/scripts/seerr_prepare.py").resolve()
+script = Path("apps/media/media-stack/app/scripts/seerr_prepare.py").resolve()
 with tempfile.TemporaryDirectory() as directory:
     config = Path(directory)
     (config / "db").mkdir()
@@ -132,7 +132,7 @@ Expected: both validation commands exit zero and the temporary test no longer ex
 - [ ] **Step 6: Commit the implementation**
 
 ```bash
-git add apps/base/media-stack/scripts/seerr_prepare.py
+git add apps/media/media-stack/app/scripts/seerr_prepare.py
 git commit -m "auto-approve Seerr media requests"
 ```
 

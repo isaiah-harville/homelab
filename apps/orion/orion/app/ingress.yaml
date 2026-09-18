@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orion
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Orion
+    gethomepage.dev/description: Public Orion app
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=orion
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [orion.harville.dev]
+  rules:
+    - host: orion.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orion-gui
+                port:
+                  name: gui
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: orion-api
+                port:
+                  name: api

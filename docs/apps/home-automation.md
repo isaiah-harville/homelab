@@ -127,7 +127,7 @@ Kubernetes OTBR is active: only one OTBR process may own the Thread RCP.
 
 ## Configure Zigbee2MQTT
 
-Edit `apps/base/home-automation/zigbee2mqtt.yaml`:
+Edit `apps/home-automation/home-automation/app/zigbee2mqtt.yaml`:
 
 ```text
 zigbee2mqtt-adapter.data.serial_port
@@ -145,7 +145,7 @@ permit-join, and verify its Home Assistant MQTT discovery entities.
 
 ## Configure OTBR and verify IPv6/TUN
 
-Edit `apps/base/home-automation/otbr.yaml`:
+Edit `apps/home-automation/home-automation/app/otbr.yaml`:
 
 ```text
 otbr-config.data.RCP_HOST
@@ -218,8 +218,7 @@ docker run --rm --entrypoint sh eclipse-mosquitto:2.0.22 -c \
 
 then `sops set` the result into `mosquitto-passwd` and the matching plaintexts
 into `mosquitto-clients`. Changing either secret rolls the dependent
-Deployments, because their SOPS MACs are projected into pod annotations by the
-`replacements` in `clusters/homelab/apps/kustomization.yaml`. After rotating,
+Deployments: Reloader restarts anything whose Secret changes. After rotating,
 re-enter the Home Assistant password in the MQTT integration.
 
 ## Commission a Matter-over-Thread device

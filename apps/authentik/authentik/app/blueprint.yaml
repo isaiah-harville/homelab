@@ -1,0 +1,865 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-blueprint
+data:
+  homelab.yaml: |
+    version: 1
+    metadata:
+      name: Homelab
+    entries:
+      # Content-addressed blueprint mounts can coexist briefly during rolling
+      # updates. Frequent discovery guarantees the newest revision is imported
+      # immediately after all old workers have exited.
+      - model: authentik_tasks_schedules.schedule
+        identifiers:
+          actor_name: authentik.blueprints.v1.tasks.blueprints_discovery
+        attrs:
+          crontab: "*/2 * * * *"
+      - model: authentik_core.group
+        id: seaweedfs-admins
+        identifiers:
+          name: SeaweedFS Admins
+      - model: authentik_core.group
+        id: openvitae-admins
+        identifiers:
+          name: OpenVitae Admins
+      - model: authentik_core.group
+        id: flux-admins
+        identifiers:
+          name: Flux Admins
+      - model: authentik_core.group
+        id: longhorn-admins
+        identifiers:
+          name: Longhorn Admins
+      - model: authentik_core.group
+        id: grafana-users
+        identifiers:
+          name: Grafana Users
+      - model: authentik_core.group
+        id: headlamp-users
+        identifiers:
+          name: Headlamp Users
+      - model: authentik_core.group
+        id: books-users
+        identifiers:
+          name: Books Users
+      - model: authentik_core.group
+        id: media-users
+        identifiers:
+          name: Media Users
+      - model: authentik_core.group
+        id: primer-users
+        identifiers:
+          name: Primer Users
+      - model: authentik_core.group
+        id: primer-admins
+        identifiers:
+          name: Primer Admins
+      - model: authentik_core.group
+        id: mlflow-users
+        identifiers:
+          name: MLflow Users
+      - model: authentik_core.group
+        id: mlflow-admins
+        identifiers:
+          name: MLflow Admins
+      - model: authentik_core.group
+        id: home-assistant-users
+        identifiers:
+          name: Home Assistant Users
+      # KeyOf only resolves backwards - an entry can reference one that
+      # came before it in the document, never one that comes later - so this
+      # has to be defined before primer-provider, its first use, rather than
+      # grouped with the property mappings further down where every other
+      # provider using it already comes after it.
+      - model: authentik_providers_oauth2.scopemapping
+        id: groups-scope
+        identifiers:
+          name: Homelab groups
+        attrs:
+          scope_name: groups
+          description: Kubernetes RBAC group membership
+          expression: |
+            return {"groups": [group.name for group in request.user.ak_groups.all()]}
+      # Primer authenticates through its own oauth2-proxy rather than the
+      # ForwardAuth middleware: it reads oauth2-proxy's X-Auth-Request-*
+      # headers, which only that proxy sets from a verified session.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: primer-provider
+        identifiers:
+          name: Primer Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: primer
+          client_secret: !Env [PRIMER_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          # oauth2-proxy uses exactly one callback path, so this is pinned
+          # rather than host-matched.
+          redirect_uris:
+            - matching_mode: strict
+              url: https://primer.harville.dev/oauth2/callback
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: primer
+        attrs:
+          name: Primer
+          provider: !KeyOf primer-provider
+          meta_launch_url: https://primer.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, primer]]
+          order: 0
+        attrs:
+          group: !KeyOf primer-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, primer]]
+          order: 1
+        attrs:
+          group: !KeyOf primer-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, primer]]
+          order: 2
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: seaweedfs-provider
+        identifiers:
+          name: SeaweedFS Admin Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://seaweedfs.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: seaweedfs-admin
+        attrs:
+          name: SeaweedFS Admin
+          provider: !KeyOf seaweedfs-provider
+          meta_launch_url: https://seaweedfs.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seaweedfs-admin]]
+          order: 0
+        attrs:
+          group: !KeyOf seaweedfs-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seaweedfs-admin]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: openvitae-provider
+        identifiers:
+          name: OpenVitae Admin Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://isaiah.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: openvitae-admin
+        attrs:
+          name: OpenVitae Admin
+          provider: !KeyOf openvitae-provider
+          meta_launch_url: https://isaiah.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, openvitae-admin]]
+          order: 0
+        attrs:
+          group: !KeyOf openvitae-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, openvitae-admin]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: flux-provider
+        identifiers:
+          name: Flux Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://flux.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: flux
+        attrs:
+          name: Flux
+          provider: !KeyOf flux-provider
+          meta_launch_url: https://flux.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, flux]]
+          order: 0
+        attrs:
+          group: !KeyOf flux-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, flux]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: longhorn-provider
+        identifiers:
+          name: Longhorn Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://longhorn.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: longhorn
+        attrs:
+          name: Longhorn
+          provider: !KeyOf longhorn-provider
+          meta_launch_url: https://longhorn.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, longhorn]]
+          order: 0
+        attrs:
+          group: !KeyOf longhorn-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, longhorn]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: grafana-provider
+        identifiers:
+          name: Grafana Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://grafana.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: grafana
+        attrs:
+          name: Grafana
+          provider: !KeyOf grafana-provider
+          meta_launch_url: https://grafana.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, grafana]]
+          order: 0
+        attrs:
+          group: !KeyOf grafana-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, grafana]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: calibre-web-automated-provider
+        identifiers:
+          name: Calibre Web Automated Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://calibre.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: calibre-web-automated
+        attrs:
+          name: Calibre Web Automated
+          provider: !KeyOf calibre-web-automated-provider
+          meta_launch_url: https://calibre.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, calibre-web-automated]]
+          order: 0
+        attrs:
+          group: !KeyOf books-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, calibre-web-automated]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: qbittorrent-provider
+        identifiers:
+          name: qBittorrent Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://torrent.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: qbittorrent
+        attrs:
+          name: qBittorrent
+          provider: !KeyOf qbittorrent-provider
+          meta_launch_url: https://torrent.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, qbittorrent]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: prowlarr-provider
+        identifiers:
+          name: Prowlarr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://prowlarr.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: prowlarr
+        attrs:
+          name: Prowlarr
+          provider: !KeyOf prowlarr-provider
+          meta_launch_url: https://prowlarr.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, prowlarr]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: radarr-provider
+        identifiers:
+          name: Radarr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://radarr.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: radarr
+        attrs:
+          name: Radarr
+          provider: !KeyOf radarr-provider
+          meta_launch_url: https://radarr.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, radarr]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_proxy.proxyprovider
+        id: zigbee2mqtt-provider
+        identifiers:
+          name: Zigbee2MQTT Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://zigbee2mqtt.int.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: zigbee2mqtt
+        attrs:
+          name: Zigbee2MQTT
+          provider: !KeyOf zigbee2mqtt-provider
+          meta_launch_url: https://zigbee2mqtt.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, zigbee2mqtt]]
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_oauth2.oauth2provider
+        id: shelfmark-provider
+        identifiers:
+          name: Shelfmark Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: !Env [BOOKS_OIDC_CLIENT_ID, ""]
+          client_secret: !Env [BOOKS_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://books.harville.dev/api/auth/oidc/callback
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: books
+        attrs:
+          name: Books
+          provider: !KeyOf shelfmark-provider
+          meta_launch_url: https://books.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, books]]
+          order: 0
+        attrs:
+          group: !KeyOf books-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, books]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_providers_oauth2.oauth2provider
+        id: headlamp-provider
+        identifiers:
+          name: Headlamp Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: headlamp
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://headlamp.int.harville.dev/oidc-callback
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: headlamp
+        attrs:
+          name: Headlamp
+          provider: !KeyOf headlamp-provider
+          meta_launch_url: https://headlamp.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, headlamp]]
+          order: 0
+        attrs:
+          group: !KeyOf headlamp-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, headlamp]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Harbor was retired. Keep these absent entries so Authentik deletes the
+      # leftover application, provider and group; the policy bindings go with
+      # the application.
+      - model: authentik_core.application
+        state: absent
+        identifiers:
+          slug: harbor
+      - model: authentik_providers_oauth2.oauth2provider
+        state: absent
+        identifiers:
+          name: Harbor Provider
+      - model: authentik_core.group
+        state: absent
+        identifiers:
+          name: Harbor Users
+      # MLflow authenticates natively via OIDC (mlflow-oidc-auth) rather than the
+      # ForwardAuth outpost, so the Python client can hold a personal access
+      # token instead of a browser session.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: mlflow-provider
+        identifiers:
+          name: MLflow Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: mlflow
+          client_secret: !Env [MLFLOW_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          # The plugin derives its own callback path from the forwarded headers,
+          # so the match is host-locked rather than pinned to a single path.
+          redirect_uris:
+            - matching_mode: regex
+              url: https://mlflow\.int\.harville\.dev/.*
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: mlflow
+        attrs:
+          name: MLflow
+          provider: !KeyOf mlflow-provider
+          meta_launch_url: https://mlflow.int.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, mlflow]]
+          order: 0
+        attrs:
+          group: !KeyOf mlflow-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, mlflow]]
+          order: 1
+        attrs:
+          group: !KeyOf mlflow-admins
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, mlflow]]
+          order: 2
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Seerr uses its native OIDC preview implementation so browser sessions,
+      # user creation, and access policy all remain owned by Authentik.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: seerr-provider
+        identifiers:
+          name: Seerr Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: !Env [SEERR_OIDC_CLIENT_ID, ""]
+          client_secret: !Env [SEERR_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+          redirect_uris:
+            - matching_mode: strict
+              url: https://movies.harville.dev/login
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://movies.harville.dev/profile/settings/linked-accounts
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: seerr
+        attrs:
+          name: Movies
+          provider: !KeyOf seerr-provider
+          meta_launch_url: https://movies.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seerr]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, seerr]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Jellyfin's web UI uses OIDC. LDAP remains available as the default
+      # password provider for television and native clients without web SSO.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: jellyfin-oidc-provider
+        identifiers:
+          name: Jellyfin OIDC Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: confidential
+          client_id: !Env [JELLYFIN_OIDC_CLIENT_ID, ""]
+          client_secret: !Env [JELLYFIN_OIDC_CLIENT_SECRET, ""]
+          grant_types:
+            - authorization_code
+            - refresh_token
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://watch.harville.dev/sso/OID/r/authentik
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://watch.harville.dev/sso/OID/redirect/authentik
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: jellyfin-oidc
+        attrs:
+          name: Jellyfin
+          provider: !KeyOf jellyfin-oidc-provider
+          meta_launch_url: https://watch.harville.dev/sso/OID/p/authentik
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-oidc]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-oidc]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Jellyfin clients need native username/password authentication. Authentik's
+      # LDAP outpost validates those credentials while Jellyfin JIT-provisions
+      # its own local user records through the LDAP Authentication plugin.
+      - model: authentik_core.user
+        id: jellyfin-ldap-bind-user
+        identifiers:
+          username: jellyfin-ldap-bind
+        attrs:
+          name: Jellyfin LDAP Bind
+          type: service_account
+      - model: authentik_core.token
+        identifiers:
+          identifier: jellyfin-ldap-bind
+        attrs:
+          key: !Env [AUTHENTIK_LDAP_BIND_TOKEN, ""]
+          user: !KeyOf jellyfin-ldap-bind-user
+          intent: app_password
+          expiring: false
+      # LDAP clients cannot execute this installation's browser/MFA policies.
+      # Use a dedicated bind flow containing only credential verification and
+      # session creation, as recommended by Authentik for LDAP providers.
+      - model: authentik_stages_password.passwordstage
+        id: jellyfin-ldap-password-stage
+        identifiers:
+          name: jellyfin-ldap-password
+        attrs:
+          backends:
+            - authentik.core.auth.InbuiltBackend
+            - authentik.core.auth.TokenBackend
+          failed_attempts_before_cancel: 5
+      - model: authentik_stages_identification.identificationstage
+        id: jellyfin-ldap-identification-stage
+        identifiers:
+          name: jellyfin-ldap-identification
+        attrs:
+          user_fields:
+            - username
+            - email
+          password_stage: !KeyOf jellyfin-ldap-password-stage
+          case_insensitive_matching: true
+          pretend_user_exists: true
+      - model: authentik_stages_user_login.userloginstage
+        id: jellyfin-ldap-login-stage
+        identifiers:
+          name: jellyfin-ldap-login
+      - model: authentik_flows.flow
+        id: jellyfin-ldap-authentication-flow
+        identifiers:
+          slug: jellyfin-ldap-authentication
+        attrs:
+          name: Jellyfin LDAP Authentication
+          title: Jellyfin LDAP Authentication
+          designation: authentication
+          authentication: none
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf jellyfin-ldap-authentication-flow
+          stage: !KeyOf jellyfin-ldap-identification-stage
+          order: 10
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf jellyfin-ldap-authentication-flow
+          stage: !KeyOf jellyfin-ldap-login-stage
+          order: 30
+      - model: authentik_providers_ldap.ldapprovider
+        id: jellyfin-ldap-provider
+        identifiers:
+          name: Jellyfin LDAP Provider
+        attrs:
+          authentication_flow: !KeyOf jellyfin-ldap-authentication-flow
+          # Authentik's LDAP outpost executes authorization_flow as its bind
+          # flow (exposed as bind_flow_slug in the outpost API).
+          authorization_flow: !KeyOf jellyfin-ldap-authentication-flow
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          base_dn: dc=media,dc=harville,dc=dev
+          bind_mode: cached
+          search_mode: cached
+        permissions:
+          - permission: authentik_providers_ldap.search_full_directory
+            user: !KeyOf jellyfin-ldap-bind-user
+      - model: authentik_core.application
+        identifiers:
+          slug: jellyfin-ldap
+        attrs:
+          name: Jellyfin LDAP
+          provider: !KeyOf jellyfin-ldap-provider
+          meta_launch_url: https://watch.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 0
+        attrs:
+          group: !KeyOf media-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, jellyfin-ldap]]
+          order: 2
+        attrs:
+          user: !KeyOf jellyfin-ldap-bind-user
+      # Home Assistant signs in through the hass-oidc-auth integration rather
+      # than ForwardAuth: the iOS app authenticates its background connections
+      # with Home Assistant's own tokens, which cannot follow a browser
+      # redirect. Public client + PKCE, so there is no secret to leak.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: home-assistant-provider
+        identifiers:
+          name: Home Assistant Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          client_type: public
+          client_id: home-assistant
+          include_claims_in_id_token: true
+          issuer_mode: per_provider
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !KeyOf groups-scope
+          redirect_uris:
+            - matching_mode: strict
+              url: https://home-assistant.harville.dev/auth/oidc/callback
+              redirect_uri_type: authorization
+            - matching_mode: strict
+              url: https://home-assistant.int.harville.dev/auth/oidc/callback
+              redirect_uri_type: authorization
+      - model: authentik_core.application
+        identifiers:
+          slug: home-assistant
+        attrs:
+          name: Home Assistant
+          provider: !KeyOf home-assistant-provider
+          meta_launch_url: https://home-assistant.harville.dev
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, home-assistant]]
+          order: 0
+        attrs:
+          group: !KeyOf home-assistant-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, home-assistant]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      - model: authentik_outposts.outpost
+        identifiers:
+          name: Jellyfin LDAP Outpost
+        attrs:
+          type: ldap
+          config:
+            authentik_host: http://authentik-server.apps.svc.cluster.local
+          providers:
+            - !KeyOf jellyfin-ldap-provider
+      - model: authentik_outposts.outpost
+        identifiers:
+          name: authentik Embedded Outpost
+        attrs:
+          type: proxy
+          config:
+            authentik_host: https://auth.harville.dev
+            authentik_host_browser: https://auth.harville.dev
+          providers:
+            - !KeyOf seaweedfs-provider
+            - !KeyOf openvitae-provider
+            - !KeyOf flux-provider
+            - !KeyOf longhorn-provider
+            - !KeyOf grafana-provider
+            - !KeyOf calibre-web-automated-provider
+            - !KeyOf qbittorrent-provider
+            - !KeyOf prowlarr-provider
+            - !KeyOf radarr-provider
+            - !KeyOf zigbee2mqtt-provider

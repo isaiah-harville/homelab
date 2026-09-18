@@ -1,0 +1,116 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+  labels:
+    app: vllm
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      # Kubernetes injects a Docker-link environment variable for every
+      # Service in the namespace, so the Service named `vllm` sets
+      # VLLM_PORT=tcp://10.x.x.x:8000 - and vLLM reads VLLM_PORT as its own
+      # configuration. It refuses to start, having been handed a URI where it
+      # expected a port number.
+      #
+      # Turning the links off is the fix rather than renaming the Service:
+      # the name is what the router and every consumer address, and the next
+      # component whose name collides with one of its own variables would hit
+      # exactly this again.
+      enableServiceLinks: false
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.28.0
+          args:
+            - --model
+            - Qwen/Qwen2.5-3B-Instruct-AWQ
+            - --served-model-name
+            - qwen2.5-3b-instruct
+            - --port
+            - "8000"
+            - --quantization
+            - awq_marlin
+            - --enforce-eager
+            - --gpu-memory-utilization
+            - "0.92"
+            - --max-model-len
+            - "16384"
+            - --kv-cache-dtype
+            - auto
+            - --max-num-seqs
+            - "4"
+          env:
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: "1"
+              memory: 6Gi
+            limits:
+              nvidia.com/gpu: 1
+              memory: 12Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-models
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-models
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm
+  labels:
+    app: vllm
+spec:
+  selector:
+    app: vllm
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

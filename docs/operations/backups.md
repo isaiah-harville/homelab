@@ -38,7 +38,7 @@ backups depend on, so the CronJob explicitly ignores that prefix.
 
 Failures are alerted on rather than discovered later: `CNPGBackupFailing`,
 `CNPGNoRecentBackup` and `CNPGWALArchiveFailing` in
-`apps/base/authentik/postgres-alerts.yaml`. The WAL alert matters most — WAL
+`apps/authentik/authentik/app/postgres-alerts.yaml`. The WAL alert matters most — WAL
 archiving can break while nightly base backups keep succeeding, silently
 removing point-in-time recovery between them.
 
@@ -64,7 +64,7 @@ not a guaranteed "run immediately after backup" time.
 When changing retention:
 
 1. Update the age passed to `mc rm` in
-   `apps/base/seaweedfs/backup-prune-cronjob.yaml`.
+   `apps/seaweedfs/seaweedfs/app/backup-prune-cronjob.yaml`.
 2. Leave enough overlap to retain multiple usable snapshots.
 3. Verify the CronJob can authenticate to the backup bucket.
 4. Confirm recent snapshots remain after a manual job run.

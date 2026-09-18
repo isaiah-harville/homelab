@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # The app's own manifests, from its repo. The `swing-thoughts` Kustomization
+  # that applies this file also owns the GitRepository and the Ingress.
+  name: swing-thoughts-upstream
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./SwingThoughtsWebsite/deploy/k8s
+  prune: true
+  targetNamespace: swing-thoughts
+  wait: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: swing-thoughts
+  dependsOn:
+    - name: infra
+    - name: certificates

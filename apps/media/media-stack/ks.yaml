@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: media-stack
+  namespace: flux-system
+spec:
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: ./apps/media/media-stack/app
+  prune: true
+  wait: true
+  targetNamespace: apps
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

@@ -1,0 +1,19 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - storage.yaml
+  - prowlarr.yaml
+  - radarr.yaml
+  - jellyfin.yaml
+  - seerr.yaml
+  - authentik-ldap.yaml
+  - services.yaml
+  - ingresses.yaml
+  - networkpolicies.yaml
+configMapGenerator:
+  - name: media-stack-scripts
+    files:
+      - arr_bootstrap.py=scripts/arr_bootstrap.py
+      - jellyfin_prepare.sh=scripts/jellyfin_prepare.sh
+      - seerr_prepare.py=scripts/seerr_prepare.py

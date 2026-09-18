@@ -4,6 +4,7 @@ extends: default
 ignore: |
   clusters/**/secrets/**
   clusters/**/sops/**
+  *.sops.yaml
   clusters/**/flux-system/gotk-*.yaml
   clusters/**/flux-system/gotk-*.yml
   # Vendored upstream release manifest; kept byte-identical for upgrades.

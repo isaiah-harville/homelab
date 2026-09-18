@@ -1,17 +1,20 @@
 # Apps Layout
 
-`apps/base/` contains workloads whose Kubernetes resources are maintained in this
-repository. Most are a HelmRelease or a small Deployment/Service/Ingress bundle.
+One folder per namespace, one folder per app inside it:
 
-`apps/releases/` contains applications sourced from another Git repository. The
-usual directory contains:
+```
+apps/<namespace>/
+  kustomization.yaml   # namespace.yaml + each <app>/ks.yaml
+  namespace.yaml
+  <app>/
+    ks.yaml            # the app's own Flux Kustomization
+    app/               # manifests, kustomization.yaml, *.sops.yaml
+```
 
-- a Flux `GitRepository`
-- a Flux `Kustomization` pointing at deployment manifests in that repository
-- an ingress and any cluster-local integration
+Each `ks.yaml` is a Flux `Kustomization` in `flux-system` that applies `app/`
+into its `targetNamespace` and reports its own health. A namespace folder is
+deployed once it is listed in `clusters/homelab/apps/kustomization.yaml`.
 
-`openvitae` is different: its external repository supplies a Helm chart, so this
-repository contains the `HelmRelease` directly.
-
-Both kinds are selected by `clusters/homelab/apps/kustomization.yaml`; adding a
-directory under `apps/` does not deploy it by itself.
+Apps sourced from another Git repository (`swing-thoughts`) keep a
+`GitRepository`, an `<app>-upstream` Flux `Kustomization` and their Ingress in
+`app/`. `openvitae` is similar but installs a Helm chart from its repository.

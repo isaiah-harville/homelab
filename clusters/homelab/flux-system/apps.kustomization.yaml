@@ -7,9 +7,13 @@ metadata:
 spec:
   interval: 5m
   path: ./clusters/homelab/apps
-  prune: true
-  wait: true
-  timeout: 20m
+  # TEMPORARY: off while ownership moves to the per-app Kustomizations, so
+  # nothing this one used to own is deleted before its new owner applies it.
+  prune: false
+  # Namespaces and per-app Kustomizations only; each app reports its own
+  # health, so one broken app no longer holds every other app's changes.
+  wait: false
+  timeout: 5m
   sourceRef:
     kind: GitRepository
     name: flux-system
