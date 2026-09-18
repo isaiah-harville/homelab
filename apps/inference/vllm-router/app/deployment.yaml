@@ -25,7 +25,7 @@ spec:
             - --service-discovery
             - static
             - --static-backends
-            - "http://llama-ministral-3b-instruct.apps.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.apps.svc.cluster.local:8080"
+            - "http://llama-ministral-3b-instruct.inference.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.inference.svc.cluster.local:8080"
             - --static-models
             - "ministral-3-3b-instruct,ministral-3-3b-reasoning"
             - --static-model-types
