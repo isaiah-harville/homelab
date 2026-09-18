@@ -11,7 +11,7 @@ spec:
   path: ./apps/home-automation/home-automation/app
   prune: true
   wait: true
-  targetNamespace: apps
+  targetNamespace: home-automation
   sourceRef:
     kind: GitRepository
     name: flux-system
