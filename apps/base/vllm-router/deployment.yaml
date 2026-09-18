@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vllm-router
-  namespace: apps
+  namespace: inference
   labels:
     app: vllm-router
 spec:

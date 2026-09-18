@@ -28,7 +28,6 @@ resources:
   - ../../../apps/base/books
   - ../../../apps/base/qbittorrent
   - ../../../apps/base/media-stack
-  - ../../../apps/base/echo-server
   - ../../../apps/base/headlamp
   - ../../../apps/base/homepage
   - ../../../apps/releases/swing-thoughts
@@ -49,14 +48,12 @@ resources:
 patches:
   - target:
       kind: Ingress
-      namespace: apps
     patch: |-
       - op: add
         path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
         value: websecure
   - target:
       kind: Ingress
-      namespace: apps
     patch: |-
       - op: replace
         path: /spec/tls/0/secretName

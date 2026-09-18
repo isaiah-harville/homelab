@@ -8,6 +8,7 @@ spec:
   interval: 5m
   path: ./SwingThoughtsWebsite/deploy/k8s
   prune: true
+  targetNamespace: swing-thoughts
   wait: true
   timeout: 2m
   sourceRef:

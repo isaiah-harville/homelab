@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: vllm-router
-  namespace: apps
+  namespace: inference
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: AI

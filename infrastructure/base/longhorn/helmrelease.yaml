@@ -35,6 +35,11 @@ spec:
       allowVolumeCreationWithDegradedAvailability: false
       replicaAutoBalance: least-effort
       replicaSoftAntiAffinity: false
+      # When a node dies, force-delete its Deployment/StatefulSet pods so their
+      # RWO volumes can attach elsewhere. The default (do-nothing) leaves them
+      # stuck Terminating, and single-replica apps stay down until the node
+      # comes back.
+      nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
     persistence:
       defaultClassReplicaCount: 3
     metrics:

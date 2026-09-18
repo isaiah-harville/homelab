@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: homepage
-  namespace: apps
+  namespace: homepage
 spec:
   replicas: 1
   selector:

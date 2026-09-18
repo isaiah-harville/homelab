@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: swing-thoughts
-  namespace: apps
+  namespace: swing-thoughts
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Public

@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: searxng-settings
-  namespace: apps
+  namespace: searxng
 data:
   settings.yml: |
     use_default_settings: true

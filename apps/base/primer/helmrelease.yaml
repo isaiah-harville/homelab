@@ -122,7 +122,7 @@ spec:
       # only which of them a new conversation starts on. Anything outside the
       # cluster is added from Primer's own settings page instead.
       chat:
-        baseUrl: http://vllm-router.apps.svc.cluster.local:8001/v1
+        baseUrl: http://vllm-router.inference.svc.cluster.local:8001/v1
         model: ministral-3-3b-instruct
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY

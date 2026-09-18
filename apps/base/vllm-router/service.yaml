@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vllm-router
-  namespace: apps
+  namespace: inference
   labels:
     app: vllm-router
 spec:
