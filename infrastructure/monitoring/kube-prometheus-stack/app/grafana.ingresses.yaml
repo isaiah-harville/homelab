@@ -46,7 +46,6 @@ metadata:
     gethomepage.dev/name: Grafana
     gethomepage.dev/description: Dashboards and alerting
     gethomepage.dev/pod-selector: app.kubernetes.io/name=grafana
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: monitoring-grafana-internal@kubernetescrd
     traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
@@ -54,7 +53,6 @@ spec:
   tls:
     - hosts:
         - grafana.int.harville.dev
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: grafana.int.harville.dev
       http:
@@ -73,14 +71,12 @@ metadata:
   name: grafana-public
   namespace: monitoring
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-public
   tls:
     - hosts:
         - grafana.harville.dev
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: grafana.harville.dev
       http:

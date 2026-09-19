@@ -114,14 +114,16 @@ jobs:
             exit 1
           fi
 
-      - name: Shared wildcard TLS stays centralized for app ingresses
+      # The default TLSStore serves the wildcard to every Ingress; only the
+      # Certificate and the TLSStore itself name the secret.
+      - name: Ingresses do not name the wildcard TLS secret
         run: |
           bad="$(
-            rg -n 'secretName: harville-wildcard-shared-tls' apps \
-              --glob '*ingress.yaml' || true
+            rg -n 'secretName: harville-wildcard-shared-tls' apps infrastructure |
+            grep -v '^infrastructure/certificates/certificates/app/' || true
           )"
           if [ -n "$bad" ]; then
-            echo "App ingress manifests should not hardcode the shared wildcard TLS secret:"
+            echo "Drop secretName; the default TLSStore serves the wildcard certificate:"
             echo "$bad"
             exit 1
           fi

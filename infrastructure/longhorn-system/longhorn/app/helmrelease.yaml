@@ -40,6 +40,10 @@ spec:
       # stuck Terminating, and single-replica apps stay down until the node
       # comes back.
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+      # A node that drops out comes back with replica data Longhorn has
+      # already rebuilt elsewhere; delete those leftovers (after the default
+      # grace period) instead of letting them fill the disk.
+      orphanResourceAutoDeletion: replica-data;instance
     persistence:
       defaultClassReplicaCount: 3
     metrics:

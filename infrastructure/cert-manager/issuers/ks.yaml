@@ -4,10 +4,6 @@ kind: Kustomization
 metadata:
   name: issuers
   namespace: flux-system
-  annotations:
-    # TEMPORARY: moved here from clusters/homelab/flux-system; stops the
-    # old parent deleting it (and pruning what it owns) on the way out.
-    kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
   interval: 30m
   retryInterval: 1m

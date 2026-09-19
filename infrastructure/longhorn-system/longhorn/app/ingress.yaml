@@ -16,7 +16,6 @@ spec:
   tls:
     - hosts:
         - longhorn.int.harville.dev
-      secretName: harville-wildcard-shared-tls
   rules:
     - host: longhorn.int.harville.dev
       http:

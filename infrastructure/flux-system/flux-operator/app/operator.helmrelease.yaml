@@ -44,7 +44,6 @@ spec:
           gethomepage.dev/name: Flux
           gethomepage.dev/description: GitOps delivery dashboard
           gethomepage.dev/href: https://flux.int.harville.dev
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
           traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
         hosts:
           - host: flux.int.harville.dev
@@ -54,4 +53,3 @@ spec:
         tls:
           - hosts:
               - flux.int.harville.dev
-            secretName: harville-wildcard-shared-tls
