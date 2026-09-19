@@ -16,7 +16,7 @@ def manifests() -> Iterator[tuple[Path, dict[str, Any]]]:
     for root_name in MANIFEST_ROOTS:
         for path in sorted((ROOT / root_name).rglob("*.yaml")):
             relative = path.relative_to(ROOT)
-            if "secrets" in relative.parts or path.name == "gotk-components.yaml":
+            if "secrets" in relative.parts or path.name.endswith(".sops.yaml"):
                 continue
 
             try:

@@ -102,15 +102,14 @@ jobs:
             exit 1
           fi
 
-      - name: Git repositories belong to an app or Flux bootstrap
+      - name: Git repositories belong to an app
         run: |
           bad="$(
             rg -l '^kind: GitRepository$' apps infrastructure clusters |
-            grep -v '^apps/[^/]*/[^/]*/app/' |
-            grep -v '^clusters/.*/flux-system/gotk-sync.yaml$' || true
+            grep -v '^apps/[^/]*/[^/]*/app/' || true
           )"
           if [ -n "$bad" ]; then
-            echo "GitRepository manifests found outside an app directory or Flux bootstrap:"
+            echo "GitRepository manifests found outside an app directory:"
             echo "$bad"
             exit 1
           fi

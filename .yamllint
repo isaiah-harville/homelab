@@ -5,8 +5,6 @@ ignore: |
   clusters/**/secrets/**
   clusters/**/sops/**
   *.sops.yaml
-  clusters/**/flux-system/gotk-*.yaml
-  clusters/**/flux-system/gotk-*.yml
   # Vendored upstream release manifest; kept byte-identical for upgrades.
   infrastructure/base/cnpg-barman-plugin/plugin-barman-cloud.yaml
 
