@@ -34,7 +34,7 @@ spec:
                     - ALL
               env:
                 - name: QBITTORRENT_URL
-                  value: http://qbittorrent.apps.svc:8080
+                  value: http://qbittorrent.media.svc:8080
                 - name: QBITTORRENT_USERNAME
                   valueFrom:
                     secretKeyRef:

@@ -8,10 +8,10 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  path: ./apps/books/books/app
+  path: ./apps/media/books/app
   prune: true
   wait: true
-  targetNamespace: apps
+  targetNamespace: media
   sourceRef:
     kind: GitRepository
     name: flux-system

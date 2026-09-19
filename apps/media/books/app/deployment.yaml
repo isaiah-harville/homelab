@@ -115,7 +115,7 @@ spec:
             - name: PROWLARR_ENABLED
               value: "true"
             - name: PROWLARR_URL
-              value: http://prowlarr.apps.svc:9696
+              value: http://prowlarr.media.svc:9696
             - name: PROWLARR_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -124,7 +124,7 @@ spec:
             - name: PROWLARR_TORRENT_CLIENT
               value: qbittorrent
             - name: QBITTORRENT_URL
-              value: http://qbittorrent.apps.svc:8080
+              value: http://qbittorrent.media.svc:8080
             - name: QBITTORRENT_USERNAME
               valueFrom:
                 secretKeyRef:

@@ -39,7 +39,7 @@ cat > /config/plugins/configurations/LDAP-Auth.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <PluginConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <LdapUsers />
-  <LdapServer>authentik-ldap.apps.svc.cluster.local</LdapServer>
+  <LdapServer>authentik-ldap.media.svc.cluster.local</LdapServer>
   <LdapPort>3389</LdapPort>
   <UseSsl>false</UseSsl>
   <UseStartTls>false</UseStartTls>

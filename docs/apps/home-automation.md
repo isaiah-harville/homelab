@@ -32,9 +32,9 @@ flowchart TD
 | --- | --- |
 | Home Assistant | `https://home-assistant.int.harville.dev` |
 | Zigbee2MQTT | `https://zigbee2mqtt.int.harville.dev` |
-| MQTT broker | `mqtt://mosquitto.apps.svc.cluster.local:1883` |
-| Matter Server | `ws://matter-server.apps.svc.cluster.local:5580/ws` |
-| OTBR API | `http://otbr.apps.svc.cluster.local:8081` |
+| MQTT broker | `mqtt://mosquitto.home-automation.svc.cluster.local:1883` |
+| Matter Server | `ws://matter-server.home-automation.svc.cluster.local:5580/ws` |
+| OTBR API | `http://otbr.home-automation.svc.cluster.local:8081` |
 
 Home Assistant, Matter Server, and OTBR use host networking so they participate
 directly in LAN IPv6 and multicast discovery. Matter Server port 5580 and OTBR
@@ -173,12 +173,12 @@ or migration.
 
 In Home Assistant, use **Settings > Devices & services > Add integration**:
 
-1. Add MQTT with host `mosquitto.apps.svc.cluster.local`, port `1883`, and the
+1. Add MQTT with host `mosquitto.home-automation.svc.cluster.local`, port `1883`, and the
    Home Assistant identity stored in the SOPS-managed MQTT Secrets.
 2. Add Matter using
-   `ws://matter-server.apps.svc.cluster.local:5580/ws`.
+   `ws://matter-server.home-automation.svc.cluster.local:5580/ws`.
 3. Add OpenThread Border Router using
-   `http://otbr.apps.svc.cluster.local:8081`.
+   `http://otbr.home-automation.svc.cluster.local:8081`.
 4. Confirm Home Assistant discovers the same active Thread dataset exposed by
    OTBR before commissioning Matter-over-Thread devices.
 
