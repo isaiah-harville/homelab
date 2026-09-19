@@ -126,7 +126,7 @@ spec:
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
       embeddings:
-        baseUrl: http://primer-embeddings.apps.svc.cluster.local:8080/v1
+        baseUrl: http://primer-embeddings.primer.svc.cluster.local:8080/v1
         model: Qwen/Qwen3-Embedding-0.6B
         # Must match the model. Changing either invalidates every stored
         # vector and forces a full reindex - and more than that, the pgvector
@@ -142,7 +142,7 @@ spec:
       # No /v1 on this one, unlike the embedding URL above. Primer posts
       # straight to `{baseUrl}/rerank`, which is where TEI serves it.
       rerank:
-        baseUrl: http://primer-reranker.apps.svc.cluster.local:8080
+        baseUrl: http://primer-reranker.primer.svc.cluster.local:8080
         model: BAAI/bge-reranker-base
         # Measured at 0.17-0.27s for ten passages on this deployment, so a
         # shortlist of twenty costs well under a second per question.

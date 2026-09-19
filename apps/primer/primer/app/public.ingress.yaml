@@ -11,7 +11,7 @@ kind: Ingress
 metadata:
   name: primer-public
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-primer-strip-identity@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: primer-primer-strip-identity@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: AI
     gethomepage.dev/name: Primer
