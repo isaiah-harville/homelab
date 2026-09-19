@@ -5,6 +5,9 @@ metadata:
   name: longhorn-media
   annotations:
     storageclass.kubernetes.io/is-default-class: "false"
+    # StorageClass parameters are immutable; let Flux recreate it on change.
+    # Existing volumes keep their own replica count (set on the Longhorn volume).
+    kustomize.toolkit.fluxcd.io/force: enabled
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 reclaimPolicy: Delete
@@ -16,6 +19,8 @@ parameters:
   disableRevisionCounter: "true"
   fromBackup: ""
   fsType: ext4
-  numberOfReplicas: "1"
+  # Two copies: the media stack shares one RWX volume, so a single replica
+  # took every media app down with the node that held it.
+  numberOfReplicas: "2"
   staleReplicaTimeout: "30"
   unmapMarkSnapChainRemoved: ignored
