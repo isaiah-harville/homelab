@@ -42,6 +42,11 @@ spec:
                 secretKeyRef:
                   name: media-auth
                   key: SEERR_OIDC_CLIENT_SECRET
+            - name: RADARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-auth
+                  key: RADARR_API_KEY
           command:
             - python
             - /scripts/seerr_prepare.py

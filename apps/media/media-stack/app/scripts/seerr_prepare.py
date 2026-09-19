@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep Seerr's native Authentik OIDC provider declarative and idempotent."""
+"""Keep Seerr's OIDC provider and its Radarr and Jellyfin links declarative."""
 
 import json
 import os
@@ -46,6 +46,42 @@ settings["oidc"] = {
         }
     ]
 }
+
+# Seerr stores where Radarr and Jellyfin live in settings.json, so a service
+# rename or namespace move used to strand every request silently. Pin the
+# connection here; anything chosen in the UI (quality profile, libraries,
+# Jellyfin credentials) is left alone. Short service names: all of these run
+# in the media namespace.
+radarr_servers = settings.setdefault("radarr", [])
+radarr = next((server for server in radarr_servers if server.get("isDefault")), None)
+if radarr is None:
+    radarr = {
+        "id": len(radarr_servers),
+        "name": "Radarr",
+        "activeProfileId": 4,
+        "activeProfileName": "HD-1080p",
+        "tags": [],
+        "overrideRule": [],
+        "minimumAvailability": "released",
+    }
+    radarr_servers.append(radarr)
+radarr.update(
+    {
+        "hostname": "radarr",
+        "port": 7878,
+        "apiKey": os.environ["RADARR_API_KEY"],
+        "useSsl": False,
+        "baseUrl": "",
+        "activeDirectory": "/media/library/movies",
+        "is4k": False,
+        "isDefault": True,
+        "externalUrl": "https://radarr.int.harville.dev",
+        "syncEnabled": True,
+        "preventSearch": False,
+    }
+)
+jellyfin = settings.setdefault("jellyfin", {})
+jellyfin.update({"ip": "jellyfin", "port": 8096, "useSsl": False, "urlBase": ""})
 
 database_path = config_directory / "db/db.sqlite3"
 if database_path.exists():

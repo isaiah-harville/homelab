@@ -11,9 +11,11 @@ resources:
   - services.yaml
   - ingresses.yaml
   - networkpolicies.yaml
+  - media-links.yaml
 configMapGenerator:
   - name: media-stack-scripts
     files:
       - arr_bootstrap.py=scripts/arr_bootstrap.py
       - jellyfin_prepare.sh=scripts/jellyfin_prepare.sh
       - seerr_prepare.py=scripts/seerr_prepare.py
+      - media_links.py=scripts/media_links.py

@@ -1,0 +1,73 @@
+---
+# Keeps the links between the media apps (download clients, indexers, the
+# Prowlarr -> Radarr sync) in Git: see scripts/media_links.py.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: media-links
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: media-links
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          containers:
+            - name: media-links
+              image: python:3.14-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - /scripts/media_links.py
+              env:
+                - name: RADARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: media-auth
+                      key: RADARR_API_KEY
+                - name: PROWLARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: media-auth
+                      key: PROWLARR_API_KEY
+                - name: QBITTORRENT_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: qbittorrent
+                      key: QBITTORRENT_USERNAME
+                - name: QBITTORRENT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: qbittorrent
+                      key: QBITTORRENT_PASSWORD
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: media-stack-scripts

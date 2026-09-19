@@ -27,6 +27,7 @@ spec:
                 operator: In
                 values:
                   - books
+                  - media-links
                   - radarr
       ports:
         - protocol: TCP
@@ -59,6 +60,7 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values:
+                  - media-links
                   - prowlarr
                   - seerr
       ports:
