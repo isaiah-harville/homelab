@@ -28,9 +28,10 @@ backup at 01:30, which together give point-in-time recovery rather than a
 once-a-day image. Retention is `backup.retentionPolicy` on the Cluster, set to
 30 days; CNPG prunes its own backups.
 
-Other application volumes are covered only by the daily Longhorn snapshot. That
-is a deliberate trade: everything else is either rebuildable, replaceable, or
-not worth the object storage.
+Every volume gets a daily Longhorn snapshot. The volumes that cannot be
+fetched again also get a weekly Longhorn backup to Cloudflare R2 (see
+"Off-site copies"); media files, model caches, Prometheus history and Orion's
+frames are deliberately left out of that.
 
 `seaweedfs-backup-prune` must never delete anything under `config/`. Removing a
 WAL segment or base backup by age breaks the recovery chain that the remaining
@@ -42,10 +43,29 @@ Failures are alerted on rather than discovered later: `CNPGBackupFailing`,
 archiving can break while nightly base backups keep succeeding, silently
 removing point-in-time recovery between them.
 
-This is not disaster recovery. SeaweedFS is itself backed by Longhorn volumes on
-the same nodes, so it covers application-level loss but not loss of the cluster
-or the disks. Pointing `destinationPath` and the credentials Secret at off-site
-S3 would close that gap with no other changes.
+## Off-site copies
+
+SeaweedFS is itself backed by Longhorn volumes on these nodes, so on its own it
+covers application-level loss but not loss of the cluster or its disks. Two
+jobs copy state to Cloudflare R2 (bucket `homelab-backups`, credentials in
+`infrastructure/longhorn-system/longhorn/app/longhorn-r2.sops.yaml`):
+
+| What | How | When |
+| --- | --- | --- |
+| Postgres base backups and WAL, Omni snapshots | `offsite-backup-sync` CronJob (rclone) mirrors the whole `backups` bucket to `seaweedfs-backups/` | nightly, 05:00 |
+| The 13 volumes labelled `recurring-job-group.longhorn.io/offsite` | Longhorn `weekly-backup` recurring job, to `longhorn/` | Sundays, 03:00 |
+
+`sync` mirrors deletions too, so barman's 30-day retention applies off-site
+as well; R2 is a copy of the current backup set, not a second archive.
+
+A volume opts in through its PVC labels in Git. Longhorn keeps that membership
+on the Volume and never copies it from the PVC, so the hourly `offsite-labels`
+job propagates the labels; a volume labelled in Git but missing from the group
+is the failure to look for.
+
+Restoring is the reverse: a Longhorn backup restores to a new volume from the
+backup target, and a Postgres cluster restores with `bootstrap.recovery` as
+described in [Flux layout and moves](flux-layout.md).
 
 ## Snapshot retention
 
@@ -84,10 +104,11 @@ Restore them in that order: OTBR, Matter Server, Zigbee2MQTT, Mosquitto, then
 Home Assistant. Restore the Thread and Matter volumes from compatible recovery
 points; restoring only one can invalidate device commissioning state.
 
-The default recurring-job group retains seven daily Longhorn snapshots. These
-are local recovery points, not off-cluster disaster recovery. Loss of the
-cluster or its storage disks can therefore lose all five volumes. Export and
-protect the Thread dataset separately before an OTBR migration, and do not
+The default recurring-job group retains seven daily Longhorn snapshots, and all
+five volumes are also in the `offsite` group, so a weekly copy lives in R2.
+Snapshots are the fast local recovery points; R2 is what survives losing the
+cluster. Export and protect the Thread dataset separately before an OTBR
+migration, and do not
 create a replacement Thread network during recovery.
 
 ## Terraform state
