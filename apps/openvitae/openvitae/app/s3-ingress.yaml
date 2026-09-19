@@ -5,7 +5,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: openvitae-s3
-  namespace: apps
+  # Beside the service it routes to: an Ingress only reaches its own namespace.
+  namespace: seaweedfs
 spec:
   ingressClassName: traefik-public
   tls:

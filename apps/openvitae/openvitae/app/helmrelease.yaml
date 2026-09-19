@@ -3,7 +3,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: openvitae
-  namespace: apps
+  namespace: openvitae
 spec:
   interval: 30m
   install:
@@ -70,19 +70,19 @@ spec:
     # Presigned links are opened by the visitor's browser; s3-ingress.yaml
     # exposes only this bucket on the public host.
     publicS3Url: https://openvitae-s3.harville.dev
-    # This chart renders its own Ingress, outside the repo-wide Ingress patches.
+    # This chart renders its own Ingress.
     ingress:
       enabled: true
       className: traefik-public
       host: isaiah.harville.dev
       tls:
         enabled: true
-        secretName: harville-wildcard-shared-tls
+        # Empty: Traefik's default TLSStore serves the wildcard certificate.
+        secretName: ""
       # The chart applies this middleware only to /admin and /api.
       protectedAnnotations:
         traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
       annotations:
-        traefik.ingress.kubernetes.io/router.entrypoints: websecure
         gethomepage.dev/enabled: "true"
         gethomepage.dev/group: Public
         gethomepage.dev/name: CV
