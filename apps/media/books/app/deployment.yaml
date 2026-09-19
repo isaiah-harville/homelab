@@ -196,7 +196,7 @@ spec:
             claimName: books-shelfmark-config
         - name: smtp-credentials
           secret:
-            secretName: books-smtp
+            secretName: cloudflare-smtp
             items:
               - key: CLOUDFLARE_SMTP_TOKEN
                 path: cloudflare-smtp-token

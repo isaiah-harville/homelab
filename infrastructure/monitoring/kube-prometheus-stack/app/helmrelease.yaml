@@ -28,6 +28,15 @@ spec:
         name: prometheus-community
         namespace: flux-system
   values:
+    # Talos binds the controller-manager, scheduler and kube-proxy metrics to
+    # localhost, so Prometheus can never scrape them; left on, they only
+    # produce permanent TargetDown/InstanceUnreachable alerts.
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeProxy:
+      enabled: false
     prometheus:
       prometheusSpec:
         retention: 30d
@@ -43,6 +52,12 @@ spec:
               storageClassName: longhorn-retain
     alertmanager:
       alertmanagerSpec:
+        # Routing, SMTP and the recipient live in this SOPS-encrypted Secret
+        # (alertmanager-config.sops.yaml) rather than in these public values;
+        # the Cloudflare SMTP token is mounted from the shared cloudflare-smtp.
+        configSecret: alertmanager-config
+        secrets:
+          - cloudflare-smtp
         retention: 120h
         storage:
           volumeClaimTemplate:
