@@ -48,6 +48,11 @@ spec:
                 secretKeyRef:
                   name: media-auth
                   key: JELLYFIN_OIDC_CLIENT_SECRET
+            - name: JELLYFIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-auth
+                  key: JELLYFIN_API_KEY
           command:
             - /bin/sh
             - /scripts/jellyfin_prepare.sh

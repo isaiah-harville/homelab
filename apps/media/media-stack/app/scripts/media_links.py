@@ -114,6 +114,14 @@ def main():
         print(f"rootfolder {MOVIE_ROOT}: created")
     ensure(RADARR, radarr_key, "downloadclient", "QBittorrent", "qBittorrent",
            {**QBITTORRENT, "movieCategory": "movies"}, credentials)
+    # Tell Jellyfin to rescan as soon as a movie is imported, renamed or
+    # removed, instead of waiting for its 12-hourly library scan.
+    ensure(RADARR, radarr_key, "notification", "MediaBrowser", "Jellyfin",
+           {"host": "jellyfin", "port": 8096, "useSsl": False, "updateLibrary": True, "notify": False},
+           {"apiKey": os.environ["JELLYFIN_API_KEY"]},
+           extra={"onDownload": True, "onUpgrade": True, "onRename": True,
+                  "onMovieDelete": True, "onMovieFileDelete": True,
+                  "onMovieFileDeleteForUpgrade": True})
 
     # Prowlarr: its own client, the link that pushes indexers into Radarr,
     # and the indexers themselves.

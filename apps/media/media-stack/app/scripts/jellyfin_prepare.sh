@@ -148,3 +148,20 @@ EOF
 chown -R 1000:1000 /config/plugins /config/config "${ldap_plugin_dir}" "${sso_plugin_dir}" /media/downloads /media/library
 chmod 0600 /config/plugins/configurations/LDAP-Auth.xml
 chmod 0600 /config/plugins/configurations/SSO-Auth.xml /config/config/branding.xml
+
+# Radarr tells Jellyfin to rescan as soon as it imports a movie; otherwise a
+# new film waits for the 12-hourly library scan (inotify doesn't see writes
+# from other pods on the shared RWX volume). Its API key comes from Git, so
+# register that key here while Jellyfin is stopped. Skipped on a brand-new
+# install until Jellyfin has created its database.
+database=/config/data/jellyfin.db
+if [ -f "${database}" ]; then
+  command -v sqlite3 >/dev/null || apk add --no-cache sqlite >/dev/null
+  sqlite3 "${database}" <<SQL
+DELETE FROM ApiKeys WHERE Name = 'Radarr' AND AccessToken <> '${JELLYFIN_API_KEY}';
+INSERT INTO ApiKeys (DateCreated, DateLastActivity, Name, AccessToken)
+SELECT datetime('now'), datetime('now'), 'Radarr', '${JELLYFIN_API_KEY}'
+WHERE NOT EXISTS (SELECT 1 FROM ApiKeys WHERE AccessToken = '${JELLYFIN_API_KEY}');
+SQL
+  chown 1000:1000 "${database}"*
+fi

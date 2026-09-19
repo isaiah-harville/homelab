@@ -42,6 +42,11 @@ spec:
                     secretKeyRef:
                       name: media-auth
                       key: PROWLARR_API_KEY
+                - name: JELLYFIN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: media-auth
+                      key: JELLYFIN_API_KEY
                 - name: QBITTORRENT_USERNAME
                   valueFrom:
                     secretKeyRef:

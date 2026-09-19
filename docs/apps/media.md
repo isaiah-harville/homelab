@@ -24,6 +24,7 @@ enforced from Git rather than set in the UIs:
 | Seerr -> Radarr server, Seerr -> Jellyfin address | `scripts/seerr_prepare.py`, on every Seerr start |
 | Radarr download client and root folder | `scripts/media_links.py`, the `media-links` CronJob (every 30 minutes) |
 | Prowlarr download client, Prowlarr -> Radarr link, indexer list | same |
+| Radarr -> Jellyfin "rescan on import" connection | same; its API key is registered in Jellyfin by `scripts/jellyfin_prepare.sh` |
 
 All addresses are short service names (`radarr`, `prowlarr`, `qbittorrent`,
 `jellyfin`), which resolve inside the namespace. Changes made in the UIs to
