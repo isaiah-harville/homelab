@@ -49,7 +49,7 @@ spec:
           keyOfAccessKeyId: AWS_ACCESS_KEY_ID
           keyOfSecretAccessKey: AWS_SECRET_ACCESS_KEY
     extraEnvVars:
-      MLFLOW_S3_ENDPOINT_URL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+      MLFLOW_S3_ENDPOINT_URL: http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333
       AWS_DEFAULT_REGION: us-east-1
     oidcAuth:
       enabled: true

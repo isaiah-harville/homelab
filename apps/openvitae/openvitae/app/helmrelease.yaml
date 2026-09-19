@@ -65,7 +65,7 @@ spec:
     minio:
       enabled: false
     externalS3:
-      endpointUrl: http://seaweedfs-s3.apps.svc.cluster.local:8333
+      endpointUrl: http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333
       bucket: openvitae
     # Presigned links are opened by the visitor's browser; s3-ingress.yaml
     # exposes only this bucket on the public host.

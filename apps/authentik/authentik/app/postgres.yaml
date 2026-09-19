@@ -61,7 +61,7 @@ spec:
   retentionPolicy: 30d
   configuration:
     destinationPath: s3://backups/config/authentik-postgres
-    endpointURL: http://seaweedfs-s3.apps.svc.cluster.local:8333
+    endpointURL: http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333
     s3Credentials:
       accessKeyId:
         name: config-backup-s3
