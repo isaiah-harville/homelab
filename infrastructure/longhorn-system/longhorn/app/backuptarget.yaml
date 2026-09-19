@@ -1,0 +1,12 @@
+---
+# Off-site copy of the volumes that can't be re-downloaded. Longhorn writes
+# backups to Cloudflare R2; credentials are in longhorn-r2.sops.yaml.
+apiVersion: longhorn.io/v1beta2
+kind: BackupTarget
+metadata:
+  name: default
+  namespace: longhorn-system
+spec:
+  backupTargetURL: s3://homelab-backups@auto/longhorn
+  credentialSecret: longhorn-r2
+  pollInterval: 5m

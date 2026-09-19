@@ -29,6 +29,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mosquitto-data
+  labels:
+    # Daily snapshots plus a weekly backup off-site (Cloudflare R2).
+    recurring-job-group.longhorn.io/default: enabled
+    recurring-job-group.longhorn.io/offsite: enabled
 spec:
   accessModes:
     - ReadWriteOnce

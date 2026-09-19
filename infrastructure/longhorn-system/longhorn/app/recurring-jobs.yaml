@@ -1,4 +1,5 @@
-# Local snapshots are fast recovery points, not disaster-recovery backups.
+# Local snapshots are fast recovery points; the weekly backup below is the
+# disaster-recovery copy, and it leaves the cluster (Cloudflare R2).
 ---
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
@@ -27,3 +28,22 @@ spec:
     - default
   retain: 1
   concurrency: 2
+---
+# Volumes opt in with `recurring-job-group.longhorn.io/offsite: enabled`, and
+# keep the `default` label too (a labelled volume leaves the default group).
+# Only data that cannot be fetched again belongs here: media files, model
+# caches, Prometheus history and Orion's frames are deliberately left out.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: weekly-backup
+  namespace: longhorn-system
+spec:
+  cron: "0 3 * * 0"
+  task: backup
+  groups:
+    - offsite
+  retain: 4
+  concurrency: 1
+  labels:
+    schedule: weekly

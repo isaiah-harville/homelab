@@ -3,6 +3,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: books-cwa-config
+  labels:
+    # Daily snapshots plus a weekly backup off-site (Cloudflare R2).
+    recurring-job-group.longhorn.io/default: enabled
+    recurring-job-group.longhorn.io/offsite: enabled
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,6 +19,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: books-library
+  labels:
+    # Daily snapshots plus a weekly backup off-site (Cloudflare R2).
+    recurring-job-group.longhorn.io/default: enabled
+    recurring-job-group.longhorn.io/offsite: enabled
 spec:
   accessModes:
     - ReadWriteOnce
@@ -39,6 +47,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: books-shelfmark-config
+  labels:
+    # Daily snapshots plus a weekly backup off-site (Cloudflare R2).
+    recurring-job-group.longhorn.io/default: enabled
+    recurring-job-group.longhorn.io/offsite: enabled
 spec:
   accessModes:
     - ReadWriteOnce
