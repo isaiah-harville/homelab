@@ -26,7 +26,7 @@ merge to `main`.
 ## How it runs (CI)
 
 `.github/workflows/terraform.yaml` targets `runs-on: homelab` — the ARC runner in
-`infrastructure/base/actions-runner-controller`. The runner pod:
+`infrastructure/arc-systems/actions-runner-controller/app/`. The runner pod:
 
 - gets `OMNI_ENDPOINT` + `OMNI_SERVICE_ACCOUNT_KEY` via `envFrom` the `omni-terraform`
   secret (provider auth — no GitHub secrets needed);
@@ -62,12 +62,12 @@ The backend choice and evaluated alternatives are recorded in the
 ### 2. Maintain the runner secrets
 
 The two files under
-`clusters/homelab/infra/secrets/actions-runner-controller/` are already
+`infrastructure/arc-systems/actions-runner-controller/app/` are already
 SOPS-encrypted:
 
 ```bash
-sops clusters/homelab/infra/secrets/actions-runner-controller/github-config.yaml
-sops clusters/homelab/infra/secrets/actions-runner-controller/omni-terraform.yaml
+sops infrastructure/arc-systems/actions-runner-controller/app/github-config.sops.yaml
+sops infrastructure/arc-systems/actions-runner-controller/app/omni-terraform.sops.yaml
 ```
 
 Editing requires the age identity matching `.sops.yaml`.

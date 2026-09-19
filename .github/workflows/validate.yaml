@@ -51,8 +51,8 @@ jobs:
       - name: Render manifests
         run: kubectl kustomize "${{ matrix.path }}" >/dev/null
 
-  render-apps:
-    name: Render apps
+  render-components:
+    name: Render apps and infrastructure
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,12 +63,12 @@ jobs:
         with:
           version: v1.31.0
 
-      # clusters/homelab/apps only renders the per-app Flux Kustomizations, so
-      # render each app's own directory too.
-      - name: Render every app
+      # clusters/homelab/{apps,infra} only render the per-component Flux
+      # Kustomizations, so render each component's own directory too.
+      - name: Render every app and infrastructure component
         run: |
           set -e
-          for ks in $(find apps -name ks.yaml | sort); do
+          for ks in $(find apps infrastructure -name ks.yaml | sort); do
             echo "::group::$(dirname "$ks")"
             kubectl kustomize "$(dirname "$ks")/app" >/dev/null
             echo "::endgroup::"
@@ -90,26 +90,26 @@ jobs:
             exit 1
           fi
 
-      - name: Helm repositories belong in infrastructure/base/sources
+      - name: Helm repositories belong in infrastructure/sources
         run: |
           bad="$(
-            rg -l '^kind: HelmRepository$' infrastructure/base apps |
-            grep -v '^infrastructure/base/sources/' || true
+            rg -l '^kind: HelmRepository$' infrastructure apps |
+            grep -v '^infrastructure/sources/' || true
           )"
           if [ -n "$bad" ]; then
-            echo "HelmRepository manifests found outside infrastructure/base/sources:"
+            echo "HelmRepository manifests found outside infrastructure/sources:"
             echo "$bad"
             exit 1
           fi
 
-      - name: Git repositories belong to an app
+      - name: Git repositories belong to an app or component
         run: |
           bad="$(
             rg -l '^kind: GitRepository$' apps infrastructure clusters |
-            grep -v '^apps/[^/]*/[^/]*/app/' || true
+            grep -v -E '^(apps|infrastructure)/[^/]*/[^/]*/app/' || true
           )"
           if [ -n "$bad" ]; then
-            echo "GitRepository manifests found outside an app directory:"
+            echo "GitRepository manifests found outside an app or component directory:"
             echo "$bad"
             exit 1
           fi

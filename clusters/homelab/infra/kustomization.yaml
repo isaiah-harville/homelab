@@ -1,32 +1,23 @@
 ---
+# Each namespace folder holds its Namespace and one Flux Kustomization per
+# component (ks.yaml); those apply the component itself, with their own
+# health checks and dependsOn ordering.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../../infrastructure/base/namespaces
-  - ../../../infrastructure/base/traefik
-  - ../../../infrastructure/base/cert-manager
-  - ../../../infrastructure/base/metallb
-  - ../../../infrastructure/base/reflector
-  - ../../../infrastructure/base/reloader
-  - ../../../infrastructure/base/admin
-  - ../../../infrastructure/base/longhorn
-  - ../../../infrastructure/base/monitoring
-  - ../../../infrastructure/base/metrics-server
-  - ../../../infrastructure/base/flux-operator
-  - ../../../infrastructure/base/cloudnative-pg
-  - ../../../infrastructure/base/cnpg-barman-plugin
-  - ../../../infrastructure/base/rabbitmq-operator
-  - ../../../infrastructure/base/nvidia-gpu-operator
-  - ./secrets/cert-manager/cloudflare-api-token.yaml
-  - ./secrets/monitoring/cluster-user-auth.yaml
-  - ../../../infrastructure/base/actions-runner-controller
-  - ./secrets/actions-runner-controller/github-config.yaml
-  - ./secrets/actions-runner-controller/omni-terraform.yaml
-patches:
-  - target:
-      kind: Ingress
-      namespace: longhorn-system
-    patch: |-
-      - op: add
-        path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.entrypoints
-        value: websecure
+  - ../../../infrastructure/flux-system
+  - ../../../infrastructure/traefik-internal
+  - ../../../infrastructure/traefik-public
+  - ../../../infrastructure/cert-manager
+  - ../../../infrastructure/certificates
+  - ../../../infrastructure/metallb-system
+  - ../../../infrastructure/reflector
+  - ../../../infrastructure/reloader
+  - ../../../infrastructure/longhorn-system
+  - ../../../infrastructure/monitoring
+  - ../../../infrastructure/kube-system
+  - ../../../infrastructure/cnpg-system
+  - ../../../infrastructure/rabbitmq-system
+  - ../../../infrastructure/gpu-operator
+  - ../../../infrastructure/arc-systems
+  - ../../../infrastructure/apps

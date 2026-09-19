@@ -55,7 +55,7 @@ runner for workflows that need access to LAN-only services.
 | --- | --- | --- |
 | Talos machine configuration | `terraform/omni/` and `talos/omni/patches/` | Terraform and Omni |
 | Kubernetes composition | `clusters/homelab/` | Flux |
-| Reusable platform services | `infrastructure/base/` | Flux |
+| Reusable platform services | `infrastructure/` | Flux |
 | Application definitions | `apps/` | Flux |
 | Secret ciphertext | SOPS-encrypted manifests | Flux with SOPS |
 | Terraform state | Kubernetes backend | Terraform |

@@ -50,6 +50,6 @@ Both Traefik releases enable Prometheus ServiceMonitors and router labels.
 Longhorn's HelmRelease supplies its ServiceMonitor.
 
 Dashboard IDs and revisions are pinned in
-`infrastructure/base/monitoring/helmrelease.yaml`. Review a dashboard before
+`infrastructure/monitoring/kube-prometheus-stack/app/helmrelease.yaml`. Review a dashboard before
 changing its revision; a newer Grafana.com revision is external code and may
 change queries or required metrics.

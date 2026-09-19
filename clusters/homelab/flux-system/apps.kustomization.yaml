@@ -19,7 +19,13 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  # The platform pieces apps need before their own Kustomizations can apply:
+  # storage, TLS, and the operators whose CRDs apps use.
   dependsOn:
-    - name: certificates
-    - name: infra
     - name: sources
+    - name: certificates
+    - name: longhorn
+    - name: cloudnative-pg
+    - name: cnpg-barman-plugin
+    - name: rabbitmq-operator
+    - name: kube-prometheus-stack

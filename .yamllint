@@ -6,7 +6,7 @@ ignore: |
   clusters/**/sops/**
   *.sops.yaml
   # Vendored upstream release manifest; kept byte-identical for upgrades.
-  infrastructure/base/cnpg-barman-plugin/plugin-barman-cloud.yaml
+  infrastructure/cnpg-system/cnpg-barman-plugin/app/plugin-barman-cloud.yaml
 
 rules:
   line-length:

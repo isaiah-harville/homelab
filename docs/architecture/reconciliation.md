@@ -28,7 +28,7 @@ manifests.
 | Change | Edit | Apply path |
 | --- | --- | --- |
 | Application configuration | `apps/` or its external repository | Flux |
-| Shared service | `infrastructure/base/` | Flux |
+| Shared service | `infrastructure/` | Flux |
 | Cluster selection or patch | `clusters/homelab/` | Flux |
 | Machine configuration | `talos/omni/patches/` | Terraform and Omni |
 | Machine assignment or version | `terraform/omni/` | Terraform and Omni |

@@ -146,7 +146,7 @@ fail to load. The `-lts` variants are the fallback if the production driver
 branch ever drops one of these GPUs.
 
 The Kubernetes half is the NVIDIA GPU operator, reconciled by Flux from
-`../infrastructure/base/nvidia-gpu-operator/` with the driver and toolkit
+`../infrastructure/gpu-operator/nvidia-gpu-operator/app/` with the driver and toolkit
 containers disabled. Node Feature Discovery labels the GPU machines, so the
 operands place themselves and no node labelling is needed here.
 

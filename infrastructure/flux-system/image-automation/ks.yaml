@@ -1,0 +1,24 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: image-automation
+  namespace: flux-system
+  annotations:
+    # TEMPORARY: moved here from clusters/homelab/flux-system; stops the
+    # old parent deleting it (and pruning what it owns) on the way out.
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  path: ./infrastructure/flux-system/image-automation/app
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age

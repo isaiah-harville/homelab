@@ -21,7 +21,8 @@ omni-server/         Self-hosted Omni (Compose stack + runbook) — the manageme
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
-infrastructure/base/ Cluster plumbing: traefik, cert-manager, metallb, longhorn, monitoring, reflector, sources
+infrastructure/<ns>/<component>/ Cluster plumbing, same shape as apps/ (see infrastructure/README.md)
+infrastructure/sources/ Flux HelmRepository/OCIRepository objects
 apps/<ns>/<app>/     One folder per app, grouped by namespace: ks.yaml + app/ (see below)
 ```
 
@@ -68,7 +69,7 @@ patch files** under `talos/omni/patches/`, so patch content stays single-sourced
 keep `terraform/omni/locals.tf` and `cluster-template.yaml` topologies in step.
 
 Jobs run on an **in-cluster GitHub Actions self-hosted runner** (ARC,
-`infrastructure/base/actions-runner-controller/`, namespaces `arc-systems` /
+`infrastructure/arc-systems/actions-runner-controller/app/`, namespaces `arc-systems` /
 `arc-runners`) so they can reach the **LAN-only** Omni. The runner pod gets
 `OMNI_*` creds via `envFrom` the `omni-terraform` SOPS secret (+ a `github_token`
 PAT in `github-config`), so the workflow needs no GitHub secrets.
@@ -157,7 +158,7 @@ back changes to the rest.
 3. New namespace? Add `apps/<namespace>/{namespace.yaml,kustomization.yaml}` and
    list the folder in `clusters/homelab/apps/kustomization.yaml`.
 4. If the chart is from a new Helm repo, add a `HelmRepository` under
-   `infrastructure/base/sources/` and register it in that dir's `kustomization.yaml`.
+   `infrastructure/sources/` and register it in that dir's `kustomization.yaml`.
 
 ## Apps from external repos
 
@@ -180,7 +181,7 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 - **Public** services: `ingressClassName: traefik-public`, host `*.harville.dev`.
   LoadBalancer at **10.1.10.252**.
 - TLS: give the Ingress `tls: [{hosts: [...]}]` and **no** `secretName`. The
-  `default` TLSStore (`infrastructure/base/certificates/`) serves the wildcard
+  `default` TLSStore (`infrastructure/certificates/certificates/app/`) serves the wildcard
   certificate, and `websecure` is Traefik's only default entrypoint; plain HTTP
   redirects to HTTPS. This applies to chart-rendered Ingresses too.
 - **Authentik SSO** on an internal app: annotation
@@ -197,7 +198,7 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 
 ## TLS / certificates
 
-- One wildcard `Certificate` `harville-wildcard` (`infrastructure/base/certificates/`)
+- One wildcard `Certificate` `harville-wildcard` (`infrastructure/certificates/certificates/app/`)
   via cert-manager + the `letsencrypt-dns` ClusterIssuer (Cloudflare DNS-01).
   Covers `*.harville.dev`, `*.int.harville.dev`, `*.harville.ai`, `*.int.harville.ai`,
   `innerswings.com`, `*.innerswings.com`, `pigeonwire.app`, and
@@ -242,9 +243,10 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 
 Talos enforces Pod Security **baseline** by default (kube-system exempt). Namespaces
 that run privileged pods are labeled `pod-security.kubernetes.io/enforce: privileged`
-in `infrastructure/base/namespaces/namespaces.yaml`: **longhorn-system** (engine/
+in each folder's `namespace.yaml` (`infrastructure/<ns>/`, `apps/<ns>/`): **longhorn-system** (engine/
 manager), **metallb-system** (speaker: hostNetwork + NET_RAW), **monitoring**
-(node-exporter: hostNetwork/hostPath). Add the label if you introduce another
+(node-exporter: hostNetwork/hostPath), **home-automation** (Home Assistant and OTBR:
+hostNetwork), **media** (gluetun VPN sidecars: NET_ADMIN). Add the label if you introduce another
 privileged workload's namespace, or Talos baseline will block its pods.
 
 ## Secrets (SOPS + age)
@@ -272,7 +274,7 @@ privileged workload's namespace, or Talos baseline will block its pods.
 
 - Pool `lab-lb-pool` = **10.1.10.251–10.1.10.252** (only 2 IPs, both consumed by
   traefik-internal/.251 and traefik-public/.252). Need a new LoadBalancer IP? Expand
-  the pool in `infrastructure/base/metallb-config/ipaddresspool.yaml`. Prefer routing
+  the pool in `infrastructure/metallb-system/metallb-config/app/ipaddresspool.yaml`. Prefer routing
   through an existing Traefik ingress instead of claiming a new LB IP.
 - The control-plane API VIP (**10.1.10.9**) is served by Talos itself (see
   `controlplane-vip.yaml`), not MetalLB.
@@ -308,7 +310,7 @@ Mobile) and `talos-6t5-q1d` (RTX A2000 Mobile), both control planes. Talos is
 immutable, so the driver arrives as the `nonfree-kmod-nvidia-production` and
 `nvidia-container-toolkit-production` system extensions plus
 `talos/omni/patches/nvidia-gpu.yaml`; the NVIDIA GPU operator
-(`infrastructure/base/nvidia-gpu-operator/`) runs with its driver and toolkit
+(`infrastructure/gpu-operator/nvidia-gpu-operator/app/`) runs with its driver and toolkit
 containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
 needs manual labelling. Details in `talos/README.md`.
 

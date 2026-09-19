@@ -45,7 +45,7 @@ uv run mkdocs serve
 ## Storage (Longhorn)
 
 Distributed block storage across the nodes, configured via Helm values in
-`infrastructure/base/longhorn/helmrelease.yaml`:
+`infrastructure/longhorn-system/longhorn/app/helmrelease.yaml`:
 
 - `defaultDataPath: /var/mnt/longhorn` + `storageReservedPercentageForDefaultDisk: 30`
   — dedicated disks use a Talos `UserVolumeConfig`; intentionally selected
