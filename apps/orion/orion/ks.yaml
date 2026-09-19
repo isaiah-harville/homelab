@@ -11,7 +11,7 @@ spec:
   path: ./apps/orion/orion/app
   prune: true
   wait: true
-  targetNamespace: apps
+  targetNamespace: orion
   sourceRef:
     kind: GitRepository
     name: flux-system
