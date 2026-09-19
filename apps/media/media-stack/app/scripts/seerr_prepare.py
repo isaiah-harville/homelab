@@ -81,7 +81,17 @@ radarr.update(
     }
 )
 jellyfin = settings.setdefault("jellyfin", {})
-jellyfin.update({"ip": "jellyfin", "port": 8096, "useSsl": False, "urlBase": ""})
+jellyfin.update(
+    {
+        "ip": "jellyfin",
+        "port": 8096,
+        "useSsl": False,
+        "urlBase": "",
+        # What "Play on Jellyfin" links point at: the browser can't reach the
+        # in-cluster address above.
+        "externalHostname": "https://watch.harville.dev",
+    }
+)
 
 database_path = config_directory / "db/db.sqlite3"
 if database_path.exists():
