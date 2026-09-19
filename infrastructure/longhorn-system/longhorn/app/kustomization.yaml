@@ -10,5 +10,6 @@ resources:
   - longhorn-media.storageclass.yaml
   - recurring-jobs.yaml
   - backuptarget.yaml
+  - offsite-labels.yaml
   - longhorn-r2.sops.yaml
   - ingress.yaml
