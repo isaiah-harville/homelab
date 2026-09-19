@@ -13,3 +13,7 @@ resources:
   - offsite-labels.yaml
   - longhorn-r2.sops.yaml
   - ingress.yaml
+configMapGenerator:
+  - name: longhorn-offsite-labels
+    files:
+      - offsite_labels.py=scripts/offsite_labels.py

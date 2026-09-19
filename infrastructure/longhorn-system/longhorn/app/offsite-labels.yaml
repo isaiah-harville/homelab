@@ -78,31 +78,15 @@ spec:
             runAsGroup: 1000
           containers:
             - name: offsite-labels
-              image: docker.io/bitnami/kubectl:1.34.1
+              image: python:3.14-alpine
+              imagePullPolicy: IfNotPresent
               command:
-                - /bin/bash
-                - -c
-                - |
-                  set -euo pipefail
-                  kubectl get pvc -A -o json |
-                    jq -r '.items[]
-                      | select(.spec.volumeName != null)
-                      | . as $p
-                      | (.metadata.labels // {}) | to_entries
-                      | map(select(.key | startswith("recurring-job-group.longhorn.io/")))
-                      | select(length > 0)
-                      | "\($p.spec.volumeName) " + (map("\(.key)=\(.value)") | join(" "))' |
-                  while read -r volume labels; do
-                    have=$(kubectl -n longhorn-system get volumes.longhorn.io "$volume" \
-                      -o jsonpath='{.metadata.labels}' 2>/dev/null || true)
-                    [ -n "$have" ] || continue
-                    for label in $labels; do
-                      key=${label%%=*}
-                      case "$have" in *"\"$key\""*) continue;; esac
-                      kubectl -n longhorn-system label volumes.longhorn.io "$volume" "$label" --overwrite
-                    done
-                  done
-                  echo "labels reconciled"
+                - python
+                - /scripts/offsite_labels.py
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -114,3 +98,7 @@ spec:
                   memory: 64Mi
                 limits:
                   memory: 128Mi
+          volumes:
+            - name: scripts
+              configMap:
+                name: longhorn-offsite-labels
