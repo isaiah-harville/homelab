@@ -7,14 +7,23 @@ spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4-minimal-trixie
   primaryUpdateStrategy: unsupervised
+  # Restored from the object store when this cluster moved out of the `apps`
+  # namespace (2026-09-18); bootstrap only runs on first creation. `origin`
+  # is the archive the old cluster wrote under its own server name.
   bootstrap:
-    initdb:
+    recovery:
+      source: origin
       database: mlflow
       owner: mlflow
       secret:
         name: mlflow-postgres
-      postInitSQL:
-        - CREATE DATABASE mlflow_auth OWNER mlflow;
+  externalClusters:
+    - name: origin
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: mlflow-postgres-backup
+          serverName: mlflow-postgres
   storage:
     storageClass: longhorn-database
     size: 10Gi
@@ -46,6 +55,9 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: mlflow-postgres-backup
+        # Distinct from `origin` above: a restored cluster must archive into
+        # an empty location, not on top of the history it was restored from.
+        serverName: mlflow-postgres-mlflow
 ---
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore

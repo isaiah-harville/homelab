@@ -31,7 +31,7 @@ spec:
       databaseConnectionCheck: true
       postgres:
         enabled: true
-        host: mlflow-postgres-rw.apps.svc.cluster.local
+        host: mlflow-postgres-rw.mlflow.svc.cluster.local
         port: 5432
         database: mlflow
         driver: psycopg2
@@ -72,7 +72,7 @@ spec:
       database:
         postgres:
           enabled: true
-          host: mlflow-postgres-rw.apps.svc.cluster.local
+          host: mlflow-postgres-rw.mlflow.svc.cluster.local
           port: 5432
           database: mlflow_auth
           driver: psycopg2
@@ -89,7 +89,7 @@ spec:
       port: 5000
     serviceMonitor:
       enabled: true
-      namespace: apps
+      namespace: mlflow
       useServicePort: true
       labels:
         release: kube-prometheus-stack
