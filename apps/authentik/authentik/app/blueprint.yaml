@@ -522,6 +522,11 @@ data:
         state: absent
         identifiers:
           name: Harbor Users
+      # Open WebUI was retired; its proxy provider outlived it.
+      - model: authentik_providers_proxy.proxyprovider
+        state: absent
+        identifiers:
+          name: Open WebUI Provider
       # MLflow authenticates natively via OIDC (mlflow-oidc-auth) rather than the
       # ForwardAuth outpost, so the Python client can hold a personal access
       # token instead of a browser session.

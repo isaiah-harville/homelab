@@ -20,4 +20,3 @@ resources:
   - ../../../infrastructure/rabbitmq-system
   - ../../../infrastructure/gpu-operator
   - ../../../infrastructure/arc-systems
-  - ../../../infrastructure/apps
