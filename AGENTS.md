@@ -184,7 +184,7 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
   certificate, and `websecure` is Traefik's only default entrypoint; plain HTTP
   redirects to HTTPS. This applies to chart-rendered Ingresses too.
 - **Authentik SSO** on an internal app: annotation
-  `traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd`.
+  `traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd`.
   Don't put forwardauth in front of services that authenticate themselves via API
   (S3 access keys, `docker login`) — clients can't traverse it.
 - Headlamp is the deliberate exception: its internal Ingress has no ForwardAuth

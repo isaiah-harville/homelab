@@ -841,7 +841,7 @@ data:
         attrs:
           type: ldap
           config:
-            authentik_host: http://authentik-server.apps.svc.cluster.local
+            authentik_host: http://authentik-server.authentik.svc.cluster.local
           providers:
             - !KeyOf jellyfin-ldap-provider
       - model: authentik_outposts.outpost

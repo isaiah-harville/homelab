@@ -31,7 +31,7 @@ kind: Ingress
 metadata:
   name: calibre-web-automated
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
 spec:
   ingressClassName: traefik-internal
   rules:

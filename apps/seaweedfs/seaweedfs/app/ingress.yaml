@@ -30,7 +30,7 @@ kind: Ingress
 metadata:
   name: seaweedfs-admin
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Storage
     gethomepage.dev/name: SeaweedFS Admin

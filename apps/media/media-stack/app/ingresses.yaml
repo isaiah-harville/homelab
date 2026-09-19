@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: prowlarr
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Prowlarr
     gethomepage.dev/description: Media indexer management
@@ -32,7 +32,7 @@ kind: Ingress
 metadata:
   name: radarr
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Radarr
     gethomepage.dev/description: Movie library management

@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: qbittorrent
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: apps-authentik-forwardauth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: qBittorrent
     gethomepage.dev/description: Torrent client over NordVPN

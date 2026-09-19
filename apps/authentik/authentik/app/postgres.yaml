@@ -8,12 +8,23 @@ spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4-minimal-trixie
   priorityClassName: system-cluster-critical
   primaryUpdateStrategy: unsupervised
+  # Restored from the object store when this cluster moved out of the `apps`
+  # namespace (2026-09-19); bootstrap only runs on first creation. `origin`
+  # is the archive the old cluster wrote under its own server name.
   bootstrap:
-    initdb:
+    recovery:
+      source: origin
       database: authentik
       owner: authentik
       secret:
         name: authentik-postgres
+  externalClusters:
+    - name: origin
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: authentik-postgres-backup
+          serverName: authentik-postgres
   storage:
     storageClass: longhorn-database
     size: 10Gi
@@ -52,6 +63,9 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: authentik-postgres-backup
+        # Distinct from `origin` above: a restored cluster must archive into
+        # an empty location, not on top of the history it was restored from.
+        serverName: authentik-postgres-authentik
 ---
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore
