@@ -42,13 +42,21 @@ def call(base, key, method, path, body=None):
 
 
 def wait_until_up(base, key, name):
-    for _ in range(30):
+    """True once the app answers. False means it is down right now.
+
+    A down app is not this job's failure to report: it has its own alert, and
+    the next run reconciles it. Failing here instead produced a fresh
+    KubeJobFailed alert, and an email, every 30 minutes while Prowlarr's VPN
+    sidecar was unhealthy for 22 hours.
+    """
+    for _ in range(18):
         try:
             call(base, key, "GET", "/system/status")
-            return
+            return True
         except (SystemExit, OSError):
             time.sleep(10)
-    raise SystemExit(f"{name} did not answer within 5 minutes")
+    print(f"{name} is not answering; skipping this run")
+    return False
 
 
 def masked(value):
@@ -104,8 +112,9 @@ def main():
         "password": os.environ["QBITTORRENT_PASSWORD"],
     }
 
-    wait_until_up(RADARR, radarr_key, "Radarr")
-    wait_until_up(PROWLARR, prowlarr_key, "Prowlarr")
+    if not (wait_until_up(RADARR, radarr_key, "Radarr")
+            and wait_until_up(PROWLARR, prowlarr_key, "Prowlarr")):
+        return
 
     # Radarr: where movies go, and which client downloads them.
     roots = [r["path"] for r in call(RADARR, radarr_key, "GET", "/rootfolder")]
