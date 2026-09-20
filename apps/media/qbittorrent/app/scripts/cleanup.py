@@ -3,6 +3,7 @@ import http.cookiejar
 import json
 import os
 import sys
+from urllib.error import URLError
 import time
 import urllib.parse
 import urllib.request
@@ -110,6 +111,12 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
+    except (URLError, TimeoutError, ConnectionError) as exc:
+        # qBittorrent being down (its VPN sidecar restarting, say) is not this
+        # job's failure: it alerts on its own, and cleanup retries tomorrow.
+        # Failing here just raised a KubeJobFailed alert, and an email.
+        print(f"qBittorrent is unreachable ({exc}); skipping this run")
+        sys.exit(0)
     except Exception as exc:
         print(f"qBittorrent cleanup failed: {exc}", file=sys.stderr)
         sys.exit(1)
