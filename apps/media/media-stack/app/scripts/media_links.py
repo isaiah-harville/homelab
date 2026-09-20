@@ -20,9 +20,18 @@ PROWLARR = "http://prowlarr:9696/api/v1"
 
 QBITTORRENT = {"host": "qbittorrent", "port": 8080, "useSsl": False, "urlBase": ""}
 MOVIE_ROOT = "/media/library/movies"
-# Prowlarr indexer definitions to keep enabled. YTS is movie-only and has no
-# Cloudflare front, so it keeps Radarr searching when The Pirate Bay is down.
-INDEXERS = ["thepiratebay", "yts", "limetorrents"]
+# Prowlarr indexer definitions to keep enabled, with any settings they need.
+# YTS is movie-only and has no Cloudflare front, so it keeps Radarr searching
+# when The Pirate Bay is down.
+INDEXERS = {
+    # Radarr's test (and any keyword-less search) asks for the latest items.
+    # The Pirate Bay answers those from a Top 100 list, and on the default
+    # "All" it returns nothing in the movie categories, so Radarr rejects the
+    # indexer outright. Point it at the Movies/TV list.
+    "thepiratebay": {"top100": 1},
+    "yts": {},
+    "limetorrents": {},
+}
 
 
 def call(base, key, method, path, body=None):
@@ -155,18 +164,23 @@ def main():
 
     have = {i["definitionName"]: i for i in call(PROWLARR, prowlarr_key, "GET", "/indexer")}
     schemas = None
-    for definition in INDEXERS:
+    for definition, fields in INDEXERS.items():
         indexer = have.get(definition)
         if indexer is None:
             schemas = schemas or call(PROWLARR, prowlarr_key, "GET", "/indexer/schema")
             indexer = next(s for s in schemas if s["definitionName"] == definition)
+            apply_fields(indexer, fields)
             indexer.update({"enable": True, "appProfileId": 1, "priority": 25})
             call(PROWLARR, prowlarr_key, "POST", "/indexer", indexer)
             print(f"indexer {indexer['name']}: created")
-        elif not indexer["enable"]:
+            continue
+        changed = apply_fields(indexer, fields)
+        if not indexer["enable"]:
             indexer["enable"] = True
-            call(PROWLARR, prowlarr_key, "PUT", f"/indexer/{indexer['id']}", indexer)
-            print(f"indexer {indexer['name']}: re-enabled")
+            changed = True
+        if changed:
+            call(PROWLARR, prowlarr_key, "PUT", f"/indexer/{indexer['id']}?forceSave=true", indexer)
+            print(f"indexer {indexer['name']}: corrected")
         else:
             print(f"indexer {indexer['name']}: ok")
 
