@@ -87,6 +87,24 @@ spec:
               value: 480h
             - name: FIREWALL_INPUT_PORTS
               value: "9696"
+            # The default health check resolves a hostname, so it fails when DNS
+            # itself is the problem — which is exactly what stalled Prowlarr for
+            # 22 hours. Check a literal address instead.
+            - name: HEALTH_TARGET_ADDRESS
+              value: 1.1.1.1:443
+            # Plain DNS through the tunnel rather than gluetun's DNS-over-TLS:
+            # when the DoT upstreams were unreachable, every lookup in the pod
+            # failed and the tunnel never recovered.
+            - name: DOT
+              value: "off"
+            - name: DNS_ADDRESS
+              value: 1.1.1.1
+            # Reconnect (picking another US P2P server) soon after a tunnel
+            # goes bad, instead of backing off for long stretches.
+            - name: HEALTH_VPN_DURATION_INITIAL
+              value: 30s
+            - name: HEALTH_VPN_DURATION_ADDITION
+              value: 10s
             # Permit only in-cluster service/pod ranges outside the VPN so
             # Prowlarr can reach Radarr and qBittorrent without leaking indexer
             # traffic onto the LAN.
@@ -118,6 +136,16 @@ spec:
                 - healthcheck
             periodSeconds: 10
             failureThreshold: 3
+          # Last resort: if the tunnel is still unhealthy after ~10 minutes of
+          # gluetun's own reconnects, restart the container so it starts over
+          # with a freshly chosen server.
+          livenessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            periodSeconds: 30
+            failureThreshold: 20
           resources:
             requests:
               cpu: 50m
