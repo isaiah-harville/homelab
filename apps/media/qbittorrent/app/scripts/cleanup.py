@@ -3,10 +3,10 @@ import http.cookiejar
 import json
 import os
 import sys
-from urllib.error import URLError
 import time
 import urllib.parse
 import urllib.request
+from urllib.error import URLError
 
 
 RETENTION_SECONDS = 86_400
