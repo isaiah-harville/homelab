@@ -92,13 +92,10 @@ spec:
             # 22 hours. Check a literal address instead.
             - name: HEALTH_TARGET_ADDRESS
               value: 1.1.1.1:443
-            # Plain DNS through the tunnel rather than gluetun's DNS-over-TLS:
-            # when the DoT upstreams were unreachable, every lookup in the pod
-            # failed and the tunnel never recovered.
-            - name: DOT
-              value: "off"
-            - name: DNS_ADDRESS
-              value: 1.1.1.1
+            # Leave gluetun's DNS alone: pointing DNS_ADDRESS at a public
+            # resolver replaces the pod's resolver and cluster names
+            # (radarr, qbittorrent) stop resolving. The liveness probe below
+            # is what recovers a tunnel whose DNS has died.
             # Reconnect (picking another US P2P server) soon after a tunnel
             # goes bad, instead of backing off for long stretches.
             - name: HEALTH_VPN_DURATION_INITIAL
