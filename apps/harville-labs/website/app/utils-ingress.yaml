@@ -1,0 +1,43 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: website-utils-api-limits
+  namespace: harville-labs
+spec:
+  rateLimit:
+    average: 120
+    period: 1m
+    burst: 30
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: website-utils
+  namespace: harville-labs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: harville-labs-website-utils-api-limits@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [harville.ai]
+  rules:
+    - host: harville.ai
+      http:
+        paths:
+          - path: /api/utils/v1/convert
+            pathType: Prefix
+            backend:
+              service:
+                name: utils-converter
+                port:
+                  name: http
+          - path: /api/utils/v1/youtube
+            pathType: Prefix
+            backend:
+              service:
+                name: utils-youtube
+                port:
+                  name: http

@@ -16,6 +16,7 @@ resources:
   - ./secrets/qbittorrent.yaml
   - ./secrets/vllm-api-key.yaml
   - ../../../apps/authentik
+  - ../../../apps/harville-labs
   - ../../../apps/headlamp
   - ../../../apps/home-automation
   - ../../../apps/homepage

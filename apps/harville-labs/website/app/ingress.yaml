@@ -1,0 +1,28 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: website
+  namespace: harville-labs
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Harville Labs
+    gethomepage.dev/description: Company website
+    gethomepage.dev/href: https://harville.ai
+    gethomepage.dev/siteMonitor: https://harville.ai/healthz
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [harville.ai]
+  rules:
+    - host: harville.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: website
+                port:
+                  name: http

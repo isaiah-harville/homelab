@@ -1,0 +1,23 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # The site's own manifests, from its repo. CI there bumps the image tag in
+  # deploy/k8s/kustomization.yaml on every build of main. The `website`
+  # Kustomization that applies this file also owns the GitRepository and the
+  # Ingress.
+  name: website-upstream
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./deploy/k8s
+  prune: true
+  targetNamespace: harville-labs
+  wait: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: website
+  dependsOn:
+    - name: infra
+    - name: certificates

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: website-auth
+    namespace: flux-system
+type: Opaque
+stringData:
+    identity: ENC[AES256_GCM,data:3NdIB4gOfkTH/o1aTnDBrY3t7fBttgwzT2Mc9akCS2oJM2skKLlm1jDOMTK3WFZe2hq4xI1gDduhkKSyaNRhLkVxL20+hKVwrLWi9+kI8iFWN9bKw2dlUBceBYZrNNbUs8/6VFBxU7dUyHoKbnl8b7t3umjWJ7FkQDb982zF52O71pQyDvgil9lVDEV+k6Yn1cF6TLn2uDXIAzAbDNGuXdnFDmy9D0xtqWgvEQ6YUz80OUZSRBxve8kJY6dO2AzBFnCPhtaF3vHBWav4xQC8KRxx+UBTduNsxYrZGOl2OZSSjDh6b+10agDHv4RAE0YAS9wKSyJWdJXOvbRTlI/Um2CT9dZMT8p5teb1CZZM/MWydSxUR8Ic6FHY0v2mj205VqbehOG2moKU2o+hT71Ryt8WwIYE8mycKplcOnH2fBZ65THYfhhbQl5S+qdpNFodgd3xY8n1pKySkg4Y/kzBchGwVjen3anMVKdE0a9jsa+eBmA+8XpEHU61nqphagP9SmR9CkeLDGLu+Yb2HTwPNMu4HCWkc0nk9fBZ,iv:i0SJqG3/g940pq4GbXBs1cIlc5iRAYggLcKHbc/kDu8=,tag:ps+NpqBynNoHEqRbZ0yHaw==,type:str]
+    identity.pub: ENC[AES256_GCM,data:p7yrOYpThbgTfK8wQtUK8BkdSgLdYKhJFetjBMcOj56j39DnDUZP0hoxbDtEwQZWlHFxdHYs068X0N5Okpi9rS9oA8niJab+3hPGTNopVNRLUbjIbrupLCB3QFgAfb01l/7yK5nz,iv:PxHT60f1XS+fvzRtHlnpMcq1gEjcMF+5dGb6XTOtTLs=,tag:GZauX5Kii9cIGik9d0ApEw==,type:str]
+    known_hosts: ENC[AES256_GCM,data:rh1pvvZaj4f0MZUpwoBdg0LiJleLzlYNseEwI1awQE0CnYNARCLkp54ODCKTii1YjrUOXCyJeixU40BOJAfN8/PPHArEcZnI2C/QQfEe/xk9CXDGJzjH/Wdq/rFRUoxkQ459v8z2N+33RO1u6+rr+fR63TPS6fdMhvHXbINKoJ25ee7cTmSmcVS1ccV6fTUPdhoh3MFM8FRSjVDmhNNXDmN0j8ubhXlW6pU9,iv:ErWyovqkR8OmVfvnFpX4446/8tfko1w0pvYsds9euqI=,tag:tyGkbqL5MHvJ5DEP1PWyBg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBKV3F0WHNnL1ZoSis1ZVRF
+            ODN2ei85Zk1yQWFObHo0OFhXWXpPeHl3WHlnCnoydlBuQ1A1RVp3NW9nMXNMS0FG
+            QjNKR0QrWlVobkl1NSsvMlJjOE1uRkEKLS0tIG1zVWg3ckhDVWNBalc1UUVCaTl4
+            MGhSYnpLUWtNOUlkMC9LQ1NRcjN5c2MKWNwvORiNYJZ0tQ070f5vPt0vxhIgePxe
+            xv8GN7iCcHm46T2m9jsNx6R2IdUKgWmfAecCf7iuH2zzIjD1uwcn/g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-26T02:39:05Z"
+    mac: ENC[AES256_GCM,data:9UdwROwJ17vy6S3ZVjZYB461sJIXcyVe3I7aEvSuqlnFX8WhRu5kHGUki2w1VfEN+lMfPFKOoBAwJpWDMjIKR6ZdNGB54tsEoT4m0kWn1BZT8TdnR6oTw+NfeGukpHzaKP9R+kYxid2N5w16PrJ7iE2qb24DPjl9lZuTualfIuc=,iv:kVpBoYF6zDBen1XW1W7NW1wKLnDesM4oyjsw9Da8r3o=,tag:PoBgqKlDzsdR7jDzLYEyqA==,type:str]
+    version: 3.13.3

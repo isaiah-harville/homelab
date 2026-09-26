@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: utils-vpn
+    namespace: harville-labs
+type: Opaque
+stringData:
+    NORDVPN_SERVICE_USERNAME: ENC[AES256_GCM,data:qFiOuAJ3m0ise2BYEaOK9DHNupgz7DEp,iv:/WjBaH19NpnS4IoY08mMjvgAFYIUXB8V/VJaoNA5ahg=,tag:btZtW8oyZ2V30pDPBcI0yg==,type:str]
+    NORDVPN_SERVICE_PASSWORD: ENC[AES256_GCM,data:LUC5MybozORJBEYuWuK7gH8IljUmJ5BL,iv:fYxH8qpIlwOK/wkhrw+zphStDo//pGzlvECMjKxXfvQ=,tag:/2taT3likxjt41HVQ1/ggA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBodk1MeXFMWHJjbUN6NzQ5
+            a0dWRlY5SlFEOHVZSmV0WGIva0tEVTJSVVVzCndTajhjc2hGUVVLdFpwY2hpVUNv
+            NWcwV2xqNklNempkbTBpTGkzeHZDNlkKLS0tIDQzaVhwTjBGeXNaU1I4OHl2Qk1S
+            d2F6SDE0Rlgycmt5YWVMSGNTY1d3YVUKy2ENKqsWz7JQnHTbEIKylwCa577afyDc
+            DfZ3gA7gFSPhugDjfdrt532m2cYM6UNCHPIQ0NlMi4R5eykhzcCTEw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-26T02:20:39Z"
+    mac: ENC[AES256_GCM,data:74Ubqs4OKfx7hH+VeX2wXnmKpnrSE5gRjQ4COqzcY+P/NbJJfUIPdxD9+ICB8P7M3b2u5ZJ/o+AfIY71TF9kFMBgAk4ivl1L7UA14qDerj05svPG1qntnTgRRL8/MPncMchiCztKQ3qxuMsczyuHj9fugUog/oue8FLPi7VfuzY=,iv:4GIQxhdxE6eiBh5pdHuklMBhZRSWR8iKRxRyc8BYYMY=,tag:dfk2DImJsTMy+AK7GSPcUA==,type:str]
+    version: 3.13.3
