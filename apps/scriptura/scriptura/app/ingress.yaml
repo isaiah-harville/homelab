@@ -1,0 +1,41 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: scriptura
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Scriptura
+    gethomepage.dev/description: Scripture Widgets for iOS
+    gethomepage.dev/href: https://scriptura.harville.dev
+    gethomepage.dev/siteMonitor: https://scriptura.harville.dev
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [scriptura.harville.dev]
+  rules:
+    - host: scriptura.harville.dev
+      http:
+        paths:
+          - path: /privacy-policy
+            pathType: Prefix
+            backend:
+              service:
+                name: scriptura
+                port:
+                  number: 80
+          - path: /support
+            pathType: Prefix
+            backend:
+              service:
+                name: scriptura
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: scriptura
+                port:
+                  number: 80
