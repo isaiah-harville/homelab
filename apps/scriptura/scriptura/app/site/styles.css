@@ -1,13 +1,16 @@
 :root {
   color-scheme: dark;
-  --bg: #020711;
-  --bg-soft: #071936;
-  --fg: #fffaf0;
-  --muted: #c7d0df;
-  --gold: #f4c84e;
-  --gold-deep: #b68a32;
-  --border: rgba(244, 200, 78, 0.24);
-  --panel: rgba(3, 13, 31, 0.6);
+  --bg: #050b18;
+  --bg-soft: #0b1e3d;
+  --fg: #f7f4ea;
+  --muted: #aab6c9;
+  --gold: #e8bf5a;
+  --gold-bright: #f6d585;
+  --border: rgba(232, 191, 90, 0.2);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --panel: rgba(255, 255, 255, 0.03);
+  --header-h: 64px;
+  --max: 760px;
 }
 
 * {
@@ -22,150 +25,290 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
   background:
-    radial-gradient(circle at 50% 32%, rgba(33, 78, 135, 0.54), transparent 34rem),
-    radial-gradient(circle at 50% 66%, rgba(244, 200, 78, 0.11), transparent 26rem),
-    linear-gradient(90deg, #020711, #071936 24%, #0a1b39 50%, #071936 76%, #020711);
+    radial-gradient(ellipse 60rem 40rem at 50% -10%, rgba(70, 110, 175, 0.28), transparent 60%),
+    radial-gradient(ellipse 50rem 30rem at 85% 15%, rgba(232, 191, 90, 0.08), transparent 60%),
+    var(--bg);
   color: var(--fg);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(2, 7, 17, 0.94), transparent 20%, transparent 78%, rgba(2, 7, 17, 0.9)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.024) 0 1px, transparent 1px 8px);
-  opacity: 0.82;
+/* Header */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 24px;
+  backdrop-filter: blur(14px);
+  background: rgba(5, 11, 24, 0.72);
+  border-bottom: 1px solid var(--border-soft);
 }
+
+.site-header .inner {
+  width: min(100%, 960px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.wordmark svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 22px;
+}
+
+.site-header nav a {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.site-header nav a:hover,
+.site-header nav a:focus-visible {
+  color: var(--gold-bright);
+}
+
+/* Layout */
 
 main {
+  flex: 1;
   position: relative;
-  width: min(100% - 32px, 780px);
+  width: min(100% - 40px, var(--max));
   margin: 0 auto;
-  padding: 64px 0 80px;
 }
 
 .home {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--header-h));
   display: grid;
   align-content: center;
-  justify-items: center;
-  text-align: center;
+  padding: 56px 0 80px;
 }
 
 .page {
-  padding-top: 72px;
+  padding: 56px 0 72px;
 }
 
 .compact {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--header-h));
   display: grid;
   align-content: center;
+  padding: 56px 0;
 }
 
-.mark {
-  width: 86px;
-  height: 86px;
-  margin: 0 0 28px;
-  border: 1px solid rgba(244, 200, 78, 0.36);
+/* Hero */
+
+.hero {
+  text-align: center;
+}
+
+.hero .mark {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 32px;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
-  background:
-    linear-gradient(var(--gold), var(--gold)) center 16px / 10px 56px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) center 32px / 42px 10px no-repeat,
-    radial-gradient(circle, rgba(244, 200, 78, 0.2), rgba(244, 200, 78, 0.04) 58%, transparent 60%);
-  box-shadow:
-    0 0 38px rgba(244, 200, 78, 0.18),
-    inset 0 0 22px rgba(244, 200, 78, 0.08);
+  border: 1px solid var(--border);
+  background: radial-gradient(circle, rgba(232, 191, 90, 0.14), transparent 70%);
+}
+
+.hero .mark svg {
+  width: 34px;
+  height: 34px;
 }
 
 h1 {
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(3.2rem, 12vw, 5.8rem);
-  line-height: 0.98;
-  letter-spacing: 0;
-  text-shadow: 0 0 34px rgba(255, 250, 240, 0.16);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 9vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
 }
 
 .page h1 {
-  font-size: clamp(2.6rem, 9vw, 4.8rem);
+  font-size: clamp(2.1rem, 7vw, 3.2rem);
+  margin-bottom: 8px;
 }
 
 h2 {
-  margin: 36px 0 8px;
+  margin: 40px 0 10px;
   color: var(--fg);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.35rem;
-  line-height: 1.22;
-  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 1.28rem;
+  line-height: 1.25;
 }
 
 p {
-  max-width: 66ch;
+  max-width: 62ch;
   margin: 0 0 18px;
   color: var(--muted);
-  font-size: 1.08rem;
+  font-size: 1.05rem;
+}
+
+.hero p {
+  margin-inline: auto;
 }
 
 .lead {
   color: var(--fg);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.45rem, 5vw, 2.2rem);
-  line-height: 1.25;
-  margin-bottom: 28px;
+  font-size: clamp(1.3rem, 4vw, 1.7rem);
+  line-height: 1.35;
+  margin-bottom: 24px;
 }
 
 .date {
+  display: inline-block;
   color: var(--gold);
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
 }
 
 .summary {
-  margin: 30px 0 34px;
-  padding: 20px;
+  margin: 0 0 36px;
+  padding: 20px 22px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel);
 }
 
 .summary p {
   margin: 0;
+  max-width: none;
   color: var(--fg);
-  font-weight: 800;
+  font-weight: 500;
 }
 
 a {
-  color: var(--gold);
-  font-weight: 800;
-  text-decoration-thickness: 0.08em;
+  color: var(--gold-bright);
+  font-weight: 600;
+  text-decoration-thickness: 0.07em;
   text-underline-offset: 0.2em;
 }
 
-nav {
+a:hover,
+a:focus-visible {
+  color: var(--gold);
+}
+
+/* Call to action */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: #1a1305;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(232, 191, 90, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  color: #1a1305;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(232, 191, 90, 0.3);
+}
+
+.principles {
+  display: grid;
+  gap: 14px;
+  margin: 8px 0 8px;
+  text-align: left;
+}
+
+.principles li {
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+nav.links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 18px;
-  margin-top: 34px;
+  gap: 10px 24px;
+  margin-top: 36px;
 }
 
-@media (max-width: 520px) {
+nav.links a {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+nav.links a:hover,
+nav.links a:focus-visible {
+  color: var(--gold-bright);
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 28px 24px 40px;
+  text-align: center;
+  border-top: 1px solid var(--border-soft);
+}
+
+.site-footer p {
+  margin: 0;
+  max-width: none;
+  font-size: 0.85rem;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+@media (max-width: 560px) {
   main {
-    width: min(100% - 24px, 780px);
-    padding: 48px 0 64px;
+    width: min(100% - 32px, var(--max));
   }
 
-  .mark {
-    width: 72px;
-    height: 72px;
-    background:
-      linear-gradient(var(--gold), var(--gold)) center 14px / 8px 46px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) center 27px / 36px 8px no-repeat,
-      radial-gradient(circle, rgba(244, 200, 78, 0.2), rgba(244, 200, 78, 0.04) 58%, transparent 60%);
+  .home {
+    padding: 40px 0 64px;
+  }
+
+  .page,
+  .compact {
+    padding: 40px 0;
   }
 }
