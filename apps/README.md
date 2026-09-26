@@ -15,6 +15,7 @@ Each `ks.yaml` is a Flux `Kustomization` in `flux-system` that applies `app/`
 into its `targetNamespace` and reports its own health. A namespace folder is
 deployed once it is listed in `clusters/homelab/apps/kustomization.yaml`.
 
-Apps sourced from another Git repository (`swing-thoughts`) keep a
+Apps sourced from another Git repository (`swing-thoughts`,
+`harville-labs/website`) keep a
 `GitRepository`, an `<app>-upstream` Flux `Kustomization` and their Ingress in
 `app/`. `openvitae` is similar but installs a Helm chart from its repository.

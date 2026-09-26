@@ -162,7 +162,7 @@ back changes to the rest.
 
 ## Apps from external repos
 
-Some apps (`swing-thoughts`) are reconciled from their **own GitHub
+Some apps (`swing-thoughts`, `harville-labs/website`) are reconciled from their **own GitHub
 repositories**. Their `app/` holds:
 
 - `gitrepository.yaml` — a Flux `GitRepository` (in `flux-system`) for the app's repo.
@@ -200,7 +200,7 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 
 - One wildcard `Certificate` `harville-wildcard` (`infrastructure/certificates/certificates/app/`)
   via cert-manager + the `letsencrypt-dns` ClusterIssuer (Cloudflare DNS-01).
-  Covers `*.harville.dev`, `*.int.harville.dev`, `*.harville.ai`, `*.int.harville.ai`,
+  Covers `*.harville.dev`, `*.int.harville.dev`, `harville.ai`, `*.harville.ai`, `*.int.harville.ai`,
   `innerswings.com`, `*.innerswings.com`, `pigeonwire.app`, and
   `*.pigeonwire.app`.
 - Secret `harville-wildcard-shared-tls` is **reflected** (emberstack reflector) into the
