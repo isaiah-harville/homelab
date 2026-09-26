@@ -20,13 +20,13 @@ resources:
   - ../../../apps/home-automation
   - ../../../apps/homepage
   - ../../../apps/inference
-  - ../../../apps/lucerna
   - ../../../apps/media
   - ../../../apps/mlflow
   - ../../../apps/openvitae
   - ../../../apps/orion
   - ../../../apps/pigeon
   - ../../../apps/primer
+  - ../../../apps/scriptura
   - ../../../apps/searxng
   - ../../../apps/seaweedfs
   - ../../../apps/swing-thoughts
