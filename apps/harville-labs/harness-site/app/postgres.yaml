@@ -5,10 +5,15 @@ metadata:
   name: harness-site-postgres
   namespace: harville-labs
 spec:
-  instances: 2
+  # Customer sites, members, policies, and device tokens: one instance per
+  # node, and every commit reaches a standby before it's acknowledged.
+  instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4-minimal-trixie
   primaryUpdateStrategy: unsupervised
   postgresql:
+    synchronous:
+      method: any
+      number: 1
     parameters:
       # See primer-postgres: an unbounded slot for a down replica can fill the volume.
       max_slot_wal_keep_size: 2GB
@@ -43,7 +48,6 @@ spec:
     podAntiAffinityType: required
   monitoring:
     disableDefaultQueries: false
-  # Customer sites, members, policies, and device tokens live here.
   plugins:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
