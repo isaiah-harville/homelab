@@ -1,0 +1,17 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: harness
+  namespace: flux-system
+spec:
+  interval: 5m
+  ref:
+    branch: main
+  secretRef:
+    name: harness-site-auth
+  url: ssh://git@github.com/Harville-Labs/harness.git
+  # Only the deploy manifests; the rest of the monorepo isn't needed here.
+  ignore: |
+    /*
+    !/deploy/
