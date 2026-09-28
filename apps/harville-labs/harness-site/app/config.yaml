@@ -5,6 +5,7 @@ metadata:
   name: harness-site-config
   namespace: harville-labs
 data:
-  # Harville Labs staff: they create sites, set seats, and see telemetry at
-  # /admin. Comma-separated; applied at startup.
+  # Harness managers (Harville Labs staff): they see every site, create sites,
+  # set seats, and assign each site's operators at /admin. Comma-separated;
+  # applied at startup.
   MANAGER_EMAILS: harvillerisaiah@gmail.com
