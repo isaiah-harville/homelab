@@ -21,7 +21,8 @@ metadata:
   name: harness-site-sign-in-limits
   namespace: harville-labs
 spec:
-  # Sign-in emails and link redemption: a person needs a handful per hour.
+  # Sign-in emails, link redemption, and SSO callbacks: a person needs a
+  # handful per hour.
   rateLimit:
     average: 10
     period: 1m
@@ -81,7 +82,8 @@ spec:
                 name: harness-site
                 port:
                   name: http
-          - path: /auth
+          # Sign-in link redemption and single sign-on callbacks (Better Auth).
+          - path: /api/auth
             pathType: Prefix
             backend:
               service:
