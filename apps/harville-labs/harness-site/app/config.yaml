@@ -7,4 +7,4 @@ metadata:
 data:
   # Harville Labs staff: they create sites, set seats, and see telemetry at
   # /admin. Comma-separated; applied at startup.
-  OPERATOR_EMAILS: harvillerisaiah@gmail.com
+  MANAGER_EMAILS: harvillerisaiah@gmail.com
