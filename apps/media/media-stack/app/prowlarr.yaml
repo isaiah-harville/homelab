@@ -60,6 +60,18 @@ spec:
           image: ghcr.io/qdm12/gluetun:v3.41.1
           imagePullPolicy: IfNotPresent
           restartPolicy: Always
+          # Gluetun sends *.cluster.local lookups to the resolvers it finds in
+          # /etc/resolv.conf, but only reads them at container start, and that
+          # file is shared by the pod and already rewritten to 127.0.0.1 after
+          # a restart. Save the pod's original file on first start and restore
+          # it before every later one, or radarr/qbittorrent stop resolving.
+          command:
+            - /bin/sh
+            - -c
+            - |
+              [ -f /pod-dns/resolv.conf ] || cp /etc/resolv.conf /pod-dns/resolv.conf
+              cat /pod-dns/resolv.conf > /etc/resolv.conf
+              exec /gluetun-entrypoint
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -154,6 +166,8 @@ spec:
               mountPath: /dev/net/tun
             - name: gluetun-state
               mountPath: /gluetun
+            - name: pod-dns
+              mountPath: /pod-dns
       containers:
         - name: prowlarr
           image: lscr.io/linuxserver/prowlarr:2.5.2.5491-ls155
@@ -215,3 +229,5 @@ spec:
         - name: gluetun-state
           persistentVolumeClaim:
             claimName: prowlarr-gluetun-state
+        - name: pod-dns
+          emptyDir: {}
