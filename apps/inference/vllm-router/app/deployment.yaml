@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: vllm-router
-          image: docker.io/lmcache/lmstack-router:v0.1.12 # {"$imagepolicy": "flux-system:lmstack-router"}
+          image: docker.io/lmcache/lmstack-router:v0.1.13 # {"$imagepolicy": "flux-system:lmstack-router"}
           args:
             - --host
             - "0.0.0.0"
