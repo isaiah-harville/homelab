@@ -1,0 +1,92 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: switchback-site-limits
+  namespace: harville-labs
+spec:
+  # Every signed-in Switchback polls for policy every few minutes; this is far
+  # above that and still stops scraping and brute force.
+  rateLimit:
+    average: 240
+    period: 1m
+    burst: 60
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: switchback-site-sign-in-limits
+  namespace: harville-labs
+spec:
+  # Sign-in emails, link redemption, and SSO callbacks: a person needs a
+  # handful per hour.
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: switchback-site
+  namespace: harville-labs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: harville-labs-switchback-site-limits@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Switchback sites
+    gethomepage.dev/description: Switchback control plane for customer organizations
+    gethomepage.dev/href: https://switchback.harville.ai
+    gethomepage.dev/siteMonitor: https://switchback.harville.ai/healthz
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [switchback.harville.ai]
+  rules:
+    - host: switchback.harville.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-site
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: switchback-site-sign-in
+  namespace: harville-labs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: harville-labs-switchback-site-sign-in-limits@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [switchback.harville.ai]
+  rules:
+    - host: switchback.harville.ai
+      http:
+        paths:
+          - path: /login
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-site
+                port:
+                  name: http
+          # Sign-in link redemption and single sign-on callbacks (Better Auth).
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-site
+                port:
+                  name: http

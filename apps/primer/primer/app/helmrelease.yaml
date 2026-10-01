@@ -180,5 +180,5 @@ spec:
       # the values-only workaround until that lands.
       index:
         resources:
-          requests: { cpu: 100m, memory: 1Gi }
-          limits: { memory: 4Gi }
+          requests: {cpu: 100m, memory: 1Gi}
+          limits: {memory: 4Gi}

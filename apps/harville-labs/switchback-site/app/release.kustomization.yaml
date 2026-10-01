@@ -1,0 +1,23 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # The site's Deployment and Service, from the switchback repo. CI there bumps
+  # the image tag in deploy/k8s/site/kustomization.yaml on every build of
+  # main. The `switchback-site` Kustomization that applies this file also owns
+  # the GitRepository, Ingress, Postgres cluster, and configuration.
+  name: switchback-site-upstream
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./deploy/k8s/site
+  prune: true
+  targetNamespace: harville-labs
+  wait: true
+  timeout: 3m
+  sourceRef:
+    kind: GitRepository
+    name: switchback
+  dependsOn:
+    - name: infra
+    - name: certificates

@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - website/ks.yaml
+  - switchback-site/ks.yaml

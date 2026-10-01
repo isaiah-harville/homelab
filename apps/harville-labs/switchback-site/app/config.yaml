@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: switchback-site-config
+  namespace: harville-labs
+data:
+  # Switchback managers (Harville Labs staff): they see every site, create sites,
+  # set seats, and assign each site's operators at /admin. Comma-separated;
+  # applied at startup.
+  MANAGER_EMAILS: harvillerisaiah@gmail.com
