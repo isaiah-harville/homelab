@@ -5,8 +5,9 @@ ignore: |
   clusters/**/secrets/**
   clusters/**/sops/**
   *.sops.yaml
-  # Vendored upstream release manifest; kept byte-identical for upgrades.
+  # Vendored upstream release manifests; kept byte-identical for upgrades.
   infrastructure/cnpg-system/cnpg-barman-plugin/app/plugin-barman-cloud.yaml
+  infrastructure/rabbitmq-system/rabbitmq-operator/app/cluster-operator.yaml
 
 rules:
   line-length:
