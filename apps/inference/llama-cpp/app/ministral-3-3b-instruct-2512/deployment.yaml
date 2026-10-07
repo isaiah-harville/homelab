@@ -51,11 +51,6 @@ spec:
           env:
             - name: LLAMA_CACHE
               value: /models
-            - name: LLAMA_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: vllm-api-key
-                  key: VLLM_API_KEY
           ports:
             - name: http
               containerPort: 8080

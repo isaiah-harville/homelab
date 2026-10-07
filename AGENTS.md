@@ -299,7 +299,7 @@ privileged workload's namespace, or Talos baseline will block its pods.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
 - **vllm-router** — OpenAI-compatible inference at `vllm.int.harville.dev`
-  (API-key auth), consumed by Primer. See "GPU / vLLM" below.
+  (no API key required), consumed by Primer. See "GPU / vLLM" below.
 - **primer** — cited answers over private document libraries, public at
   `primer.harville.dev`. See `docs/apps/primer.md`.
 
