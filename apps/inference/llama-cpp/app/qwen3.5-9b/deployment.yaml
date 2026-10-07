@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-qwen3-5-9b
+  labels:
+    app: llama-qwen3-5-9b
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-qwen3-5-9b
+  template:
+    metadata:
+      labels:
+        app: llama-qwen3-5-9b
+    spec:
+      enableServiceLinks: false
+      # This node has 16 CPU cores and 64GB RAM; the smaller worker cannot
+      # reliably host this model alongside its existing workloads.
+      nodeSelector:
+        kubernetes.io/hostname: talos-6t5-q1d
+      containers:
+        - name: llama-server
+          image: ghcr.io/ggml-org/llama.cpp:server
+          args:
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8080"
+            - -hf
+            - unsloth/Qwen3.5-9B-GGUF:Q4_K_M
+            - --no-mmproj
+            - --alias
+            - qwen3.5-9b
+            - --jinja
+            - -ngl
+            - "0"
+            - -c
+            - "8192"
+            - -np
+            - "1"
+            - --metrics
+          env:
+            - name: LLAMA_CACHE
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 90
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+            limits:
+              memory: 16Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: llama-qwen3-5-9b-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-qwen3-5-9b-models
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 15Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-qwen3-5-9b
+  labels:
+    app: llama-qwen3-5-9b
+spec:
+  selector:
+    app: llama-qwen3-5-9b
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: llama-ministral-3b-instruct
+  name: llama-qwen3-5-4b
   labels:
-    app: llama-ministral-3b-instruct
+    app: llama-qwen3-5-4b
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: llama-ministral-3b-instruct
+      app: llama-qwen3-5-4b
   template:
     metadata:
       labels:
-        app: llama-ministral-3b-instruct
+        app: llama-qwen3-5-4b
     spec:
       # Kubernetes injects a Docker-link environment variable per Service in
       # the namespace, and llama-server reads a great many LLAMA_* variables
@@ -33,20 +33,21 @@ spec:
             - --port
             - "8080"
             - -hf
-            - unsloth/Ministral-3-3B-Instruct-2512-GGUF:Q4_K_M
+            - unsloth/Qwen3.5-4B-GGUF:Q4_K_M
             - --no-mmproj
             - --alias
-            - ministral-3-3b-instruct
+            - qwen3.5-4b
+            - --jinja
             - -ngl
             - "all"
             - -c
-            - "16384"
+            - "8192"
             - -ctk
             - q8_0
             - -ctv
             - q8_0
             - -np
-            - "2"
+            - "1"
             - --metrics
           env:
             - name: LLAMA_CACHE
@@ -85,6 +86,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # Keep the existing claim so Flux does not delete the model cache volume.
   name: llama-ministral-3b-instruct-models
 spec:
   accessModes:
@@ -97,12 +99,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: llama-ministral-3b-instruct
+  name: llama-qwen3-5-4b
   labels:
-    app: llama-ministral-3b-instruct
+    app: llama-qwen3-5-4b
 spec:
   selector:
-    app: llama-ministral-3b-instruct
+    app: llama-qwen3-5-4b
   ports:
     - name: http
       port: 8080

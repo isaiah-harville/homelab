@@ -25,11 +25,11 @@ spec:
             - --service-discovery
             - static
             - --static-backends
-            - "http://llama-ministral-3b-instruct.inference.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.inference.svc.cluster.local:8080"
+            - "http://llama-qwen3-5-4b.inference.svc.cluster.local:8080,http://llama-qwen3-5-9b.inference.svc.cluster.local:8080,http://llama-ministral-3b-reasoning.inference.svc.cluster.local:8080"
             - --static-models
-            - "ministral-3-3b-instruct,ministral-3-3b-reasoning"
+            - "qwen3.5-4b,qwen3.5-9b,ministral-3-3b-reasoning"
             - --static-model-types
-            - "chat,chat"
+            - "chat,chat,chat"
             - --routing-logic
             - roundrobin
             - --log-stats

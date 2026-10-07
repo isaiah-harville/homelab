@@ -314,11 +314,11 @@ immutable, so the driver arrives as the `nonfree-kmod-nvidia-production` and
 containers disabled. Node Feature Discovery labels the GPU nodes, so nothing
 needs manual labelling. Details in `talos/README.md`.
 
-Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`), which
-is what sizes everything: `apps/inference/vllm/app` serves `Qwen2.5-3B-Instruct-AWQ` at
-4-bit with `--enforce-eager` and an fp8 KV cache, fronted by
-`apps/inference/vllm-router/app`. The old WSL box (`harvi-desktop`, `10.1.10.20`) is
-gone. See `docs/operations/external-inference.md`.
+Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`).
+`apps/inference/llama-cpp/app` runs Qwen3.5-4B on the A2000, Ministral 3 3B
+Reasoning on the T1000, and Qwen3.5-9B on CPU. All three are fronted by
+`apps/inference/vllm-router/app`. The old WSL box (`harvi-desktop`, `10.1.10.20`)
+is gone. See `docs/apps/primer.md`.
 
 Embeddings deliberately stay on CPU (`apps/primer/primer/app/embeddings.yaml`,
 `bge-small-en-v1.5`): the model is 33M parameters, and keeping it off the card

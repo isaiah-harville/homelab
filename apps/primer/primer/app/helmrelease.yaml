@@ -116,13 +116,12 @@ spec:
       # can be added or replaced without rewiring every consumer. The name is
       # now historical - what it fronts is llama.cpp, not vLLM.
       #
-      # The router fans out across both deployments, so this one URL offers
-      # the instruct model and the reasoning model both, and `model` below is
+      # The router fronts all three deployments, and `model` below is
       # only which of them a new conversation starts on. Anything outside the
       # cluster is added from Primer's own settings page instead.
       chat:
         baseUrl: http://vllm-router.inference.svc.cluster.local:8001/v1
-        model: ministral-3-3b-instruct
+        model: qwen3.5-4b
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
       embeddings:

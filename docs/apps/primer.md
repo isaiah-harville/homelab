@@ -85,25 +85,24 @@ the next tag happened to bump the minor.
 
 There are two GPUs in this cluster and both are 4GB laptop parts: an RTX A2000
 Laptop (Ampere, SM86) and a Quadro T1000 (Turing, SM75). The device plugin hands
-out whole cards, so **two models is the hard ceiling** — a third GPU deployment
+out whole cards, so **two GPU models is the hard ceiling** — a third GPU deployment
 does not run slowly, it sits `Pending` forever.
 
-Both cards are therefore spoken for: the instruct model has the A2000 and the
-reasoning model has the T1000. vLLM is scaled to zero — it held the T1000, and
-Ministral 3 replaces what it served. Its manifest is kept rather than deleted,
-because it is the record of what running vLLM on a 4GB SM75/SM86 card actually
-requires.
+Both cards are therefore spoken for: Qwen3.5-4B has the A2000 and Ministral
+reasoning has the T1000. Qwen3.5-9B runs on CPU on `talos-6t5-q1d`, which has
+room for its 8Gi request. It uses one request slot and an 8k context to bound
+memory use; responses will be slower than on the GPU models. vLLM remains
+scaled to zero.
 
-Adding a third model means taking a card from one of these two, or reaching
-something outside the cluster. Primer supports both: extra providers, hosted or
-self-hosted, are configured from its settings page rather than from this repo.
+Another GPU model means taking a card from one of these two. Primer can also
+reach hosted or self-hosted providers configured from its settings page.
 
 Two consequences of the hardware are worth knowing before changing a model:
 
 - **SM75/SM86 rule out fp8.** Native FP8 needs SM89 or newer, so vLLM cannot
   use an fp8 KV cache here. llama.cpp's `q8_0` KV cache has no such
-  requirement, which is what lets the Ministral deployments hold a 16k context
-  beside their weights on 4GB.
+  requirement, which lets the GPU deployments hold their context beside their
+  weights on 4GB.
 - **The quantization has to exist.** vLLM needs a published AWQ or GPTQ.
   Ministral 3 `-2512` shipped GGUF only, and at bf16 its 3.85B parameters need
   roughly 7.7GB — which is why it runs under llama.cpp rather than vLLM.
