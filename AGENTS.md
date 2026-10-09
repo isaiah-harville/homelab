@@ -202,7 +202,7 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
   via cert-manager + the `letsencrypt-dns` ClusterIssuer (Cloudflare DNS-01).
   Covers `*.harville.dev`, `*.int.harville.dev`, `harville.ai`, `*.harville.ai`, `*.int.harville.ai`,
   `innerswings.com`, `*.innerswings.com`, `pigeonwire.app`, and
-  `*.pigeonwire.app`.
+  `*.pigeonwire.app`, `switchback.sh`, and `*.switchback.sh`.
 - Secret `harville-wildcard-shared-tls` is **reflected** (emberstack reflector) into the
   namespaces listed in the Certificate's `reflector.*` annotations (currently
   `apps,flux-system,monitoring,longhorn-system`). **If you add an app in a new namespace, add that

@@ -9,12 +9,20 @@ spec:
     kind: ClusterIssuer
     name: letsencrypt-dns
   dnsNames:
+    # .dev
+    - "harville.dev"
     - "*.harville.dev"
     - "*.int.harville.dev"
+    # .ai
     - "harville.ai"
     - "*.harville.ai"
     - "*.int.harville.ai"
+    # innerswings
     - "innerswings.com"
     - "*.innerswings.com"
+    # pigeon
     - "pigeonwire.app"
     - "*.pigeonwire.app"
+    # switchback
+    - "switchback.sh"
+    - "*.switchback.sh"

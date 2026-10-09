@@ -16,6 +16,7 @@ spec:
             - harville.ai
             - pigeonwire.app
             - innerswings.com
+            - switchback.sh
         dns01:
           cloudflare:
             apiTokenSecretRef:
