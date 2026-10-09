@@ -50,11 +50,11 @@ spec:
   values:
     api:
       image:
-        tag: latest
+        tag: 1.0.0
         pullPolicy: Always
     frontend:
       image:
-        tag: latest
+        tag: 1.0.0
         pullPolicy: Always
     auth:
       admin:
