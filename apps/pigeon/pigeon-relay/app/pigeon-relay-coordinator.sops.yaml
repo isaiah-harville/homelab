@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: pigeon-relay-coordinator
+type: Opaque
+stringData:
+    PIGEON_COORDINATOR_SIGNING_SEED_HEX: ENC[AES256_GCM,data:8aymM+vK1SSVeW6BjFueAoEshxsD4HZa/hPYTeDTYPPiBE5ZUwTjFB/s42g+BB6E4i4B1hrKRMaWnmcc9nCjwQ==,iv:yNWsm+mX2aVvLUkdZiqayiW/fmRQSvg3zBWO6kiJoqM=,tag:Zd2H4wQra0xQyMyf9/WTmg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBGQTEwYWZ5SXpSTW9oaWlv
+            K3Rra1dJT2NLTWpQKy9wc2c1UXFlcU9aYnhnClhNSjNOaUtacDYxNG9vNFNlbVJt
+            OHdNWmlMdEdYa05wekxQN1ZwVWd1OG8KLS0tIEk2TDd5cUFZNGxKc2JpSnpJQURD
+            cUlldnNpYXBiUndFclF1cUI2Q1k2Z1UKyVlLhswc2cz/DXnjk6d/Xtt5KcDjWuPA
+            v1RFRchpTjQXzybmufawCKNFAocdLhN96qgQZAOMIJEe6+ho5OTgCA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-09T20:02:23Z"
+    mac: ENC[AES256_GCM,data:SKNNUh1wGIKLRKx/YvzKdZ60FXOLsAyD+C5L6N0A4wS1QoL5WOt9k/PKHIkG6mtWh7NNsO1DSqBd/F6QxCVDbrPBJD6gQzXngrwnMhPKj+Y2x8cape3ISWvDupIq+Nn4Cr/Ln3YoFMwLKFS26Fzd01nQInMFTB8EWN2gh9puvxY=,iv:1ZfMyEYekcZF83LKP8Yu+P+vcuq7HRsTJw8FPxJZIXQ=,tag:AS1rwg53/LXRdQvw/Kd5Og==,type:str]
+    version: 3.13.3
