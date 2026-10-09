@@ -23,6 +23,26 @@ spec:
         - name: ghcr-pull-secret
       securityContext:
         fsGroup: 65532
+      initContainers:
+        - name: own-relay-state
+          image: busybox:1.37.0
+          command:
+            - chown
+            - -R
+            - 65532:65532
+            - /var/lib/pigeon-relay
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: relay-state
+              mountPath: /var/lib/pigeon-relay
       containers:
         - name: pigeon-relay
           image: ghcr.io/isaiah-harville/pigeon/relay:v0.4.1 # {"$imagepolicy": "flux-system:pigeon-relay"}
