@@ -1,0 +1,66 @@
+---
+# switchback.sh: Switchback's page and docs, served by the website repo's
+# switchback-web Deployment (apps/switchback there). The console is app.switchback.sh
+# (../../switchback-site).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: switchback-web
+  namespace: harville-labs
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: Switchback
+    gethomepage.dev/description: Switchback's site and docs
+    gethomepage.dev/href: https://switchback.sh
+    gethomepage.dev/siteMonitor: https://switchback.sh/healthz
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [switchback.sh]
+  rules:
+    - host: switchback.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-web
+                port:
+                  name: http
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: switchback-www-redirect
+  namespace: harville-labs
+spec:
+  redirectRegex:
+    regex: '^https?://www\.switchback\.sh/(.*)$'
+    replacement: https://switchback.sh/${1}
+    permanent: true
+---
+# www.switchback.sh already resolves (Cloudflare); send it to the apex.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: switchback-web-www
+  namespace: harville-labs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: harville-labs-switchback-www-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [www.switchback.sh]
+  rules:
+    - host: www.switchback.sh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-web
+                port:
+                  name: http
