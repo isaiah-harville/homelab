@@ -10,4 +10,4 @@ spec:
     branch: main
   secretRef:
     name: website-auth
-  url: ssh://git@github.com/Harville-Labs/website.git
+  url: ssh://git@github.com/Harville-Labs/sites.git
