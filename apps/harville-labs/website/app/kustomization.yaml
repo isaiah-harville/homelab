@@ -7,4 +7,5 @@ resources:
   - gitrepository.yaml
   - ingress.yaml
   - utils-ingress.yaml
+  - switchback-ingress.yaml
   - release.kustomization.yaml

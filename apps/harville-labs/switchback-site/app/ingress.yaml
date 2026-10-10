@@ -42,14 +42,14 @@ metadata:
     gethomepage.dev/group: Public
     gethomepage.dev/name: Switchback sites
     gethomepage.dev/description: Switchback control plane for customer organizations
-    gethomepage.dev/href: https://switchback.harville.ai
-    gethomepage.dev/siteMonitor: https://switchback.harville.ai/healthz
+    gethomepage.dev/href: https://app.switchback.sh
+    gethomepage.dev/siteMonitor: https://app.switchback.sh/healthz
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [switchback.harville.ai]
+    - hosts: [app.switchback.sh]
   rules:
-    - host: switchback.harville.ai
+    - host: app.switchback.sh
       http:
         paths:
           - path: /
@@ -70,9 +70,9 @@ metadata:
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [switchback.harville.ai]
+    - hosts: [app.switchback.sh]
   rules:
-    - host: switchback.harville.ai
+    - host: app.switchback.sh
       http:
         paths:
           - path: /login
@@ -84,6 +84,42 @@ spec:
                   name: http
           # Sign-in link redemption and single sign-on callbacks (Better Auth).
           - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: switchback-site
+                port:
+                  name: http
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: switchback-site-moved
+  namespace: harville-labs
+spec:
+  # The console moved from switchback.harville.ai to app.switchback.sh. Keep old
+  # bookmarks and links working; the path and query carry over.
+  redirectRegex:
+    regex: '^https?://switchback\.harville\.ai/(.*)$'
+    replacement: https://app.switchback.sh/${1}
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: switchback-site-moved
+  namespace: harville-labs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: harville-labs-switchback-site-moved@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [switchback.harville.ai]
+  rules:
+    - host: switchback.harville.ai
+      http:
+        paths:
+          - path: /
             pathType: Prefix
             backend:
               service:
