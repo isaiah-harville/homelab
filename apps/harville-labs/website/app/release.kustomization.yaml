@@ -14,7 +14,9 @@ spec:
   prune: true
   targetNamespace: harville-labs
   wait: true
-  timeout: 2m
+  # utils-youtube isn't ready until Gluetun's VPN connects, about 2.5 minutes
+  # after the pod starts.
+  timeout: 5m
   sourceRef:
     kind: GitRepository
     name: website
