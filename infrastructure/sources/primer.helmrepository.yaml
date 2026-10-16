@@ -7,4 +7,4 @@ metadata:
 spec:
   type: oci
   interval: 1h
-  url: oci://ghcr.io/isaiah-harville/charts
+  url: oci://ghcr.io/harville-labs/charts
