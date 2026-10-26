@@ -5,3 +5,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - public-ingress.yaml
+  - auth-proxy.configmap.yaml
+  - vllm-api-key.sops.yaml

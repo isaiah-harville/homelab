@@ -1,0 +1,37 @@
+---
+# The router has no API-key option, so a bearer-token check sits in front of
+# the public listener. nginx renders this template at start and substitutes
+# only the env vars that are set (VLLM_API_KEY), leaving its own $variables.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vllm-router-auth-proxy
+data:
+  default.conf.template: |
+    map $http_authorization $authorized {
+      default 0;
+      "Bearer ${VLLM_API_KEY}" 1;
+    }
+
+    server {
+      listen 8002;
+
+      location / {
+        if ($authorized = 0) {
+          add_header WWW-Authenticate 'Bearer realm="vllm"' always;
+          add_header Content-Type application/json always;
+          return 401 '{"error":{"message":"Missing or invalid API key","type":"invalid_request_error","code":"invalid_api_key"}}';
+        }
+
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Authorization "";
+        # Token streaming and long generations: no buffering, no short timeout.
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        client_max_body_size 32m;
+      }
+    }

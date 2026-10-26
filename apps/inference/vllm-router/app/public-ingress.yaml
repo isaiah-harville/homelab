@@ -1,0 +1,22 @@
+---
+# Public route to the router, gated by the nginx auth-proxy sidecar (bearer API
+# key). The internal route above stays keyless for in-LAN consumers like Primer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vllm-router-public
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [vllm.harville.dev]
+  rules:
+    - host: vllm.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vllm-router
+                port:
+                  name: public

@@ -50,3 +50,30 @@ spec:
             requests:
               cpu: "100m"
               memory: 256Mi
+        - name: auth-proxy
+          image: docker.io/library/nginx:1.31.8-alpine # {"$imagepolicy": "flux-system:nginx"}
+          ports:
+            - name: public
+              containerPort: 8002
+          env:
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm-api-key
+                  key: api-key
+          volumeMounts:
+            - name: auth-proxy
+              mountPath: /etc/nginx/templates
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8002
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+      volumes:
+        - name: auth-proxy
+          configMap:
+            name: vllm-router-auth-proxy

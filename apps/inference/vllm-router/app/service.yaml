@@ -12,3 +12,6 @@ spec:
     - name: http
       port: 8001
       targetPort: 8001
+    - name: public
+      port: 8002
+      targetPort: 8002
