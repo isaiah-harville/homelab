@@ -30,7 +30,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.28.0
+          image: vllm/vllm-openai:v0.28.0 # {"$imagepolicy": "flux-system:vllm"}
           args:
             - --model
             - Qwen/Qwen2.5-3B-Instruct-AWQ

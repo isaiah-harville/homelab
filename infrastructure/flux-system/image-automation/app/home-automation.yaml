@@ -1,0 +1,120 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: home-assistant
+  namespace: flux-system
+spec:
+  image: ghcr.io/home-assistant/home-assistant
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: home-assistant
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: home-assistant
+  filterTags:
+    pattern: '^(?P<version>[0-9]{4}\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '*'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: zigbee2mqtt
+  namespace: flux-system
+spec:
+  image: docker.io/koenkk/zigbee2mqtt
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: zigbee2mqtt
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: zigbee2mqtt
+  filterTags:
+    pattern: '^(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '*'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: mosquitto
+  namespace: flux-system
+spec:
+  image: docker.io/library/eclipse-mosquitto
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: mosquitto
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: mosquitto
+  filterTags:
+    pattern: '^(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '*'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: matter-server
+  namespace: flux-system
+spec:
+  image: ghcr.io/matter-js/matterjs-server
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: matter-server
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: matter-server
+  filterTags:
+    pattern: '^(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '*'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: busybox
+  namespace: flux-system
+spec:
+  image: docker.io/library/busybox
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: busybox
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: busybox
+  filterTags:
+    pattern: '^(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '*'

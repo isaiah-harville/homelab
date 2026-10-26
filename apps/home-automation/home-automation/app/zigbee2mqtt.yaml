@@ -51,7 +51,7 @@ spec:
       enableServiceLinks: false
       initContainers:
         - name: validate-radio-config
-          image: busybox:1.37.0
+          image: busybox:1.37.0 # {"$imagepolicy": "flux-system:busybox"}
           command:
             - sh
             - -ec
@@ -75,7 +75,7 @@ spec:
                   key: serial_port
       containers:
         - name: zigbee2mqtt
-          image: koenkk/zigbee2mqtt:2.13.0
+          image: koenkk/zigbee2mqtt:2.13.0 # {"$imagepolicy": "flux-system:zigbee2mqtt"}
           ports:
             - name: http
               containerPort: 8080

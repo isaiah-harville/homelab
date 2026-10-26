@@ -47,7 +47,7 @@ spec:
           # The same pinned version as the embedding server, for the same
           # reason: a server version that changes what a model returns is
           # not something to discover by floating a tag.
-          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3 # {"$imagepolicy": "flux-system:text-embeddings-inference"}
           args:
             - --model-id
             - BAAI/bge-reranker-base

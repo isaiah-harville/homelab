@@ -21,4 +21,4 @@ spec:
     extract: '$version'
   policy:
     semver:
-      range: '>=1.27.0 <2.0.0'
+      range: '*'

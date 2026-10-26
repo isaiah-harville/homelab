@@ -6,6 +6,10 @@ resources:
   - gitrepository.yaml
   - books.yaml
   - homepage.yaml
+  - home-automation.yaml
+  - inference.yaml
+  - media.yaml
+  - seaweedfs.yaml
   - lmstack-router.yaml
   - nginx.yaml
   - pigeon-relay.yaml

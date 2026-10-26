@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: tei
-          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3 # {"$imagepolicy": "flux-system:text-embeddings-inference"}
           args:
             - --model-id
             - onnx-community/Qwen3-Embedding-0.6B-ONNX

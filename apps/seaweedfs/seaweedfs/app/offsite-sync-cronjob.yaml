@@ -27,7 +27,7 @@ spec:
             runAsGroup: 1000
           containers:
             - name: sync
-              image: rclone/rclone:1.71.1
+              image: rclone/rclone:1.71.1 # {"$imagepolicy": "flux-system:rclone"}
               args:
                 - sync
                 - seaweedfs:backups

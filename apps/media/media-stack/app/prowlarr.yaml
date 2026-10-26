@@ -57,7 +57,7 @@ spec:
               mountPath: /scripts
               readOnly: true
         - name: gluetun
-          image: ghcr.io/qdm12/gluetun:v3.41.1
+          image: ghcr.io/qdm12/gluetun:v3.41.1 # {"$imagepolicy": "flux-system:gluetun"}
           imagePullPolicy: IfNotPresent
           restartPolicy: Always
           # Gluetun sends *.cluster.local lookups to the resolvers it finds in
@@ -164,7 +164,7 @@ spec:
               mountPath: /pod-dns
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:2.5.2.5491-ls155
+          image: lscr.io/linuxserver/prowlarr:2.5.2.5491-ls155 # {"$imagepolicy": "flux-system:prowlarr"}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

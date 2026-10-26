@@ -59,7 +59,7 @@ spec:
               mountPath: /scripts
               readOnly: true
         - name: gluetun
-          image: ghcr.io/qdm12/gluetun:v3.41.1
+          image: ghcr.io/qdm12/gluetun:v3.41.1 # {"$imagepolicy": "flux-system:gluetun"}
           imagePullPolicy: IfNotPresent
           restartPolicy: Always
           securityContext:

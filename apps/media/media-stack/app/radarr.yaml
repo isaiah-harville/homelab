@@ -58,7 +58,7 @@ spec:
               readOnly: true
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.3.0.10514-ls312
+          image: lscr.io/linuxserver/radarr:6.3.0.10514-ls312 # {"$imagepolicy": "flux-system:radarr"}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

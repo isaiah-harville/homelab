@@ -88,7 +88,7 @@ spec:
         # a referenced file is missing. Create them empty once, then leave them
         # alone so the UI editors keep their contents.
         - name: seed-includes
-          image: busybox:1.37.0
+          image: busybox:1.37.0 # {"$imagepolicy": "flux-system:busybox"}
           command:
             - sh
             - -c
@@ -104,7 +104,7 @@ spec:
         # Install the pinned release (checksum-verified) into the PVC; bump
         # both values together to upgrade.
         - name: install-auth-oidc
-          image: ghcr.io/home-assistant/home-assistant:2026.8.2
+          image: ghcr.io/home-assistant/home-assistant:2026.8.2 # {"$imagepolicy": "flux-system:home-assistant"}
           command:
             - python3
             - -c
@@ -129,7 +129,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: ghcr.io/home-assistant/home-assistant:2026.8.2
+          image: ghcr.io/home-assistant/home-assistant:2026.8.2 # {"$imagepolicy": "flux-system:home-assistant"}
           ports:
             - name: http
               containerPort: 8123
