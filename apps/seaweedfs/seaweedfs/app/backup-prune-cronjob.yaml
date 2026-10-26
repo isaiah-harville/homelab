@@ -1,4 +1,3 @@
----
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -22,7 +21,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: rclone-prune
-              image: rclone/rclone:1.75.1 # {"$imagepolicy": "flux-system:rclone"}
+              image: docker.io/rclone/rclone:1.75.2 # {"$imagepolicy": "flux-system:rclone"}
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:

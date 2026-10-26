@@ -25,7 +25,7 @@ spec:
         fsGroup: 65532
       initContainers:
         - name: own-relay-state
-          image: busybox:1.37.0 # {"$imagepolicy": "flux-system:busybox"}
+          image: docker.io/library/busybox:1.38.0 # {"$imagepolicy": "flux-system:busybox"}
           command:
             - chown
             - -R

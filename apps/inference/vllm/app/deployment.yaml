@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,7 +29,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.28.0 # {"$imagepolicy": "flux-system:vllm"}
+          image: docker.io/vllm/vllm-openai:v0.32.0 # {"$imagepolicy": "flux-system:vllm"}
           args:
             - --model
             - Qwen/Qwen2.5-3B-Instruct-AWQ

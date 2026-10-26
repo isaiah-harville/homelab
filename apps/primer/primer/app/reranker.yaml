@@ -1,4 +1,3 @@
----
 # A cross-encoder for reordering what the vector search found.
 #
 # A vector search compares a question and a passage through two embeddings
@@ -47,7 +46,7 @@ spec:
           # The same pinned version as the embedding server, for the same
           # reason: a server version that changes what a model returns is
           # not something to discover by floating a tag.
-          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.3 # {"$imagepolicy": "flux-system:text-embeddings-inference"}
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4 # {"$imagepolicy": "flux-system:text-embeddings-inference"}
           args:
             - --model-id
             - BAAI/bge-reranker-base
