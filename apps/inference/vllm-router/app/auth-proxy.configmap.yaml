@@ -8,16 +8,13 @@ metadata:
   name: vllm-router-auth-proxy
 data:
   default.conf.template: |
-    map $http_authorization $authorized {
-      default 0;
-      "Bearer ${VLLM_API_KEY}" 1;
-    }
-
     server {
       listen 8002;
 
       location / {
-        if ($authorized = 0) {
+        # A direct comparison, not a map: a map key as long as "Bearer <key>"
+        # overflows nginx's default map_hash_bucket_size and nginx won't start.
+        if ($http_authorization != "Bearer ${VLLM_API_KEY}") {
           add_header WWW-Authenticate 'Bearer realm="vllm"' always;
           add_header Content-Type application/json always;
           return 401 '{"error":{"message":"Missing or invalid API key","type":"invalid_request_error","code":"invalid_api_key"}}';
