@@ -38,6 +38,12 @@ spec:
             - --alias
             - qwen3.5-4b
             - --jinja
+            # Thinking is on by default in this model's template, and at
+            # ~6.5 tok/s on the throttled A2000 a bare "hi" spent ~85s
+            # reasoning. A request can turn it back on with
+            # chat_template_kwargs: {"enable_thinking": true}.
+            - --chat-template-kwargs
+            - '{"enable_thinking":false}'
             - -ngl
             - "all"
             - -c
