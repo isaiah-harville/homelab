@@ -17,7 +17,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: searxng
-          image: docker.io/searxng/searxng:2026.10.27-cb74e7f81 # {"$imagepolicy": "flux-system:searxng"}
+          image: docker.io/searxng/searxng:2026.10.27-28423d332 # {"$imagepolicy": "flux-system:searxng"}
           ports:
             - name: http
               containerPort: 8080
