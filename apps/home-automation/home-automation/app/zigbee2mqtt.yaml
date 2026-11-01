@@ -74,7 +74,7 @@ spec:
                   key: serial_port
       containers:
         - name: zigbee2mqtt
-          image: docker.io/koenkk/zigbee2mqtt:2.14.2 # {"$imagepolicy": "flux-system:zigbee2mqtt"}
+          image: docker.io/koenkk/zigbee2mqtt:2.14.3 # {"$imagepolicy": "flux-system:zigbee2mqtt"}
           ports:
             - name: http
               containerPort: 8080
