@@ -216,6 +216,16 @@ spec:
         size: 50Gi
         storageClass: longhorn
 
+    # Primer 1.1's tool calling, with the chart's own search server: mcp-searxng
+    # and a SearXNG beside it. Queries go out to public engines through the
+    # cluster's egress, which nothing here restricts. Every call is shown to
+    # whoever asked and runs only if they approve it. qwen3.5-4b can ask for
+    # one because its llama.cpp runs with --jinja.
+    tools:
+      enabled: true
+      search:
+        enabled: true
+
     workers:
       parse:
         modelCache:
