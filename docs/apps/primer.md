@@ -107,11 +107,17 @@ Laptop (Ampere, SM86) and a Quadro T1000 (Turing, SM75). The device plugin hands
 out whole cards, so **two GPU models is the hard ceiling** — a third GPU deployment
 does not run slowly, it sits `Pending` forever.
 
-Both cards are therefore spoken for: Qwen3.5-4B has the A2000 and Ministral
-reasoning has the T1000. Qwen3.5-9B runs on CPU on `talos-6t5-q1d`, which has
-room for its 8Gi request. It uses one request slot and an 8k context to bound
-memory use; responses will be slower than on the GPU models. vLLM remains
+Both cards are therefore spoken for: Primer's Lab has the A2000, for
+Qwen3-1.7B in bf16 (about 3.4GB), and Qwen3.5-4B has the T1000. Lab loads its
+model with transformers rather than llama.cpp, so it cannot share a card with
+a llama-server. Qwen3.5-9B and Ministral reasoning run on CPU on
+`talos-6t5-q1d`, which has 16 cores and 64GB. They use one request slot each
+to bound memory use, and answer more slowly than the GPU model. vLLM remains
 scaled to zero.
+
+Qwen3.5-4B is also what builds Primer's knowledge graph: with no extraction
+model named, the chart extracts with the chat model, one call per passage as
+a document is indexed.
 
 Another GPU model means taking a card from one of these two. Primer can also
 reach hosted or self-hosted providers configured from its settings page.

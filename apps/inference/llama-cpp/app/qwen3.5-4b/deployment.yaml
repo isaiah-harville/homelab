@@ -22,8 +22,10 @@ spec:
       # as its own configuration. Off for the same reason vLLM has it off:
       # the next name collision would be found at 3am rather than here.
       enableServiceLinks: false
+      # On the T1000 so Primer's Lab can have the A2000 to itself: Lab loads
+      # its research model with transformers and needs the whole card.
       nodeSelector:
-        nvidia.com/gpu.product: NVIDIA-RTX-A2000-Laptop-GPU
+        nvidia.com/gpu.product: Quadro-T1000
       containers:
         - name: llama-server
           image: ghcr.io/ggml-org/llama.cpp:server-cuda
@@ -40,7 +42,7 @@ spec:
             - --jinja
             # Thinking is on by default in this model's template, and at
             # ~6.5 tok/s on the throttled A2000 a bare "hi" spent ~85s
-            # reasoning. A request can turn it back on with
+            # reasoning; the T1000 is no faster. A request can turn it back on with
             # chat_template_kwargs: {"enable_thinking": true}.
             - --chat-template-kwargs
             - '{"enable_thinking":false}'

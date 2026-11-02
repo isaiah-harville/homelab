@@ -18,11 +18,14 @@ spec:
         app: llama-ministral-3b-reasoning
     spec:
       enableServiceLinks: false
+      # On CPU, beside qwen3.5-9b: the two 4GB cards are taken by qwen3.5-4b
+      # (the T1000) and Primer's Lab (the A2000), and this is the model
+      # least used of the three.
       nodeSelector:
-        nvidia.com/gpu.product: Quadro-T1000
+        kubernetes.io/hostname: talos-6t5-q1d
       containers:
         - name: llama-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda
+          image: ghcr.io/ggml-org/llama.cpp:server
           args:
             - --host
             - "0.0.0.0"
@@ -44,7 +47,7 @@ spec:
             - deepseek
             - --jinja
             - -ngl
-            - "all"
+            - "0"
             - -c
             - "16384"
             - -ctk
@@ -78,7 +81,6 @@ spec:
               cpu: "1"
               memory: 2Gi
             limits:
-              nvidia.com/gpu: 1
               memory: 8Gi
           volumeMounts:
             - name: models
