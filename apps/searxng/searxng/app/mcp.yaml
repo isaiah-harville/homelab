@@ -1,0 +1,113 @@
+---
+# An MCP server over the SearXNG beside it, so Primer's Chat can search the
+# web as a tool. Chat speaks MCP only; it cannot call SearXNG's JSON API
+# itself. Streamable HTTP at /mcp on port 3000.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-searxng
+  labels:
+    app: mcp-searxng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-searxng
+  template:
+    metadata:
+      labels:
+        app: mcp-searxng
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp
+          image: docker.io/isokoliuk/mcp-searxng:2.8.1
+          env:
+            - name: SEARXNG_URL
+              value: http://searxng:8080
+            # It binds to localhost unless told otherwise, which in a pod
+            # means nothing can reach it.
+            - name: MCP_HTTP_HOST
+              value: 0.0.0.0
+            - name: MCP_HTTP_PORT
+              value: "3000"
+            # web_url_read fetches whatever URL the model names. Stated
+            # rather than left to the default so it never reads a cluster
+            # address on a model's say-so.
+            - name: MCP_HTTP_ALLOW_PRIVATE_URLS
+              value: "false"
+          ports:
+            - name: mcp
+              containerPort: 3000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: mcp
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-searxng
+spec:
+  selector:
+    app: mcp-searxng
+  ports:
+    - name: mcp
+      port: 3000
+      targetPort: mcp
+---
+# The server has no authentication: Chat's tool configuration has no field
+# for a token. So only Primer's Chat pods may reach it. Selects this pod
+# alone; SearXNG itself stays open to whatever already uses it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-searxng-from-primer-chat
+spec:
+  podSelector:
+    matchLabels:
+      app: mcp-searxng
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: primer
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: primer
+              app.kubernetes.io/component: chat
+      ports:
+        - port: 3000
+          protocol: TCP
