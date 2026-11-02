@@ -18,7 +18,7 @@ spec:
   chart:
     spec:
       chart: primer
-      version: ">=0.1.0 <1.0.0"
+      version: ">=1.0.0 <2.0.0"
       sourceRef:
         kind: HelmRepository
         name: primer
@@ -128,10 +128,13 @@ spec:
         baseUrl: http://primer-embeddings.primer.svc.cluster.local:8080/v1
         model: Qwen/Qwen3-Embedding-0.6B
         # Must match the model. Changing either invalidates every stored
-        # vector and forces a full reindex - and more than that, the pgvector
-        # column is fixed at creation and the Haystack integration will not
-        # rewrite it, so `vectors.chunks` has to be dropped and rebuilt.
+        # vector and forces a full reindex.
         dimensions: 1024
+        # The cluster runs its own TEI (embeddings.yaml), pinned to the ONNX
+        # export that runs at usable speed on these CPUs. The chart refuses a
+        # baseUrl while its own server is on, so turn that one off.
+        bundled:
+          enabled: false
 
       # A cross-encoder reads the question and a passage together, which a
       # vector search cannot: its two embeddings were made without knowing
@@ -146,6 +149,9 @@ spec:
         # Measured at 0.17-0.27s for ten passages on this deployment, so a
         # shortlist of twenty costs well under a second per question.
         candidates: 20
+        # reranker.yaml, for the same reason as the embedder above.
+        bundled:
+          enabled: false
 
       # Passages scoring below this are dropped, even when that leaves an
       # answer with nothing behind it - which is the point. Before this, a
@@ -162,8 +168,16 @@ spec:
       # Qwen3-Embedding runs about 0.19 to 0.69 - so the two move together.
       minScore: "0.02"
 
+    # Primer 1.0 stores vectors in Qdrant only. This is the chart's own
+    # Qdrant, reachable only from Retrieval. It holds embeddings, not
+    # documents, so losing it costs a reindex, not a library. The old
+    # pgvector schema stays in Postgres until it is dropped by hand once
+    # every library has been reindexed: `DROP SCHEMA vectors CASCADE;`.
     vectorStore:
-      kind: pgvector
+      qdrant:
+        persistence:
+          size: 20Gi
+          storageClass: longhorn
 
     workers:
       parse:

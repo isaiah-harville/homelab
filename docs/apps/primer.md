@@ -10,9 +10,11 @@ in `apps/primer/primer/app/` exists to supply those:
 
 | Piece | Where it comes from |
 | --- | --- |
-| PostgreSQL + pgvector | `postgres.yaml` — CNPG cluster, pgvector as an ImageVolume extension |
+| PostgreSQL | `postgres.yaml` — CNPG cluster |
+| Vectors | The chart's bundled Qdrant, on a 20Gi Longhorn volume |
 | RabbitMQ | `rabbitmq.yaml` — `RabbitmqCluster`, three nodes for quorum queues |
 | Embeddings | `embeddings.yaml` — Text Embeddings Inference on CPU, `Qwen3-Embedding-0.6B` |
+| Reranker | `reranker.yaml` — Text Embeddings Inference on CPU, `bge-reranker-base` |
 | Chat models | `apps/inference/llama-cpp/app/<model>`, one llama.cpp deployment each, fronted by `vllm-router` |
 | Source objects | SeaweedFS bucket `primer-sources` |
 | Identity | Authentik OIDC, via the chart's own `oauth2-proxy` |
@@ -75,11 +77,28 @@ The Postgres URL is not managed here at all — CNPG generates
 
 ## Chart version
 
-The chart is pre-1.0 and published from this repository's own release tags, so
-the `HelmRelease` tracks all of `0.x` rather than a single minor. A chart that
-fails to install is rolled back by the release's own remediation, which is a
-better failure than the deployment quietly sitting on a stale version because
-the next tag happened to bump the minor.
+The chart is published from Primer's own release tags, and the `HelmRelease`
+tracks all of `1.x` rather than a single minor. A chart that fails to install
+is rolled back by the release's own remediation, which is a better failure
+than the deployment quietly sitting on a stale version because the next tag
+happened to bump the minor. A new major is a deliberate edit to the range,
+after reading Primer's upgrade notes.
+
+The chart ships its own embedding and reranking servers. Both are turned off
+here (`bundled.enabled: false`) in favour of `embeddings.yaml` and
+`reranker.yaml`, which pin the ONNX exports that run at usable speed on these
+CPUs.
+
+### Moving from 0.x to 1.0
+
+Primer 1.0 stores vectors in Qdrant only, so the libraries are empty to search
+until they are rebuilt. After the release is upgraded:
+
+1. Reindex each library: `POST /api/v1/libraries/{id}/documents/reindex`, or
+   the reindex action on the library page.
+2. Once every library answers again, drop the old vectors from Postgres:
+   `DROP SCHEMA vectors CASCADE;`. The CNPG image can keep loading pgvector
+   until then; nothing in Primer uses it.
 
 ## GPU capacity
 
@@ -112,19 +131,11 @@ Two consequences of the hardware are worth knowing before changing a model:
 `Qwen3-Embedding-0.6B` is 1024-dimensional, and the `HelmRelease` pins
 `inference.embeddings.dimensions: 1024` to match.
 
-Changing the model, or the number, is not a config change. Retrieval builds
-its pgvector store with `recreate_table=False`, so the `vectors.chunks`
-column keeps whatever width it was created with and the new vectors simply do
-not fit it. A model change is therefore:
+Changing the model, or the number, is not a config change. Every stored
+vector was made by the old model and is the old width, so a model change is:
 
 1. Change `inference.embeddings.model` and `dimensions` together.
-2. `DROP TABLE vectors.chunks` — the Haystack integration recreates it at the
-   new width on first use.
-3. Rebuild every document: `POST /api/v1/documents/{id}/reindex`, which
-   builds a new generation per document.
-
-Search returns nothing between steps 2 and 3. There is no library-wide
-reindex endpoint yet, so step 3 is per document.
+2. Reindex every library: `POST /api/v1/libraries/{id}/documents/reindex`.
 
 The model runs on CPU because both GPUs are held by the chat models, and it
 is roughly 18x the parameters of the `bge-small-en-v1.5` it replaced — so
