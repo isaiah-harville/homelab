@@ -4,6 +4,11 @@ metadata:
   name: primer-embeddings
   labels:
     app: primer-embeddings
+  annotations:
+    # The API server keeps the rollingUpdate block it defaulted, so the
+    # switch to Recreate below is refused as invalid. Forcing lets Flux
+    # replace the Deployment when an apply is refused rather than stall.
+    kustomize.toolkit.fluxcd.io/force: enabled
 spec:
   replicas: 1
   # The model cache is a ReadWriteOnce Longhorn volume. A rolling update
