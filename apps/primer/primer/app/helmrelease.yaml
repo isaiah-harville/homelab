@@ -5,6 +5,10 @@ metadata:
   name: primer
 spec:
   interval: 30m
+  # Helm's default of five minutes covers the hooks and every image pull.
+  # Lab's CUDA image is several gigabytes, and a first pull of it outlasts
+  # that, so the upgrade rolled back while the pods were still coming up.
+  timeout: 15m
   install:
     crds: CreateReplace
     remediation:
