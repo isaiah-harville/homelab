@@ -6,6 +6,12 @@ metadata:
     app: primer-embeddings
 spec:
   replicas: 1
+  # The model cache is a ReadWriteOnce Longhorn volume. A rolling update
+  # starts the new pod before stopping the old one, and when the scheduler
+  # puts it on another node it waits forever for a volume the old pod still
+  # holds. Recreate stops the old pod first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: primer-embeddings
