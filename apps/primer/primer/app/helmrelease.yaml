@@ -201,21 +201,26 @@ spec:
         timeoutSeconds: 300
 
     # Lab loads a small open model itself, with transformers, to look inside
-    # it. Qwen3-1.7B in bf16 is about 3.4GB, which is why it has the A2000
-    # to itself: qwen3.5-4b moved to the T1000 to make room. The SAEs are
-    # the chart default, Qwen-Scope, about 15GB in the weights volume and
-    # licensed for research use. Attribution graphs stay off: Qwen3-4B's
-    # transcoders are about 60GB and the model does not fit this card.
+    # it. Qwen3-4B is about 8GB in bf16, twice the A2000's 4GB, so it runs
+    # on CPU: slow, a few tokens a second, but whole. Qwen3.5-4B, the chat
+    # model, is the one people want here, but it is a vision-language model
+    # and Lab's loader takes text-only ones. Qwen publishes no SAE for
+    # Qwen3-4B, so feature reading is off for it; the 1.7B SAEs stay mapped
+    # for anyone who picks Qwen3-1.7B. Attribution graphs stay off: Qwen3-4B's
+    # transcoders are about 60GB.
     lab:
       enabled: true
       model:
         source: hub
-        repository: Qwen/Qwen3-1.7B
-      device: cuda
+        repository: Qwen/Qwen3-4B
+      device: cpu
       dtype: bfloat16
-      gpu: 1
-      nodeSelector:
-        nvidia.com/gpu.product: NVIDIA-RTX-A2000-Laptop-GPU
+      gpu: 0
+      # Requested rather than pinned to a node, so it lands on one of the
+      # two with 64GB and leaves the A2000 free.
+      resources:
+        requests: { cpu: "4", memory: 20Gi }
+        limits: { memory: 20Gi }
       persistence:
         size: 50Gi
         storageClass: longhorn
