@@ -103,7 +103,7 @@ spec:
         # Install the pinned release (checksum-verified) into the PVC; bump
         # both values together to upgrade.
         - name: install-auth-oidc
-          image: ghcr.io/home-assistant/home-assistant:2026.10.4 # {"$imagepolicy": "flux-system:home-assistant"}
+          image: ghcr.io/home-assistant/home-assistant:2026.11.0 # {"$imagepolicy": "flux-system:home-assistant"}
           command:
             - python3
             - -c
@@ -128,7 +128,7 @@ spec:
               mountPath: /config
       containers:
         - name: home-assistant
-          image: ghcr.io/home-assistant/home-assistant:2026.10.4 # {"$imagepolicy": "flux-system:home-assistant"}
+          image: ghcr.io/home-assistant/home-assistant:2026.11.0 # {"$imagepolicy": "flux-system:home-assistant"}
           ports:
             - name: http
               containerPort: 8123
