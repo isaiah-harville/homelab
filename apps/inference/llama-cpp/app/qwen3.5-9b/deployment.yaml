@@ -31,7 +31,10 @@ spec:
             - "8080"
             - -hf
             - unsloth/Qwen3.5-9B-GGUF:Q4_K_M
-            - --no-mmproj
+            # With its vision projector, which -hf fetches beside the model:
+            # this is the model Primer asks to describe the figures in a
+            # document, on CPU so that indexing never waits behind chat on
+            # the T1000.
             - --alias
             - qwen3.5-9b
             - --jinja

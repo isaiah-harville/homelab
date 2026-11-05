@@ -172,6 +172,20 @@ spec:
       # Qwen3-Embedding runs about 0.19 to 0.69 - so the two move together.
       minScore: "0.02"
 
+      # Primer 1.2 asks a vision model what each figure in a document shows,
+      # so a chart can be found by what it says rather than its axis labels.
+      # Qwen3.5-9B on CPU, with its projector loaded, rather than the chat
+      # model: one figure takes it a minute or more, and the T1000's one
+      # request slot is better spent on chat than on a large upload.
+      vision:
+        baseUrl: http://vllm-router.inference.svc.cluster.local:8001/v1
+        model: qwen3.5-9b
+        existingSecret: vllm-api-key
+        apiKeyKey: VLLM_API_KEY
+        # One request slot (-np 1), and a CPU that reads an image slowly.
+        concurrency: 1
+        timeoutSeconds: 300
+
     # Primer 1.0 stores vectors in Qdrant only. This is the chart's own
     # Qdrant, reachable only from Retrieval. It holds embeddings, not
     # documents, so losing it costs a reindex, not a library. The old

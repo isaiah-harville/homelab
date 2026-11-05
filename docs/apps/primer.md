@@ -119,6 +119,11 @@ Qwen3.5-4B is also what builds Primer's knowledge graph: with no extraction
 model named, the chart extracts with the chat model, one call per passage as
 a document is indexed.
 
+Qwen3.5-9B describes the figures in each document as it is indexed, so its
+llama-server loads the vision projector the others skip (`--no-mmproj`). It is
+on CPU so that a large upload does not hold the T1000's one request slot that
+chat needs. Expect a minute or more a figure.
+
 Another GPU model means taking a card from one of these two. Primer can also
 reach hosted or self-hosted providers configured from its settings page.
 
