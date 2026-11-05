@@ -201,18 +201,18 @@ spec:
         timeoutSeconds: 300
 
     # Lab loads a small open model itself, with transformers, to look inside
-    # it. Qwen3-4B is about 8GB in bf16, twice the A2000's 4GB, so it runs
-    # on CPU: slow, a few tokens a second, but whole. Qwen3.5-4B, the chat
-    # model, is the one people want here, but it is a vision-language model
-    # and Lab's loader takes text-only ones. Qwen publishes no SAE for
-    # Qwen3-4B, so feature reading is off for it; the 1.7B SAEs stay mapped
-    # for anyone who picks Qwen3-1.7B. Attribution graphs stay off: Qwen3-4B's
-    # transcoders are about 60GB.
+    # it. Qwen3.5-4B is a vision-language model, which Lab loads whole from
+    # 1.2.0, vision tower included: about 10GB in bf16, more than twice the
+    # A2000's 4GB, so it runs on CPU: slow, a few tokens a second, but whole.
+    # Qwen publishes no SAE for the 4B, so feature reading is off for it; the
+    # chart's defaults still map SAEs for anyone who picks Qwen3-1.7B or
+    # Qwen3.5-2B. Three in four of its layers use linear attention, so
+    # attn_out is only readable on the rest. Attribution graphs stay off.
     lab:
       enabled: true
       model:
         source: hub
-        repository: Qwen/Qwen3-4B
+        repository: Qwen/Qwen3.5-4B
       device: cpu
       dtype: bfloat16
       gpu: 0
