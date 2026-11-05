@@ -7,12 +7,12 @@ type: Opaque
 data:
     username: ENC[AES256_GCM,data:Z1y9kQ2+ftQ=,iv:BnLgH9KJoohhshvs/87SYUzz8VXiWEvdr7AS5XhzKGc=,tag:Fi3Y8fJ1Ub2eJnjrEkmg8g==,type:str]
     password: ENC[AES256_GCM,data:16ctD6rslDHtGWj12lnepAP9WPFqCzuGcjehH1+QLACkOjHrxnjAdFRJOVznYDhh4vvEtz9VsUadO8Ax,iv:ejCmRCLgaILgGFTfE43Z9JVuLoUDF1mZEXH7RmqcTiY=,tag:scWjXVQkH9WOHO8Ql9/4FQ==,type:str]
-    host: ENC[AES256_GCM,data:mxhxYb1AYwNQJcUODHCiqS+79rCngnXiIqAug/R3twJ9h/SBGavSLs3CbJ+rGX5euLCS+Q==,iv:v1jR8OJb18z2fa0sBye5DFkRIWAbrqb74ZPtq5O44H0=,tag:0DFFEwfiXVLfCFBYvhEZsA==,type:str]
+    host: ENC[AES256_GCM,data:q8AJbCH9snL09rcGGJM/tNrQkc9IsCkGbelRamCfzYcylWtsgERfjva/VTzHTCs7MteYUMmITJA=,iv:voOo6aBz7lltuVt5DQT0oapNjV0MwrkGo35AxaRw31o=,tag:rdBphic2kyWUHmXqmp4iQw==,type:str]
     port: ENC[AES256_GCM,data:x7VWsPPChsg=,iv:iH3pwt+nEvJnPnppCG55ppUF08BBcTPwc+kJwhctPhE=,tag:snNmQvrTkuP+PhmEOotKcw==,type:str]
     provider: ENC[AES256_GCM,data:4OhS4zmDwPYjD+Bx,iv:aG7F3uRv4JJlaEsgpVkFyUGG4OEodBLvopeR5a4Ctkc=,tag:FgkAthNfejeGTGHuHnvTRA==,type:str]
     type: ENC[AES256_GCM,data:sFeCdRpDpuxMj+MU,iv:dMvIyDtChEVyjQKfFkv44Z+ysAZH1lpK/BSlQkxb/2o=,tag:P52CMS6NhOPD3ozAfccp6Q==,type:str]
     default_user.conf: ENC[AES256_GCM,data:X4LYuFfkqfbBJVJac7uTHjRRedCstfEoEo5Dd+o0ocvrwIGYntUvKcNVjk5++fno+X9yVgrupBvIdZ5eq+wOooaf7D0uzsYS+lE0tC4N5tsM11g+FKIZ0Riq8MrsmFmWxWwctS3vHSBHFgyV,iv:5+oLsT0WhBr7KTX6SeY2utj8Kpd/YlzX1cIidNWr5Y0=,tag:904K1rgXdgPuTyp+1SvVmQ==,type:str]
-    broker-url: ENC[AES256_GCM,data:CM59rnylo1KywCRVPtYG1U8dDBDRyzUbZ/2LLlbKP1Dq9rZGfm8NHepHM8KLKocRnctOeto6ViG4od03E7wW1jGVqUvB0PKi4fGk78fOQqkDbtpPjTwJkpKRcWTCMqC+XPRqBTho+jGOJNO92dwKTG6bKcSYp8pkbGUnS/E+vTkzIMnHPTYhYciL95c=,iv:bxEjFr50bVYXrHsnky30rcETwf9qML8sJSAjfkQEzko=,tag:2CtFmRzfT92cji62HRqqow==,type:str]
+    broker-url: ENC[AES256_GCM,data:WCn5P6J9e9tia/23pQe+C15+V300mfkSgpTwcqv6EDZ63nMgBjrTLrsKrBO0fzw0oRpBY/b8tTv8ZCG/wxZVO7UiBWYNKXEjaM5SWoPVhg4plqsRsr2NDx5kY3eV0owFtdVYYDyQpSCoKmd1g+Q2VUo+ykdlH+xBnj3NuZiJ+VOA8FEHBz0JWx/igqU=,iv:VOUrwRiy9RbWRdWBMDG6cEr+RY3OLXMkSo/0dllpsCM=,tag:mAcwXrMsNvHXS8xspG35KA==,type:str]
 sops:
     age:
         - enc: |
@@ -25,6 +25,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-09-01T18:55:22Z"
-    mac: ENC[AES256_GCM,data:tbfKHL9dKu0p2cBgHIfTJbu10ADGujSV3mc10gujGfEXi19dfZSnrN+dE3243oWlEZuif8Ngwxa/8QRsk5COb32vjge4S8eAyOq7QqCL0MtIr/T7klInCOsYQ1Wab7AtxZ4Fca05VvyiV4UpjC9AP0AhUBT1bOxtYQInazQBZpw=,iv:y25gLYxieUnQeK+IcZ76RntxhO7ZJy+Kov6Dk/10FNw=,tag:yUCDTfdaR7HGBfo+VtngAQ==,type:str]
+    lastmodified: "2026-11-05T18:37:44Z"
+    mac: ENC[AES256_GCM,data:hMh1nTP0fgpzKrfLG+O/oxP5+vJJea9Z2bcd/PkuiS7usKsBQfB4eOMq2qnsArIhancZEgVtVRa/T19zc5VQPhHItT6Q8MHvTdGc7nkdoMigmUU9vLCmfMHMCJIToHYFJWmWmWGtcCI4qze662sIXrkThpFNumYy9rxTY7VCDyU=,iv:PQ09Z3ftIByzIU+aVnaQ5QBIiUujMKUQFjaipeSAhUY=,tag:B9xPF2BY3BqG/bLlqZgK/A==,type:str]
     version: 3.13.3
