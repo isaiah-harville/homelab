@@ -162,7 +162,7 @@ back changes to the rest.
 
 ## Apps from external repos
 
-Some apps (`swing-thoughts`, `harville-labs/website`) are reconciled from their **own GitHub
+Some apps (`swing-thoughts`, `innerswings-api`, `harville-labs/website`) are reconciled from their **own GitHub
 repositories**. Their `app/` holds:
 
 - `gitrepository.yaml` — a Flux `GitRepository` (in `flux-system`) for the app's repo.

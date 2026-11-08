@@ -1,0 +1,86 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: innerswings-api-limits
+  namespace: swing-thoughts
+spec:
+  # The app makes a few requests per score entry and holds one event stream per
+  # live round; this is far above that and still stops scraping and handle
+  # enumeration.
+  rateLimit:
+    average: 300
+    period: 1m
+    burst: 60
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: innerswings-api-sign-in-limits
+  namespace: swing-thoughts
+spec:
+  # Sign in with Apple: a person needs a handful per hour.
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+# Traefik's websecure entrypoint has no write timeout, so the round event
+# streams (server-sent events) stay open as long as the client keeps them.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: innerswings-api
+  namespace: swing-thoughts
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: swing-thoughts-innerswings-api-limits@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Public
+    gethomepage.dev/name: InnerSwings API
+    gethomepage.dev/description: Accounts, friends, and live shared rounds
+    gethomepage.dev/href: https://api.innerswings.com/healthz
+    gethomepage.dev/siteMonitor: https://api.innerswings.com/healthz
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [api.innerswings.com]
+  rules:
+    - host: api.innerswings.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: innerswings-api
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: innerswings-api-sign-in
+  namespace: swing-thoughts
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: swing-thoughts-innerswings-api-sign-in-limits@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [api.innerswings.com]
+  rules:
+    - host: api.innerswings.com
+      http:
+        paths:
+          - path: /v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: innerswings-api
+                port:
+                  name: http

@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - swing-thoughts/ks.yaml
+  - innerswings-api/ks.yaml

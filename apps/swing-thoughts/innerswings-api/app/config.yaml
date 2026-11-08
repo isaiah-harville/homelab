@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: innerswings-api-config
+  namespace: swing-thoughts
+data:
+  # Apple identity tokens must name this bundle ID as their audience.
+  APPLE_BUNDLE_ID: com.isaiah-harville.SwingThoughts
+  APPLE_TEAM_ID: PUMV3ZMP9G

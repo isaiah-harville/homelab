@@ -1,0 +1,24 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # The API's Deployment, Service, and NetworkPolicy, from the SwingThoughts
+  # repo (read through the `swing-thoughts` GitRepository). CI there bumps the
+  # image tag in deploy/k8s/kustomization.yaml on every build of main.
+  # The `innerswings-api` Kustomization that applies this file also owns the
+  # Ingress, Postgres cluster, and configuration.
+  name: innerswings-api-upstream
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./deploy/k8s
+  prune: true
+  targetNamespace: swing-thoughts
+  wait: true
+  timeout: 3m
+  sourceRef:
+    kind: GitRepository
+    name: swing-thoughts
+  dependsOn:
+    - name: infra
+    - name: certificates
