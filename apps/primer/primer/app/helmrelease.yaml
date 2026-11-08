@@ -233,8 +233,8 @@ spec:
       # Requested rather than pinned to a node, so it lands on one of the
       # two with 64GB and leaves the A2000 free.
       resources:
-        requests: { cpu: "4", memory: 20Gi }
-        limits: { memory: 20Gi }
+        requests: {cpu: "4", memory: 20Gi}
+        limits: {memory: 20Gi}
       persistence:
         size: 50Gi
         storageClass: longhorn
