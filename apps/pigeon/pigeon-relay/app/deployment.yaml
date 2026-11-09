@@ -47,7 +47,7 @@ spec:
               mountPath: /var/lib/pigeon-relay
       containers:
         - name: pigeon-relay
-          image: ghcr.io/isaiah-harville/pigeon/relay:v0.4.1 # {"$imagepolicy": "flux-system:pigeon-relay"}
+          image: ghcr.io/isaiah-harville/pigeon/relay:v0.4.2 # {"$imagepolicy": "flux-system:pigeon-relay"}
           imagePullPolicy: IfNotPresent
           env:
             - name: PIGEON_RELAY_ADDR
