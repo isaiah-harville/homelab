@@ -248,6 +248,17 @@ manager), **metallb-system** (speaker: hostNetwork + NET_RAW), **monitoring**
 (node-exporter: hostNetwork/hostPath), **home-automation** (Home Assistant and OTBR:
 hostNetwork), **media** (gluetun VPN sidecars: NET_ADMIN). Add the label if you introduce another
 privileged workload's namespace, or Talos baseline will block its pods.
+Every other namespace carries `enforce: baseline` and `warn`/`audit: restricted`,
+so a new workload that falls short of restricted shows up in API server warnings
+and audit logs. Pods set `seccompProfile: RuntimeDefault` at the pod level.
+
+## Network policies
+
+CloudNativePG pods (`postgres.networkpolicy.yaml` beside each cluster) accept
+traffic only from their namespace, `cnpg-system` and `monitoring`. SeaweedFS
+(`apps/seaweedfs/seaweedfs/app/networkpolicy.yaml`) accepts S3 only from an
+allow-listed set of namespaces. **A new S3 client's namespace must be added to
+that list**, or its requests time out. There is no cluster-wide default-deny.
 
 ## Secrets (SOPS + age)
 
