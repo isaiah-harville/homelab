@@ -4,6 +4,9 @@ kind: Namespace
 metadata:
   name: harville-labs
   labels:
+    # The website's utils VPN needs NET_ADMIN, which baseline forbids (c94a597).
+    # Privileged covers every pod here, so keep other workloads out of this
+    # namespace.
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
