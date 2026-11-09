@@ -1,3 +1,4 @@
+---
 # The Postgres backups and the Omni archives live in SeaweedFS, which runs on
 # this cluster's own storage: a cluster-wide loss would take the backups with
 # it. Mirror the bucket to Cloudflare R2 every night, one way. `sync` also
@@ -28,7 +29,7 @@ spec:
             runAsGroup: 1000
           containers:
             - name: sync
-              image: docker.io/rclone/rclone:1.76.0 # {"$imagepolicy": "flux-system:rclone"}
+              image: docker.io/rclone/rclone:1.76.0  # {"$imagepolicy": "flux-system:rclone"}
               args:
                 - sync
                 - seaweedfs:backups
