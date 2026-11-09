@@ -32,6 +32,29 @@ Avoid stacking two independent replication layers without a reason. Services
 that already store their data on Longhorn generally use a single application
 replica unless they need application-level availability semantics.
 
+## Replica counts
+
+New volumes get three replicas from `longhorn`; `longhorn-database` and
+`longhorn-media` use fewer. Volumes that hold nothing but re-downloadable data
+run at **two** replicas, set on the Longhorn `Volume` object because a PVC
+cannot change StorageClass in place:
+
+- model caches: `primer-lab-models`, `primer-model-cache`,
+  `primer-reranker-model-cache`, `primer-embeddings-model-cache`,
+  `llama-*-models`, `vllm-models`;
+- `orion-frames`.
+
+The setting lives in the cluster, not in Git. A volume recreated from its PVC
+comes back at three replicas, so repeat the change for it:
+
+```bash
+kubectl -n longhorn-system patch volumes.longhorn.io <pv-name> \
+  --type merge -p '{"spec":{"numberOfReplicas":2}}'
+```
+
+Two replicas still survive the loss of any one node. Don't lower stateful data
+(Qdrant, Neo4j, Prometheus, RabbitMQ) the same way.
+
 ## Recovery points
 
 The default recurring-job group applies these jobs to volumes that do not have
