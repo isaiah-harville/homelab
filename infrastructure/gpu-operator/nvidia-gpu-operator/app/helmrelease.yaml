@@ -32,14 +32,30 @@ spec:
     hostPaths:
       driverInstallDir: /usr/local
     devicePlugin:
+      resources:
+        requests:
+          memory: 32Mi
+        limits:
+          memory: 128Mi
       env:
         - name: NVIDIA_CDI_HOOK_PATH
           value: /usr/local/bin/nvidia-cdi-hook
     nfd:
       enabled: true
+    gfd:
+      resources:
+        requests:
+          memory: 64Mi
+        limits:
+          memory: 192Mi
     migManager:
       enabled: false
     dcgmExporter:
+      resources:
+        requests:
+          memory: 384Mi
+        limits:
+          memory: 1408Mi
       serviceMonitor:
         enabled: true
         additionalLabels:

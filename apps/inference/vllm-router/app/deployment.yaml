@@ -52,7 +52,9 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: 256Mi
+              memory: 1Gi
+            limits:
+              memory: 2560Mi
         - name: auth-proxy
           image: docker.io/library/nginx:1.31.8-alpine # {"$imagepolicy": "flux-system:nginx"}
           ports:
@@ -76,6 +78,8 @@ spec:
             requests:
               cpu: 10m
               memory: 32Mi
+            limits:
+              memory: 128Mi
       volumes:
         - name: auth-proxy
           configMap:

@@ -24,6 +24,11 @@ spec:
         name: headlamp
         namespace: flux-system
   values:
+    resources:
+      requests:
+        memory: 32Mi
+      limits:
+        memory: 128Mi
     config:
       watchPlugins: true
       oidc:
@@ -38,6 +43,11 @@ spec:
       create: false
     pluginsManager:
       enabled: true
+      resources:
+        requests:
+          memory: 96Mi
+        limits:
+          memory: 384Mi
       version: 0.1.1
       configContent: |
         plugins:

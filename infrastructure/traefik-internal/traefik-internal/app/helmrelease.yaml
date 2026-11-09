@@ -27,6 +27,11 @@ spec:
         name: traefik
         namespace: flux-system
   values:
+    resources:
+      requests:
+        memory: 64Mi
+      limits:
+        memory: 192Mi
     metrics:
       prometheus:
         addRoutersLabels: true

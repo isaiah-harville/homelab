@@ -27,3 +27,46 @@ spec:
   values:
     crds:
       enabled: true
+    controller:
+      resources:
+        requests:
+          memory: 96Mi
+        limits:
+          memory: 320Mi
+    frr-k8s:
+      frrk8s:
+        resources:
+          requests:
+            memory: 96Mi
+          limits:
+            memory: 320Mi
+        frr:
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        reloader:
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        frrMetrics:
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+        frrStatus:
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+    speaker:
+      resources:
+        requests:
+          memory: 32Mi
+        limits:
+          memory: 128Mi

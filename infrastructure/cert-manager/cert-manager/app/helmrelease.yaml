@@ -26,3 +26,20 @@ spec:
         namespace: flux-system
   values:
     installCRDs: true
+    resources:
+      requests:
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+    cainjector:
+      resources:
+        requests:
+          memory: 64Mi
+        limits:
+          memory: 192Mi
+    webhook:
+      resources:
+        requests:
+          memory: 32Mi
+        limits:
+          memory: 128Mi

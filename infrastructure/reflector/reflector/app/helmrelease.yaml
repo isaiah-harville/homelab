@@ -24,3 +24,9 @@ spec:
         kind: HelmRepository
         name: emberstack
         namespace: flux-system
+  values:
+    resources:
+      requests:
+        memory: 256Mi
+      limits:
+        memory: 1Gi

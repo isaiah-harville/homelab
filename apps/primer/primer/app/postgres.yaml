@@ -51,6 +51,8 @@ spec:
     requests:
       cpu: 100m
       memory: 512Mi
+    limits:
+      memory: 1Gi
   affinity:
     enablePodAntiAffinity: true
     topologyKey: kubernetes.io/hostname

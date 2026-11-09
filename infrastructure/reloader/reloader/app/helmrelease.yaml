@@ -24,6 +24,12 @@ spec:
         namespace: flux-system
   values:
     reloader:
+      deployment:
+        resources:
+          requests:
+            memory: 64Mi
+          limits:
+            memory: 192Mi
       # Roll any workload whose Secret or ConfigMap changes, with no
       # per-workload annotation. That covers chart-rendered Deployments too,
       # and reflected Secrets, which a SOPS-hash annotation can't reach.

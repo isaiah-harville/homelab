@@ -24,3 +24,9 @@ spec:
         kind: HelmRepository
         name: actions-runner-controller
         namespace: flux-system
+  values:
+    resources:
+      requests:
+        memory: 32Mi
+      limits:
+        memory: 128Mi
