@@ -9,3 +9,4 @@ resources:
   - ingress.yaml
   - backup-prune-cronjob.yaml
   - offsite-sync-cronjob.yaml
+  - networkpolicy.yaml

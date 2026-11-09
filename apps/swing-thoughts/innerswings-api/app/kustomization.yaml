@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - config.yaml
   - postgres.yaml
+  - postgres.networkpolicy.yaml
   - ingress.yaml
   - release.kustomization.yaml

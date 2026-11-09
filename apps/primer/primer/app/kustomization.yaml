@@ -5,6 +5,7 @@ resources:
   - primer-s3.sops.yaml
   - primer-rabbitmq.sops.yaml
   - postgres.yaml
+  - postgres.networkpolicy.yaml
   - rabbitmq.yaml
   - embeddings.yaml
   - reranker.yaml

@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - mlflow.sops.yaml
   - postgres.yaml
+  - postgres.networkpolicy.yaml
   - helmrelease.yaml
   - ingress.yaml

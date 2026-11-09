@@ -1,0 +1,62 @@
+---
+# SeaweedFS holds every database backup, so only known clients reach it. Pods in
+# its own namespace talk to each other freely (master, volume, filer, S3).
+# Everyone else gets the S3 port only; the admin UI is reachable through
+# traefik-internal alone. Add a client's namespace here when it starts using S3,
+# or its requests will time out.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: seaweedfs-ingress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-public
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: harville-labs
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: mlflow
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openvitae
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: primer
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: swing-thoughts
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: arc-runners
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - protocol: TCP
+          port: 8333
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+      ports:
+        - protocol: TCP
+          port: 23646
