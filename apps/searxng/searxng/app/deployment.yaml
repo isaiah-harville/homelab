@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: searxng
-          image: docker.io/searxng/searxng:2026.11.8-3a3dd15bf # {"$imagepolicy": "flux-system:searxng"}
+          image: docker.io/searxng/searxng:2026.11.9-57ff753ad # {"$imagepolicy": "flux-system:searxng"}
           ports:
             - name: http
               containerPort: 8080
