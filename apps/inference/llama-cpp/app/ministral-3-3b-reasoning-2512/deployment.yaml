@@ -23,6 +23,9 @@ spec:
       # least used of the three.
       nodeSelector:
         kubernetes.io/hostname: talos-6t5-q1d
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: llama-server
           image: ghcr.io/ggml-org/llama.cpp:server

@@ -72,6 +72,9 @@ spec:
                 configMapKeyRef:
                   name: zigbee2mqtt-adapter
                   key: serial_port
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: zigbee2mqtt
           image: docker.io/koenkk/zigbee2mqtt:2.14.3 # {"$imagepolicy": "flux-system:zigbee2mqtt"}

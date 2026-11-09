@@ -94,6 +94,8 @@ spec:
               subPath: widgets.yaml
               readOnly: true
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         fsGroup: 1000
         runAsGroup: 1000
         runAsNonRoot: true

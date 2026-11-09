@@ -103,6 +103,9 @@ spec:
           volumeMounts:
             - name: tun
               mountPath: /dev/net/tun
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: otbr
           image: docker.io/bnutzer/otbr-tcp:sha-a04da0c@sha256:881514caacf0829ffac7edca44f538010af0c098e9f817b939612e66a21f4004

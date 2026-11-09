@@ -17,6 +17,8 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
       initContainers:

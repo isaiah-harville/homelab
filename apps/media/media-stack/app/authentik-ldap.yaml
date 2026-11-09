@@ -12,6 +12,9 @@ spec:
       labels:
         app.kubernetes.io/name: authentik-ldap
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ldap
           image: ghcr.io/goauthentik/ldap:2026.8.5 # {"$imagepolicy": "flux-system:authentik-ldap"}

@@ -27,6 +27,9 @@ spec:
       # component whose name collides with one of its own variables would hit
       # exactly this again.
       enableServiceLinks: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vllm
           image: docker.io/vllm/vllm-openai:v0.33.0 # {"$imagepolicy": "flux-system:vllm"}

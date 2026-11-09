@@ -14,6 +14,9 @@ spec:
       labels:
         app: vllm-router
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vllm-router
           image: docker.io/lmcache/lmstack-router:v0.1.14 # {"$imagepolicy": "flux-system:lmstack-router"}

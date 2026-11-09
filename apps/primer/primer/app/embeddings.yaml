@@ -25,6 +25,9 @@ spec:
       labels:
         app: primer-embeddings
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: tei
           image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4 # {"$imagepolicy": "flux-system:text-embeddings-inference"}

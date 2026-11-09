@@ -61,6 +61,8 @@ spec:
     spec:
       enableServiceLinks: false
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsUser: 1883
         runAsGroup: 1883
         # Makes the 0440 password file and the persistence volume readable by

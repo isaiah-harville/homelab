@@ -22,6 +22,8 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull-secret
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         fsGroup: 65532
       initContainers:
         - name: own-relay-state

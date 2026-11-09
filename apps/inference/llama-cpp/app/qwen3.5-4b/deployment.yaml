@@ -26,6 +26,9 @@ spec:
       # its research model with transformers and needs the whole card.
       nodeSelector:
         nvidia.com/gpu.product: Quadro-T1000
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: llama-server
           image: ghcr.io/ggml-org/llama.cpp:server-cuda

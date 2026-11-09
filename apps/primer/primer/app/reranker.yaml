@@ -41,6 +41,9 @@ spec:
       labels:
         app: primer-reranker
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: tei
           # The same pinned version as the embedding server, for the same
