@@ -1,0 +1,13 @@
+---
+# The chart has no PDB option. Without one, draining both operator nodes at once
+# stops failover handling for every database in the cluster.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudnative-pg
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloudnative-pg
+      app.kubernetes.io/instance: cloudnative-pg
