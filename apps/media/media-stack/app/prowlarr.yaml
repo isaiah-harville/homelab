@@ -165,7 +165,7 @@ spec:
               mountPath: /pod-dns
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:2.7.0.5723-ls167 # {"$imagepolicy": "flux-system:prowlarr"}
+          image: lscr.io/linuxserver/prowlarr:2.7.0.5723-ls168 # {"$imagepolicy": "flux-system:prowlarr"}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
