@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: excalidraw
+  labels:
+    app: excalidraw
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: excalidraw
+  template:
+    metadata:
+      labels:
+        app: excalidraw
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: 1001
+      containers:
+        - name: backend
+          image: docker.io/zimengxiong/excalidash-backend:0.6.7
+          env:
+            - name: DATABASE_PROVIDER
+              value: sqlite
+            - name: DATABASE_URL
+              value: file:/app/prisma/dev.db
+            - name: PORT
+              value: "8000"
+            - name: NODE_ENV
+              value: production
+            - name: AUTH_MODE
+              value: local
+            - name: FRONTEND_URL
+              value: https://excalidraw.int.harville.dev
+            - name: TRUST_PROXY
+              value: "1"
+            - name: BACKUP_SCHEDULE
+              value: "0 0 4 * * *"
+            - name: BACKUP_DIR
+              value: /app/backups
+            - name: BACKUP_RETENTION_DAYS
+              value: "14"
+          volumeMounts:
+            - name: data
+              mountPath: /app/prisma
+              subPath: db
+            - name: data
+              mountPath: /app/backups
+              subPath: backups
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+            failureThreshold: 6
+        - name: frontend
+          image: docker.io/zimengxiong/excalidash-frontend:0.6.7
+          env:
+            - name: BACKEND_URL
+              value: 127.0.0.1:8000
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: excalidraw-data
