@@ -4,16 +4,17 @@ kind: Ingress
 metadata:
   name: excalidraw
   annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Excalidraw
     gethomepage.dev/description: Whiteboard and diagrams
     gethomepage.dev/group: Apps
     gethomepage.dev/icon: excalidraw.png
-    gethomepage.dev/href: https://excalidraw.int.harville.dev
+    gethomepage.dev/href: https://excalidraw.harville.dev
 spec:
-  ingressClassName: traefik-internal
+  ingressClassName: traefik-public
   rules:
-    - host: excalidraw.int.harville.dev
+    - host: excalidraw.harville.dev
       http:
         paths:
           - path: /
@@ -25,4 +26,4 @@ spec:
                   number: 8080
   tls:
     - hosts:
-        - excalidraw.int.harville.dev
+        - excalidraw.harville.dev

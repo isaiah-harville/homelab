@@ -35,9 +35,22 @@ spec:
             - name: NODE_ENV
               value: production
             - name: AUTH_MODE
-              value: local
+              value: oidc_enforced
             - name: FRONTEND_URL
-              value: https://excalidraw.int.harville.dev
+              value: https://excalidraw.harville.dev
+            - name: OIDC_PROVIDER_NAME
+              value: Authentik
+            - name: OIDC_ISSUER_URL
+              value: https://auth.harville.dev/application/o/excalidraw/
+            - name: OIDC_CLIENT_ID
+              value: excalidraw
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: excalidraw-oidc
+                  key: EXCALIDRAW_OIDC_CLIENT_SECRET
+            - name: OIDC_REDIRECT_URI
+              value: https://excalidraw.harville.dev/api/auth/oidc/callback
             - name: TRUST_PROXY
               value: "1"
             - name: BACKUP_SCHEDULE

@@ -9,6 +9,7 @@ resources:
   - ./secrets/books-oidc.yaml
   - ./secrets/cloudflare-smtp.yaml
   - ./secrets/config-backup-s3.yaml
+  - ./secrets/excalidraw-oidc.yaml
   - ./secrets/ghcr-pull.yaml
   - ./secrets/media-auth.yaml
   - ./secrets/mlflow-oidc.yaml
