@@ -40,6 +40,8 @@ spec:
         - secretRef:
             name: books-oidc
         - secretRef:
+            name: excalidraw-oidc
+        - secretRef:
             name: media-auth
       env:
         - name: MLFLOW_OIDC_CLIENT_SECRET

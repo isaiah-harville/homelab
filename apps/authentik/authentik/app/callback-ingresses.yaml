@@ -9,6 +9,7 @@ spec:
     - hosts:
         - isaiah.harville.dev
         - grafana.harville.dev
+        - excalidraw.harville.dev
   rules:
     - host: isaiah.harville.dev
       http:
@@ -21,6 +22,16 @@ spec:
                 port:
                   name: http
     - host: grafana.harville.dev
+      http:
+        paths:
+          - path: /outpost.goauthentik.io/
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  name: http
+    - host: excalidraw.harville.dev
       http:
         paths:
           - path: /outpost.goauthentik.io/
