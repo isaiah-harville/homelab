@@ -1,0 +1,28 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: excalidraw
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Excalidraw
+    gethomepage.dev/description: Whiteboard and diagrams
+    gethomepage.dev/group: Apps
+    gethomepage.dev/icon: excalidraw.png
+    gethomepage.dev/href: https://excalidraw.int.harville.dev
+spec:
+  ingressClassName: traefik-internal
+  rules:
+    - host: excalidraw.int.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - excalidraw.int.harville.dev
