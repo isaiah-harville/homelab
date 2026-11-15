@@ -24,7 +24,7 @@ spec:
         fsGroup: 1001
       containers:
         - name: backend
-          image: docker.io/zimengxiong/excalidash-backend:0.6.7
+          image: docker.io/zimengxiong/excalidash-backend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-backend"}
           env:
             - name: DATABASE_PROVIDER
               value: sqlite
@@ -86,7 +86,7 @@ spec:
             periodSeconds: 30
             failureThreshold: 6
         - name: frontend
-          image: docker.io/zimengxiong/excalidash-frontend:0.6.7
+          image: docker.io/zimengxiong/excalidash-frontend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-frontend"}
           env:
             - name: BACKEND_URL
               value: 127.0.0.1:8000

@@ -5,6 +5,7 @@ resources:
   - image-automation-git.sops.yaml
   - gitrepository.yaml
   - books.yaml
+  - excalidraw.yaml
   - homepage.yaml
   - home-automation.yaml
   - inference.yaml
