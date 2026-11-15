@@ -36,8 +36,21 @@ Authentik guards the site twice:
    belong to the Authentik account.
 
 Both applications admit the `Excalidraw Users` group and `authentik Admins`. To
-give someone access, add them to `Excalidraw Users` in Authentik. Share and
-collaboration links work only for people with that access.
+give someone access, add them to `Excalidraw Users` in Authentik.
+
+### Public share links
+
+A drawing with a link share is viewable, and editable if the link allows it,
+without an Authentik login. `ingress-public.yaml` is a second Ingress with no
+middleware for the paths a share page needs: `/shared`, the frontend's static
+files, `/socket.io`, `/api/auth/status`, `/api/csrf-token`, `/api/drawings` and
+`/api/files`. Traefik prefers these longer paths over the gated `/`.
+
+Past that point ExcaliDash's backend decides. It returns 401 for any drawing
+that has no active link share, so private drawings stay private. The dashboard,
+the editor at `/editor`, sign-in and the admin pages stay behind Authentik.
+Create a link from a drawing's share dialog in ExcaliDash. A new link replaces
+the previous one for that drawing.
 
 The OAuth2 client secret lives in `excalidraw-oidc` in
 `clusters/homelab/apps/secrets/`. Reflector copies it to `authentik`, where the

@@ -1,0 +1,98 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: excalidraw-public
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: excalidraw.harville.dev
+      http:
+        paths:
+          - path: /shared
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /assets
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /fonts
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /theme-init.js
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /favicon.svg
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /favicon-light.svg
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /favicon-dark.svg
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /api/auth/status
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /api/csrf-token
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /api/drawings
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+          - path: /api/files
+            pathType: Prefix
+            backend:
+              service:
+                name: excalidraw
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - excalidraw.harville.dev
