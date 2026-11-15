@@ -51,6 +51,8 @@ spec:
                   key: EXCALIDRAW_OIDC_CLIENT_SECRET
             - name: OIDC_REDIRECT_URI
               value: https://excalidraw.harville.dev/api/auth/oidc/callback
+            - name: OIDC_REQUIRE_EMAIL_VERIFIED
+              value: "false"
             - name: TRUST_PROXY
               value: "1"
             - name: BACKUP_SCHEDULE
