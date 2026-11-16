@@ -54,6 +54,13 @@ encoding and headers, to 5 MiB. Larger ebooks will not deliver through this SMTP
 path even when their source file is slightly smaller than 5 MiB. Check CWA's
 task log when an import succeeds but Kindle delivery does not.
 
+Shelfmark runs in Universal search mode with Hardcover as the metadata
+provider, pinned by the `SEARCH_MODE` and `METADATA_PROVIDER` environment
+variables. Searches query Hardcover first and look for releases only when a
+user opens a book, so a slow or blocked release source no longer stalls the
+search page. `RELEASE_SEARCH_TIMEOUT` caps one release search at 90 seconds
+instead of the default 300. Environment values override the admin UI.
+
 The `books-oidc` and `books-smtp` Kubernetes Secrets are SOPS/age encrypted in
 Git. Changes to either Secret roll the consumers through the encrypted file's
 SOPS MAC. CWA does not accept SMTP configuration through environment variables,
