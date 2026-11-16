@@ -108,6 +108,12 @@ spec:
               value: "true"
             - name: SESSION_COOKIE_SECURE
               value: "true"
+            - name: SEARCH_MODE
+              value: universal
+            - name: METADATA_PROVIDER
+              value: hardcover
+            - name: RELEASE_SEARCH_TIMEOUT
+              value: "90"
             - name: BOOKS_OUTPUT_MODE
               value: folder
             - name: INGEST_DIR
