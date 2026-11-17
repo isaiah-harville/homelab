@@ -55,6 +55,8 @@ spec:
               value: "false"
             - name: TRUST_PROXY
               value: "1"
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=768
             - name: BACKUP_SCHEDULE
               value: "0 0 4 * * *"
             - name: BACKUP_DIR
@@ -71,9 +73,9 @@ spec:
           resources:
             requests:
               cpu: 25m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /health
