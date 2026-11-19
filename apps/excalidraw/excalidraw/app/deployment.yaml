@@ -22,47 +22,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         fsGroup: 1001
-      initContainers:
-        # One-time move off the image's default dev.db: write a compacted copy
-        # to excalidash.db while the old pod is stopped. dev.db stays as the
-        # rollback copy. Remove once excalidash.db is confirmed in production.
-        - name: migrate-db-file
-          image: docker.io/zimengxiong/excalidash-backend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-backend"}
-          command:
-            - node
-            - -e
-            - |
-              const fs = require("fs");
-              const Database = require("/app/node_modules/better-sqlite3");
-              const src = "/app/prisma/dev.db";
-              const dst = "/app/prisma/excalidash.db";
-              const tmp = `${dst}.partial`;
-              if (fs.existsSync(dst) || !fs.existsSync(src)) process.exit(0);
-              fs.rmSync(tmp, { force: true });
-              const db = new Database(src, { fileMustExist: true });
-              db.exec(`VACUUM INTO '${tmp}'`);
-              db.close();
-              const copy = new Database(tmp);
-              copy.pragma("journal_mode = WAL");
-              const check = copy.pragma("integrity_check", { simple: true });
-              copy.close();
-              if (check !== "ok") {
-                fs.rmSync(tmp, { force: true });
-                throw new Error(`Compacted copy of ${src} failed integrity_check: ${check}`);
-              }
-              fs.chmodSync(tmp, 0o600);
-              fs.renameSync(tmp, dst);
-              console.log(`Compacted ${src} (${fs.statSync(src).size} bytes) into ${dst} (${fs.statSync(dst).size} bytes)`);
-          volumeMounts:
-            - name: data
-              mountPath: /app/prisma
-              subPath: db
-          resources:
-            requests:
-              cpu: 25m
-              memory: 128Mi
-            limits:
-              memory: 512Mi
       containers:
         - name: backend
           image: docker.io/zimengxiong/excalidash-backend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-backend"}
@@ -70,7 +29,7 @@ spec:
             - name: DATABASE_PROVIDER
               value: sqlite
             - name: DATABASE_URL
-              value: file:/app/prisma/excalidash.db
+              value: file:/app/prisma/dev.db
             - name: PORT
               value: "8000"
             - name: NODE_ENV
