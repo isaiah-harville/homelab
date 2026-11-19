@@ -20,8 +20,6 @@ DNS is split-horizon.
 | 8100  | Kubernetes API proxy           |
 | 5556  | Dex OIDC                       |
 | 50180/udp | SideroLink WireGuard       |
-| 5170  | Talos service logs (Vector)    |
-| 5171  | Talos kernel logs (Vector)     |
 
 ## One-time setup
 
@@ -115,23 +113,20 @@ Once the cluster is up and authelia is running:
 3. Human logins now flow **omni → dex → authelia**. Keep the static admin as
    break-glass for when the cluster is down.
 
-## Talos node logs
+## Machine logs after a crash
 
-Every node streams its kernel log and Talos service logs here
-(`talos/omni/patches/remote-logging.yaml`). The `talos-logs` container (Vector)
-writes them to `talos-logs/<node-ip>/<date>-kernel.log` and
-`<date>-services.log`, one JSON object per line. Files older than 30 days are
-deleted daily by `talos-logs-prune`.
-
-After a node crashes, read the end of its kernel log from before the reboot:
+Omni stores each machine's kernel log, streamed over SideroLink, in
+`data/omni.db`. It keeps up to 200,000 lines per machine for 30 days, which
+covers several weeks at normal volume. To read what a node logged before it
+reset:
 
 ```bash
-tail -n 200 talos-logs/10.1.10.232/$(date -u +%F)-kernel.log | jq -r '.msg'
+omnictl machine-logs <machine-id> | grep -B200 '"seq":0,'
 ```
 
-A kernel panic can stop the log stream before the panic text is sent. Look for
-warnings in the minutes before the gap: soft lockups, `NVRM: Xid`, MCE,
-thermal, or I/O errors.
+`seq` restarts at 0 on each boot, so the lines just before a `"seq":0` entry
+are the last ones the previous boot sent. A hard panic can stop the stream
+before the panic text is sent.
 
 ## Backup and restore
 
@@ -194,12 +189,10 @@ it on the same paths and start the pinned Omni version before upgrading.
 ## Layout
 
 ```
-compose.yaml          Dex + Omni + Talos log receiver
-vector.yaml           Talos log receiver config
+compose.yaml          Dex + Omni
 .env.example          copy to .env
 dex.yaml              OIDC config (static admin + authelia connector)
 certs/                lego-minted TLS (gitignored)
 secrets/omni.asc      GPG etcd key (gitignored)
 data/                 embedded etcd + SQLite state (gitignored)
-talos-logs/           received Talos node logs (gitignored)
 ```

@@ -5,13 +5,6 @@ resource "omni_config_patch" "allow_scheduling" {
   data    = file("${local.patch_dir}/allow-scheduling.yaml")
 }
 
-resource "omni_config_patch" "remote_logging" {
-  name    = "remote-logging"
-  cluster = omni_cluster.homelab.name
-  weight  = 210
-  data    = file("${local.patch_dir}/remote-logging.yaml")
-}
-
 resource "omni_config_patch" "controlplane_vip" {
   name    = "controlplane-vip"
   cluster = omni_cluster.homelab.name

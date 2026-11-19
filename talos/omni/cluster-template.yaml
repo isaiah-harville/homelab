@@ -15,8 +15,6 @@ features:
 patches:
   - name: allow-scheduling
     file: patches/allow-scheduling.yaml
-  - name: remote-logging
-    file: patches/remote-logging.yaml
 ---
 kind: ControlPlane
 machines:

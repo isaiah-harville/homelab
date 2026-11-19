@@ -1,23 +1,5 @@
 ---
 services:
-  talos-logs:
-    image: timberio/vector:0.61.0-alpine
-    container_name: talos-logs
-    restart: unless-stopped
-    command: ["--config", "/etc/vector/vector.yaml"]
-    network_mode: host
-    volumes:
-      - ./vector.yaml:/etc/vector/vector.yaml:ro
-      - ./talos-logs:/logs
-
-  talos-logs-prune:
-    image: alpine:3.22
-    container_name: talos-logs-prune
-    restart: unless-stopped
-    command: ["sh", "-c", "while true; do find /logs -type f -mtime +30 -delete; sleep 86400; done"]
-    volumes:
-      - ./talos-logs:/logs
-
   dex:
     image: ghcr.io/dexidp/dex:v2.41.1
     container_name: dex
@@ -65,6 +47,8 @@ services:
       - --etcd-embedded-db-path=/_out/etcd
       - --sqlite-storage-path=/_out/omni.db
       - --event-sink-port=8091
+      - --machine-log-max-lines-per-machine=200000
+      - --machine-log-cleanup-older-than=720h
       - --bind-addr=0.0.0.0:443
       - --k8s-proxy-bind-addr=0.0.0.0:8100
       - --advertised-api-url=https://${OMNI_HOST}/

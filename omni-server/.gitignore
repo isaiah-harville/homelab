@@ -1,7 +1,6 @@
 certs/
 secrets/
 data/
-talos-logs/
 dex.db
 .env
 .lego/
