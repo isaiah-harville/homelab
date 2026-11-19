@@ -1,0 +1,12 @@
+# Ship kernel and Talos service logs to the Omni host so a crash leaves
+# evidence. The receiver is omni-server/vector.yaml.
+machine:
+  logging:
+    destinations:
+      - endpoint: tcp://10.1.10.88:5170/
+        format: json_lines
+---
+apiVersion: v1alpha1
+kind: KmsgLogConfig
+name: omni-host
+url: tcp://10.1.10.88:5171/
