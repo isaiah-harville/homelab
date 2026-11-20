@@ -55,12 +55,14 @@ spec:
               value: "false"
             - name: TRUST_PROXY
               value: "1"
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=768
             - name: BACKUP_SCHEDULE
               value: "0 0 4 * * *"
             - name: BACKUP_DIR
               value: /app/backups
             - name: BACKUP_RETENTION_DAYS
-              value: "14"
+              value: "7"
           volumeMounts:
             - name: data
               mountPath: /app/prisma
@@ -71,9 +73,9 @@ spec:
           resources:
             requests:
               cpu: 25m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /health
