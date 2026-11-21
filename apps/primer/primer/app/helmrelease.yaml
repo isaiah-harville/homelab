@@ -120,12 +120,12 @@ spec:
       # can be added or replaced without rewiring every consumer. The name is
       # now historical - what it fronts is llama.cpp, not vLLM.
       #
-      # The router fronts all three deployments, and `model` below is
-      # only which of them a new conversation starts on. Anything outside the
-      # cluster is added from Primer's own settings page instead.
+      # The router fronts one deployment, Inkling 2 Mini, and `model` below
+      # is what a new conversation starts on. Anything outside the cluster is
+      # added from Primer's own settings page instead.
       chat:
         baseUrl: http://vllm-router.inference.svc.cluster.local:8001/v1
-        model: qwen3.5-4b
+        model: inkling-2-mini
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
       embeddings:
@@ -174,12 +174,12 @@ spec:
 
       # Primer 1.2 asks a vision model what each figure in a document shows,
       # so a chart can be found by what it says rather than its axis labels.
-      # Qwen3.5-9B on CPU, with its projector loaded, rather than the chat
-      # model: one figure takes it a minute or more, and the T1000's one
-      # request slot is better spent on chat than on a large upload.
+      # Inkling 2 Mini takes image input, so the chat model does this too,
+      # with its projector loaded. Its llama-server has two request slots,
+      # so a large upload leaves one free for chat.
       vision:
         baseUrl: http://vllm-router.inference.svc.cluster.local:8001/v1
-        model: qwen3.5-9b
+        model: inkling-2-mini
         existingSecret: vllm-api-key
         apiKeyKey: VLLM_API_KEY
         # One request slot (-np 1), and a CPU that reads an image slowly.
@@ -199,7 +199,7 @@ spec:
 
     # Primer 1.1 runs a Neo4j for the knowledge graph by default and makes
     # its password itself. Extraction falls back to the chat model above,
-    # qwen3.5-4b, one call per passage as a document is indexed - so a big
+    # inkling-2-mini, one call per passage as a document is indexed - so a big
     # upload is felt in chat. Libraries indexed before this have no graph
     # until they are reindexed.
     graph:
@@ -207,9 +207,9 @@ spec:
         persistence:
           size: 10Gi
           storageClass: longhorn
-      # llama-qwen3-5-4b serves one request at a time at about 6.5 tok/s.
-      # The chart's four concurrent passages would queue there, and the last
-      # of them would run out the timeout waiting rather than working.
+      # llama-inkling-2-mini has two request slots on CPU, shared with chat
+      # and figure descriptions. The chart's four concurrent passages would
+      # queue there, and the last would run out the timeout waiting.
       extraction:
         concurrency: 1
         timeoutSeconds: 300
@@ -243,8 +243,8 @@ spec:
     # rather than the chart's bundled copy of one. mcp-searxng sits beside it
     # in the searxng namespace (apps/searxng/searxng/app/mcp.yaml) and admits
     # only Chat. Every call is shown to whoever asked and runs only if they
-    # approve it. qwen3.5-4b can ask for one because its llama.cpp runs with
-    # --jinja.
+    # approve it. inkling-2-mini can ask for one because its llama.cpp runs
+    # with --jinja.
     tools:
       enabled: true
       servers:

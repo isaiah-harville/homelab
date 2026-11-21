@@ -1,0 +1,141 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-inkling-2-mini
+  labels:
+    app: llama-inkling-2-mini
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-inkling-2-mini
+  template:
+    metadata:
+      labels:
+        app: llama-inkling-2-mini
+    spec:
+      # Kubernetes injects a Docker-link environment variable per Service in
+      # the namespace, and llama-server reads a great many LLAMA_* variables
+      # as its own configuration. Off so a name collision cannot configure it.
+      enableServiceLinks: false
+      # Inkling 2 Mini is a 26B mixture-of-experts model with about 3B active
+      # per token. Its 17.6GB IQ4_NL file is too big for either 4GB card, so
+      # it runs on CPU on this 16-core, 64GB node.
+      nodeSelector:
+        kubernetes.io/hostname: talos-6t5-q1d
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: llama-server
+          # Pinned: the inkling2-loop architecture landed in llama.cpp b12600
+          # (#32694). The rolling `server` tag stood at b12464 when this was
+          # written, and a node that already holds that tag would not pull
+          # it again.
+          image: ghcr.io/ggml-org/llama.cpp:server-b12602
+          args:
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8080"
+            # -hf fetches the vision projector beside the model. Primer asks
+            # this model to describe the figures in a document.
+            - -hf
+            - ggml-org/Inkling-2-Mini-GGUF:IQ4_NL
+            - --alias
+            - inkling-2-mini
+            - --jinja
+            # Separates reasoning into its own response field. Every value
+            # but "none" does that; it is stated because the "auto" default
+            # has changed across llama.cpp releases.
+            - --reasoning-format
+            - deepseek
+            # The template defaults to "high" (0.9), which on CPU means
+            # minutes of reasoning before a short answer. A request can ask
+            # for more with chat_template_kwargs: {"reasoning_effort": "high"}.
+            - --chat-template-kwargs
+            - '{"reasoning_effort":"low"}'
+            # The model card's only sampling default.
+            - --temp
+            - "1.0"
+            - -ngl
+            - "0"
+            # Two slots of 32k each, so chat is not stuck behind a figure
+            # description or a knowledge-graph extraction. This one model
+            # now does all three jobs.
+            - -c
+            - "65536"
+            - -np
+            - "2"
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            - --metrics
+          env:
+            - name: LLAMA_CACHE
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8080
+          # Nothing listens until the first ~18GB download finishes, so the
+          # other probes wait on this one: up to 30 minutes.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 180
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: "4"
+              memory: 20Gi
+            limits:
+              memory: 28Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: llama-inkling-2-mini-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-inkling-2-mini-models
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-inkling-2-mini
+  labels:
+    app: llama-inkling-2-mini
+spec:
+  selector:
+    app: llama-inkling-2-mini
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

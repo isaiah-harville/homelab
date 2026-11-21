@@ -1,13 +1,9 @@
 ---
 # llama.cpp inference, one deployment per model.
 #
-# Each model uses a published GGUF and has its own resource placement.
-#
-# One subdirectory per model, and the directory is named after the model. The
-# GPU models occupy the two 4GB cards; the 9B model runs on CPU.
+# One subdirectory per model, and the directory is named after the model.
+# Inkling 2 Mini is the only model and runs on CPU; both 4GB GPUs are free.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - qwen3.5-4b
-  - qwen3.5-9b
-  - ministral-3-3b-reasoning-2512
+  - inkling-2-mini
