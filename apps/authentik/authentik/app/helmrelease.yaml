@@ -102,6 +102,12 @@ spec:
           memory: 512Mi
         limits:
           memory: 2Gi
+      # /-/health/live/ queries Postgres, so a DNS or database blip made the
+      # kubelet kill every server at once. Readiness still gates traffic.
+      livenessProbe:
+        httpGet: null
+        tcpSocket:
+          port: http
       metrics:
         enabled: true
         serviceMonitor:

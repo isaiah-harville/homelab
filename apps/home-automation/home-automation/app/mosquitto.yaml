@@ -70,7 +70,7 @@ spec:
         fsGroup: 1883
       containers:
         - name: mosquitto
-          image: docker.io/library/eclipse-mosquitto:2.0.22 # {"$imagepolicy": "flux-system:mosquitto"}
+          image: docker.io/library/eclipse-mosquitto:2.0.23 # {"$imagepolicy": "flux-system:mosquitto"}
           ports:
             - name: mqtt
               containerPort: 1883

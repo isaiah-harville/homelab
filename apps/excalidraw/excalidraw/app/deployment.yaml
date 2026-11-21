@@ -62,7 +62,7 @@ spec:
             - name: BACKUP_DIR
               value: /app/backups
             - name: BACKUP_RETENTION_DAYS
-              value: "14"
+              value: "7"
           volumeMounts:
             - name: data
               mountPath: /app/prisma

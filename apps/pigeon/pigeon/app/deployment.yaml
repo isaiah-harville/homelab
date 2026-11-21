@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: website
-          image: ghcr.io/isaiah-harville/pigeon/website:v0.2.0 # {"$imagepolicy": "flux-system:pigeon-website"}
+          image: ghcr.io/isaiah-harville/pigeon/website:v0.2.1 # {"$imagepolicy": "flux-system:pigeon-website"}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
