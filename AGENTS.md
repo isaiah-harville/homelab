@@ -328,7 +328,8 @@ needs manual labelling. Details in `talos/README.md`.
 Both cards are **4GB** (`0x25b8` is the 4GB A2000, not the 8GB `0x25ba`).
 `apps/inference/llama-cpp/app` runs a single model, Inkling 2 Mini (26B MoE,
 ~3B active, IQ4_NL, 512k context), on CPU on `talos-6t5-q1d` (64GB), fronted by
-`apps/inference/vllm-router/app`. It needs llama.cpp b12600 or later. The old WSL box (`harvi-desktop`, `10.1.10.20`)
+`apps/inference/vllm-router/app`. It needs llama.cpp b12600 or later; the image is pinned by digest
+because that build was published untagged. The old WSL box (`harvi-desktop`, `10.1.10.20`)
 is gone. See `docs/apps/primer.md`.
 
 Embeddings deliberately stay on CPU (`apps/primer/primer/app/embeddings.yaml`,
