@@ -117,7 +117,9 @@ Inkling 2 Mini does every model job Primer has: chat, building the knowledge
 graph (with no extraction model named, the chart extracts with the chat
 model, one call per passage as a document is indexed), and describing the
 figures in each document, for which its llama-server loads the vision
-projector. It has two request slots, so a large upload leaves one for chat.
+projector. It has a 512k-token context shared by two request slots, so a large upload
+leaves one for chat. The model allows 1M, but that KV cache would leave the
+64GB node too little headroom.
 Its chat template defaults to high reasoning effort; the server sets `low`,
 and a request can raise it with
 `chat_template_kwargs: {"reasoning_effort": "high"}`.

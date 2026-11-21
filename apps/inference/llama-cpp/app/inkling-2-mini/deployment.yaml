@@ -63,17 +63,34 @@ spec:
             - "1.0"
             - -ngl
             - "0"
-            # Two slots of 32k each, so chat is not stuck behind a figure
-            # description or a knowledge-graph extraction. This one model
-            # now does all three jobs.
+            # 512k tokens of context, half the model's 1M maximum, in one pool
+            # that both request slots share (-kvu), so a single request can
+            # use all of it while a second slot keeps chat from queueing
+            # behind indexing.
+            #
+            # Only 4 of the 24 layers attend to the whole context; the rest
+            # use a 1,024-token sliding window. Counting the loop core's
+            # three passes, 8 full-attention layer passes each keep about
+            # 2KB per token at q8_0: ~17KB a token, ~9GB at 512k. The full
+            # 1M would be ~18GB, putting the pod near 42GB on a 64GB
+            # control-plane node, too little headroom for etcd beside it.
+            # Note that on 16 CPU cores, filling 512k takes hours.
             - -c
-            - "65536"
+            - "524288"
             - -np
             - "2"
+            - -kvu
             - -ctk
             - q8_0
             - -ctv
             - q8_0
+            # A quantized V cache needs flash attention.
+            - -fa
+            - "on"
+            # Prompt cache kept in RAM between requests; the 8GiB default
+            # is more than the node can spare beside the context.
+            - --cache-ram
+            - "4096"
             - --metrics
           env:
             - name: LLAMA_CACHE
@@ -101,11 +118,13 @@ spec:
             periodSeconds: 30
             failureThreshold: 10
           resources:
+            # ~17.6GB weights + ~9GB KV + up to 4GB prompt cache + compute
+            # buffers.
             requests:
               cpu: "4"
-              memory: 20Gi
+              memory: 32Gi
             limits:
-              memory: 28Gi
+              memory: 40Gi
           volumeMounts:
             - name: models
               mountPath: /models
