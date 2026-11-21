@@ -47,6 +47,8 @@ services:
       - --etcd-embedded-db-path=/_out/etcd
       - --sqlite-storage-path=/_out/omni.db
       - --event-sink-port=8091
+      - --machine-log-max-lines-per-machine=200000
+      - --machine-log-cleanup-older-than=720h
       - --bind-addr=0.0.0.0:443
       - --k8s-proxy-bind-addr=0.0.0.0:8100
       - --advertised-api-url=https://${OMNI_HOST}/

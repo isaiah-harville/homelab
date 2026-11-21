@@ -113,6 +113,21 @@ Once the cluster is up and authelia is running:
 3. Human logins now flow **omni → dex → authelia**. Keep the static admin as
    break-glass for when the cluster is down.
 
+## Machine logs after a crash
+
+Omni stores each machine's kernel log, streamed over SideroLink, in
+`data/omni.db`. It keeps up to 200,000 lines per machine for 30 days, which
+covers several weeks at normal volume. To read what a node logged before it
+reset:
+
+```bash
+omnictl machine-logs <machine-id> | grep -B200 '"seq":0,'
+```
+
+`seq` restarts at 0 on each boot, so the lines just before a `"seq":0` entry
+are the last ones the previous boot sent. A hard panic can stop the stream
+before the panic text is sent.
+
 ## Backup and restore
 
 ### etcd → S3 (seaweedfs), automatic
