@@ -108,6 +108,11 @@ spec:
         httpGet: null
         tcpSocket:
           port: http
+      # /-/health/ready/ also queries Postgres and Redis. The default 3s timeout
+      # tripped during heavy I/O (e.g. the 05:00 offsite sync) and spammed
+      # Unhealthy events without any real outage.
+      readinessProbe:
+        timeoutSeconds: 10
       metrics:
         enabled: true
         serviceMonitor:
