@@ -75,6 +75,11 @@ spec:
       enabled: true
       replicas: 1
       port: 8333
+      # Without enableAuth the chart never mounts existingConfigSecret, so the
+      # gateway ran wide open: anonymous list/read/write on every bucket, including
+      # openvitae via its public Ingress. Every client signs with a key from this
+      # secret; OpenVitae visitors use presigned URLs, which still work.
+      enableAuth: true
       existingConfigSecret: seaweedfs-s3-config
       logs:
         type: emptyDir
