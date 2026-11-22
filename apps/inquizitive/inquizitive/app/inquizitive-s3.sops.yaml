@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: inquizitive-s3
+type: Opaque
+stringData:
+    S3_ACCESS_KEY_ID: ENC[AES256_GCM,data:XMuKL/VMaqcZ/XmQ0T3oYq432Iw=,iv:PFykooqm8XOD0vC8Mejd7s+NEBGKoGUb/u1IjGSuq4c=,tag:WjQlRuusF4YAx88vrV2EtA==,type:str]
+    S3_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:PKE5cLioCXQ6im7x2YTDIHJnRbjQ2e2QWh4IHwDZ5WTwkKg5eoh57g==,iv:MPfge+z/jEvZX96sYRByUIrIYxJn9OAD0MTObszmIX8=,tag:z+jZ4JuHw4N1C0w/VkjZEA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB1Q25KRC9KOXIzdjVGbGp6
+            aXVkalQyUHBraFZmbjlJdm0vWU1QSTlTa0NvCjhpZi9QVG5sM1hsYmdQa3l1Mnpj
+            d1hKVnJENFlLaW9xdVJkNWlybE9NYmcKLS0tIGNQODR6TGN1a3A5cEg3TkpGNndX
+            NjlkLytIc3d1aHFZYkVFeXZFL0JMR0EKqtjoGGDmM1bVcnP2VS4v/XLC6FpqQxF3
+            sgOEjlZmDQzK+tM3R7wsdDxHKeD0NmihNh0Cr2GIwXY9jR9ck0DzkQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-22T07:31:39Z"
+    mac: ENC[AES256_GCM,data:6Z6jWdAYI/zbbDKrO3yEcNfPqd3MAUHE3KiDBgaoKcgw7BIoz1yMF2pCHbt7O8PhR81tSpnQDEX5kSYazHx1/5F27MjyK8g8N75JF//WC2+O5VvYyevw4ixVdB6a+eldLpxEjICIaJThZ7uHRxUovIzWfXHUiDlMsIpxt6drqb4=,iv:SB1v70HWeH/6IcP9/9k0UbpVHBKbb0+JH3fe6/j2Oak=,tag:LUIzjcmreZ2GzStdrScjkQ==,type:str]
+    version: 3.13.3

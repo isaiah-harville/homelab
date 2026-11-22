@@ -26,12 +26,30 @@ spec:
         namespace: flux-system
   values:
     appUrl: https://inquizitive.harville.dev
-    # SQLite and card images share one retained Longhorn volume, so this stays
-    # a single replica. Moving to CNPG needs config-backup-s3 reflected here.
+    # Stateless: Postgres from CloudNativePG, card images in the shared
+    # SeaweedFS (bucket `inquizitive`, scoped credentials), sessions in the DB.
+    replicaCount: 2
+    database:
+      existingSecret: inquizitive-postgres-app
+      existingSecretKey: uri
+    storage:
+      driver: s3
+      s3:
+        endpoint: http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333
+        bucket: inquizitive
+        forcePathStyle: true
+        existingSecret: inquizitive-s3
     persistence:
-      enabled: true
-      size: 5Gi
-      storageClass: longhorn-retain
+      enabled: false
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: inquizitive
     # Inquizitive signs people in itself (public OIDC client with PKCE), so
     # there is no ForwardAuth: the desktop app syncs with bearer tokens that
     # can't follow Authentik's browser redirect.
