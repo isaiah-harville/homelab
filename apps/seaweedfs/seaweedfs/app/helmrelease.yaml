@@ -25,6 +25,14 @@ spec:
         name: seaweedfs
         namespace: flux-system
   values:
+    global:
+      # ServiceMonitors for master/volume/filer/S3/admin plus the upstream
+      # SeaweedFS Grafana dashboard. The release label is what the
+      # kube-prometheus-stack Prometheus selects on.
+      monitoring:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
     master:
       replicas: 1
       data:

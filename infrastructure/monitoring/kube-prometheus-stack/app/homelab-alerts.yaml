@@ -1,0 +1,109 @@
+---
+# Alerts for the failures that went unnoticed in November 2026: a laptop node
+# rebooting ten times in two weeks, a switch outage that took every NIC down
+# and corrupted a Longhorn volume, a SeaweedFS HelmRelease that sat failed for
+# 16 days, and an orphaned Flux HelmChart failing for a month. None of the
+# chart's default rules fired for any of them.
+#
+# Thresholds were backtested against 30 days of history: each alert below
+# would have fired only for real incidents.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: homelab-health
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: homelab-nodes
+      rules:
+        - alert: NodeRebooted
+          # Uptime under 15 minutes. Fires once per boot and clears on its own;
+          # a planned upgrade will trigger it too.
+          expr: |
+            ((time() - node_boot_time_seconds{job="node-exporter"}) < 900)
+              * on (instance) group_left (nodename) node_uname_info
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.nodename }} rebooted"
+            description: >-
+              {{ $labels.nodename }} has been up for less than 15 minutes.
+              If nobody restarted it, check the node for a crash or power
+              problem. Every reboot makes Longhorn rebuild that node's replicas.
+
+        - alert: NodeNetworkLinkFlapped
+          # Any carrier change on a physical NIC. When every node fires at
+          # once, suspect the switch rather than the nodes.
+          expr: |
+            (increase(node_network_carrier_changes_total{device=~"en.*|eth.*"}[10m]) > 0)
+              * on (instance) group_left (nodename) node_uname_info
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.nodename }} {{ $labels.device }} link went down"
+            description: >-
+              The physical network link on {{ $labels.nodename }} changed state
+              in the last 10 minutes. Longhorn volumes lose their replicas when
+              the network drops; check for degraded volumes and filesystem
+              errors afterwards.
+
+    - name: homelab-storage
+      rules:
+        - alert: LonghornVolumeDegraded
+          # Replica rebuilds after a reboot normally finish well inside 30m.
+          expr: longhorn_volume_robustness{state="degraded"} == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} degraded"
+            description: >-
+              The volume has had fewer healthy replicas than configured for
+              30 minutes. Check the Longhorn UI for failed or stuck rebuilds.
+
+        - alert: LonghornVolumeFaulted
+          expr: longhorn_volume_robustness{state="faulted"} == 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Longhorn volume {{ $labels.pvc_namespace }}/{{ $labels.pvc }} faulted"
+            description: >-
+              The volume has no healthy replica and its data is unavailable.
+
+    - name: homelab-gitops
+      rules:
+        - alert: FluxHelmReleaseNotReady
+          # Grouped by resource so label churn (reason, revision) does not
+          # reset the timer.
+          expr: |
+            max by (kind, exported_namespace, name) (
+              flux_resource_info{kind="HelmRelease", ready="False", suspended="False"}
+            ) == 1
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "HelmRelease {{ $labels.exported_namespace }}/{{ $labels.name }} is failing"
+            description: >-
+              The HelmRelease has not been Ready for an hour, so changes in git
+              are not reaching the cluster. Check
+              `flux get hr -n {{ $labels.exported_namespace }} {{ $labels.name }}`.
+
+        - alert: FluxResourceNotReady
+          # Kustomizations fail health checks briefly while their apps roll
+          # out, so only alert when one stays broken for hours.
+          expr: |
+            max by (kind, exported_namespace, name) (
+              flux_resource_info{kind!="HelmRelease", ready="False", suspended="False"}
+            ) == 1
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Flux {{ $labels.kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} not ready for 6h"
+            description: >-
+              The resource has been failing for six hours. Check
+              `flux get all -A --status-selector ready=false`.

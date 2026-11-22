@@ -97,6 +97,9 @@ spec:
                   storage: 5Gi
               storageClassName: longhorn-retain
     grafana:
+      # The chart's ~26 built-in dashboards (AIX/macOS node exporter, multi-
+      # cluster, API server, etcd, ...) duplicate the curated set below.
+      defaultDashboardsEnabled: false
       resources:
         requests:
           memory: 256Mi
@@ -169,6 +172,17 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/networking
+            - name: homelab
+              orgId: 1
+              folder: Homelab
+              type: file
+              disableDeletion: true
+              editable: false
+              options:
+                path: /var/lib/grafana/dashboards/homelab
+      # Node / storage / services health, generated JSON in ./dashboards.
+      dashboardsConfigMaps:
+        homelab: grafana-dashboards-homelab
       dashboards:
         kubernetes:
           global:
