@@ -23,7 +23,7 @@ spec:
         fsGroup: 1001
       containers:
         - name: backend
-          image: docker.io/zimengxiong/excalidash-backend:0.6.10 # {"$imagepolicy": "flux-system:excalidash-backend"}
+          image: docker.io/zimengxiong/excalidash-backend:0.7.0 # {"$imagepolicy": "flux-system:excalidash-backend"}
           env:
             - name: DATABASE_PROVIDER
               value: sqlite
