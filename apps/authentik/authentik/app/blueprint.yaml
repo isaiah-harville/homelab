@@ -587,6 +587,39 @@ data:
           order: 0
         attrs:
           group: !KeyOf headlamp-users
+      # Gate: ForwardAuth in front of quiz.harville.dev. The app also signs people
+      # in itself (OIDC below), and its sync paths bypass this gate because the
+      # desktop app authenticates them with bearer tokens.
+      - model: authentik_providers_proxy.proxyprovider
+        id: inquizitive-gate-provider
+        identifiers:
+          name: Inquizitive Gate Provider
+        attrs:
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://quiz.harville.dev
+      - model: authentik_core.application
+        identifiers:
+          slug: inquizitive-gate
+        attrs:
+          name: Inquizitive Gate
+          provider: !KeyOf inquizitive-gate-provider
+          meta_launch_url: blank://blank
+          policy_engine_mode: any
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, inquizitive-gate]]
+          order: 0
+        attrs:
+          group: !KeyOf inquizitive-users
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !Find [authentik_core.application, [slug, inquizitive-gate]]
+          order: 1
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
       # Inquizitive signs people in itself, so desktop apps can sync with bearer
       # tokens. Public client: PKCE protects the code exchange, no secret to share.
       - model: authentik_providers_oauth2.oauth2provider
@@ -612,7 +645,7 @@ data:
             - !KeyOf groups-scope
           redirect_uris:
             - matching_mode: strict
-              url: https://inquizitive.harville.dev/api/auth/oidc/callback
+              url: https://quiz.harville.dev/api/auth/oidc/callback
               redirect_uri_type: authorization
       - model: authentik_core.application
         identifiers:
@@ -620,7 +653,7 @@ data:
         attrs:
           name: Inquizitive
           provider: !KeyOf inquizitive-provider
-          meta_launch_url: https://inquizitive.harville.dev
+          meta_launch_url: https://quiz.harville.dev
           policy_engine_mode: any
       - model: authentik_policies.policybinding
         identifiers:
@@ -997,6 +1030,7 @@ data:
             - !KeyOf longhorn-provider
             - !KeyOf grafana-provider
             - !KeyOf excalidraw-gate-provider
+            - !KeyOf inquizitive-gate-provider
             - !KeyOf calibre-web-automated-provider
             - !KeyOf qbittorrent-provider
             - !KeyOf prowlarr-provider

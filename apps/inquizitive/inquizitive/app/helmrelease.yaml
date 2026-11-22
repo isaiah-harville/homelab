@@ -25,7 +25,7 @@ spec:
         name: inquizitive
         namespace: flux-system
   values:
-    appUrl: https://inquizitive.harville.dev
+    appUrl: https://quiz.harville.dev
     # Stateless: Postgres from CloudNativePG, card images in the shared
     # SeaweedFS (bucket `inquizitive`, scoped credentials), sessions in the DB.
     replicaCount: 2
@@ -68,22 +68,7 @@ spec:
       fsGroup: 101
       seccompProfile:
         type: RuntimeDefault
+    # The Ingresses live in this folder (ingress.yaml): ForwardAuth for the
+    # site, and a second route without it for desktop sync.
     ingress:
-      enabled: true
-      className: traefik-public
-      annotations:
-        gethomepage.dev/enabled: "true"
-        gethomepage.dev/group: Public
-        gethomepage.dev/name: Inquizitive
-        gethomepage.dev/description: Flashcards and spaced repetition
-        gethomepage.dev/href: https://inquizitive.harville.dev
-        gethomepage.dev/siteMonitor: https://inquizitive.harville.dev/api/health/
-      hosts:
-        - host: inquizitive.harville.dev
-          paths:
-            - path: /
-              pathType: Prefix
-      # No secretName: the default TLSStore serves the wildcard certificate.
-      tls:
-        - hosts:
-            - inquizitive.harville.dev
+      enabled: false
