@@ -8,3 +8,16 @@ resources:
   - grafana-longhorn.pvc.yaml
   - grafana.ingresses.yaml
   - grafana.networkpolicy.yaml
+  - homelab-alerts.yaml
+# Homelab dashboards, mounted into Grafana by the `homelab` provider in
+# helmrelease.yaml. Fixed name (no hash suffix) because the HelmRelease
+# references it; Grafana reloads the files when the ConfigMap changes.
+configMapGenerator:
+  - name: grafana-dashboards-homelab
+    namespace: monitoring
+    files:
+      - dashboards/homelab-node-health.json
+      - dashboards/homelab-storage-health.json
+      - dashboards/homelab-services.json
+    options:
+      disableNameSuffixHash: true
