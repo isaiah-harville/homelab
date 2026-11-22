@@ -74,6 +74,7 @@ nav:
       - Apps: apps/README.md
       - Primer: apps/primer.md
       - Excalidraw: apps/excalidraw.md
+      - Inquizitive: apps/inquizitive.md
       - Media: apps/media.md
       - Clusters: clusters/README.md
       - Homelab composition: clusters/homelab/README.md

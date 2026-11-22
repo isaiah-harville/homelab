@@ -96,6 +96,7 @@ spec:
         - name: backups
         - name: mlflow
         - name: openvitae
+        - name: inquizitive
         - name: primer-sources
       resources:
         requests:
