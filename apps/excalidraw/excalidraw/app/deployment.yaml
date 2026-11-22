@@ -87,7 +87,7 @@ spec:
             periodSeconds: 30
             failureThreshold: 6
         - name: frontend
-          image: docker.io/zimengxiong/excalidash-frontend:0.6.10 # {"$imagepolicy": "flux-system:excalidash-frontend"}
+          image: docker.io/zimengxiong/excalidash-frontend:0.7.0 # {"$imagepolicy": "flux-system:excalidash-frontend"}
           env:
             - name: BACKEND_URL
               value: 127.0.0.1:8000
