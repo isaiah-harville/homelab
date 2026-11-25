@@ -5,7 +5,7 @@ step is a Git change; nothing is upgraded by hand.
 
 | What | Pinned in | Applied by |
 |---|---|---|
-| Omni, Dex | `omni-server/compose.yaml` | [`ansible/omni-host`](../ansible/omni-host/README.md) on the Omni host |
+| Omni, Dex | `omni-server/coreos/versions.yaml` (and `omni-server/compose.yaml` until cutover) | `omni-sync.timer` on the CoreOS host; by hand on the Compose host |
 | Talos | `terraform/omni/locals.tf` (`talos_version`) | Terraform CI on merge, then Omni rolls nodes |
 | Kubernetes | `terraform/omni/locals.tf` (`k8s_version`) | Terraform CI on merge, then Omni rolls nodes |
 | Local CLIs | Homebrew (`siderolabs/tap/omnictl`, `talosctl`) | you |
@@ -16,8 +16,11 @@ Mirror the Talos and Kubernetes pins in `talos/omni/cluster-template.yaml`.
 
 1. **Omni first.** Each Omni release caps the Talos minor it will upgrade to,
    so a newer Talos waits on a newer Omni. Bump the image in
-   `omni-server/compose.yaml`, merge, then run the playbook. It backs up the
-   host, starts the new version and waits for Omni's and Dex's `/healthz`.
+   `omni-server/coreos/versions.yaml` (and `compose.yaml` while the Compose
+   host runs) and merge. On the CoreOS host `omni-sync` backs up, starts the
+   new version and waits for Omni's and Dex's `/healthz`, daily or on
+   `sudo systemctl start omni-sync`. On the Compose host, follow the
+   [Omni runbook](../omni-server/README.md#upgrades).
    Read the release notes first: Omni refuses to start with a removed flag
    (v1.14 removed `--auth-oidc-client-secret`, for example).
 2. **Then Talos.** Change only `talos_version`. Omni rejects an update that
@@ -38,8 +41,9 @@ if a node drops on its own mid-rollout.
 ## Patch releases
 
 Flux image automation commits Omni (`~1.14`) and Dex (`~2.46`) patch releases
-to `omni-server/compose.yaml` on `main` as `chore(omni): update Omni host
-images`. Nothing changes on the host until the playbook runs. Minor versions
+to `omni-server/coreos/versions.yaml` and `omni-server/compose.yaml` on
+`main` as `chore(omni): update Omni host images`. The CoreOS host applies them
+with its next `omni-sync` run. Minor versions
 are deliberate edits: change the ImagePolicy range in
 `infrastructure/flux-system/image-automation/app/omni-host.yaml` along with
 the pin.
@@ -57,8 +61,9 @@ the pin.
 
 ## Rollback
 
-- **Omni:** restore the encrypted backup the playbook took before the upgrade
-  (`omni-server/backups/`) and pin the previous image. Omni migrates its
+- **Omni:** restore the encrypted backup taken before the upgrade
+  (`/var/lib/omni/backups/` on the CoreOS host, `omni-server/backups/` on the
+  Compose host) and pin the previous image. Omni migrates its
   databases on start, so changing the tag back alone is not enough.
 - **Talos / Kubernetes:** revert the pin in a PR. Omni rolls nodes back the
   same way it rolled them forward.

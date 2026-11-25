@@ -1,0 +1,13 @@
+[Unit]
+Description=Build iPXE and seed the network-boot menu
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/pxe-setup
+# apt and the iPXE compile take a few minutes on the first boot.
+TimeoutStartSec=30min

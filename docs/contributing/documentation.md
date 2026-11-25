@@ -8,7 +8,7 @@ Zensical requires the tag on a line of its own).
 
 Included READMEs are inlined as-is: Zensical never rewrites their relative
 links. A link between two READMEs that are both included at matching paths
-(`omni-server/` and `ansible/omni-host/`, for example) works on GitHub and on
+(`omni-server/` and `omni-server/coreos/`, for example) works on GitHub and on
 the site. A link from an included README into `docs/` doesn't; use the page's
 GitHub URL (`https://github.com/isaiah-harville/homelab/blob/main/docs/...`)
 instead. Add any README you include to `watch` in `zensical.toml` so

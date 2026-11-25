@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Runs after every lego run (omni-cert-renew ExecStartPost). Installs the
+# certificate where Omni and Dex read it if it changed, then restarts them.
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+
+src="$OMNI_STATE/.lego/certificates/_.$OMNI_DOMAIN"
+dst="$OMNI_STATE/certs"
+[[ -f $src.crt && -f $src.key ]] || { log "lego has not issued a certificate yet"; exit 0; }
+if cmp -s "$src.crt" "$dst/server-chain.pem" && cmp -s "$src.key" "$dst/server-key.pem"; then
+  exit 0
+fi
+install -d -m 0750 -o root -g "$DEX_GID" "$dst"
+install -m 0644 -o root -g root "$src.crt" "$dst/server-chain.pem"
+# Readable by Dex (gid 1001), not by everyone.
+install -m 0640 -o root -g "$DEX_GID" "$src.key" "$dst/server-key.pem"
+log "installed a new certificate"
+# --no-block: on first boot Omni and Dex are still waiting for this unit.
+systemctl --no-block try-restart dex.service omni.service

@@ -1,0 +1,33 @@
+# Dex for Omni's OIDC login. Independent of the cluster on purpose: the static
+# admin below is the break-glass account that still works when the cluster
+# (and Authentik) is down.
+#
+# No secrets live in this file. Both come from /etc/omni/dex.env
+# (secretEnv/hashFromEnv), rendered from secrets.sops.yaml.
+issuer: https://${DEX_HOST}:5556
+
+storage:
+  type: sqlite3
+  config:
+    file: /etc/dex/dex.db
+
+web:
+  https: 0.0.0.0:5556
+  tlsCert: /etc/dex/tls/server-chain.pem
+  tlsKey: /etc/dex/tls/server-key.pem
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - name: Omni
+    id: omni
+    secretEnv: DEX_OMNI_CLIENT_SECRET
+    redirectURIs:
+      - https://${OMNI_HOST}/oidc/consume
+
+enablePasswordDB: true
+staticPasswords:
+  - email: ${OMNI_ADMIN_EMAIL}
+    username: admin
+    hashFromEnv: DEX_ADMIN_PASSWORD_HASH

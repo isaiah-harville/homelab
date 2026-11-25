@@ -1,0 +1,238 @@
+# Fedora CoreOS host for self-hosted Omni + Dex, run by Docker (moby-engine,
+# shipped in FCOS) from plain systemd units. Rendered by render.sh
+# (`make ign`): ${VARS} come from host.env and versions.yaml, local: files from
+# build/ (files/ after substitution, plus secrets decrypted from
+# secrets.sops.yaml). Never commit build/.
+variant: fcos
+version: 1.6.0
+
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys_local:
+        - authorized_keys
+
+# SELinux off host-wide. Under enforcing, container_t may not inotify-watch
+# Omni's userspace WireGuard UAPI socket, so Omni fails with "error
+# listening on uapi socket: permission denied"; Omni runs with host
+# networking and NET_ADMIN, so confining it bought little.
+kernel_arguments:
+  should_exist:
+    - selinux=0
+
+# Root (and so /var: container images, logs, /etc/omni) is LUKS-encrypted and
+# unlocked by the TPM2.
+boot_device:
+  luks:
+    tpm2: true
+
+storage:
+  disks:
+    - device: /dev/disk/by-id/coreos-boot-disk
+      wipe_table: false
+      partitions:
+        # Cap root so the rest of the disk is free for omni-data.
+        - number: 4
+          label: root
+          size_mib: ${ROOT_SIZE_MIB}
+          resize: true
+        # Omni's and Dex's state. A reinstall keeps it: coreos-installer
+        # --save-partlabel omni-data (see installer.yaml), and Ignition reuses
+        # the existing partition, LUKS volume and filesystem below. Ignition
+        # matches partitions by number, not label: without `number` it would
+        # create a second omni-data partition instead. resize: on a
+        # reinstall "rest of the disk" works out ~1 MiB larger than the
+        # partition first created, and without it the size mismatch stops
+        # the boot. It can only grow the partition.
+        - number: 5
+          label: omni-data
+          size_mib: 0
+          resize: true
+          wipe_partition_entry: false
+  luks:
+    # Unlocked by a key file rather than clevis: Ignition refuses to reuse an
+    # existing clevis-bound volume, so a reinstall would fail. The key comes
+    # from secrets.sops.yaml and lives on the TPM-sealed root, so at rest the
+    # data is still bound to this machine's TPM; with the age identity it
+    # can also be opened elsewhere for recovery.
+    - name: omni-data
+      device: /dev/disk/by-partlabel/omni-data
+      label: luks-omni-data
+      wipe_volume: false
+      key_file:
+        local: secrets/omni-data.key
+  filesystems:
+    - path: /var/lib/omni
+      device: /dev/mapper/omni-data
+      format: xfs
+      label: omni-data
+      wipe_filesystem: false
+      with_mount_unit: true
+
+  directories:
+    - path: /etc/omni
+      mode: 0755
+    - path: /usr/local/lib/omni
+      mode: 0755
+    - path: /usr/local/lib/omni/pxe
+      mode: 0755
+
+  files:
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: ${HOSTNAME}
+    - path: /etc/hosts
+      append:
+        - local: files/etc/hosts
+
+    # --- Configuration and secrets (/etc/omni) ---------------------------
+    - path: /etc/omni/host.env
+      mode: 0644
+      contents:
+        local: host.env
+    - path: /etc/omni/omni.env
+      mode: 0600
+      contents:
+        local: secrets/omni.env
+    - path: /etc/omni/dex.env
+      mode: 0600
+      contents:
+        local: secrets/dex.env
+    - path: /etc/omni/lego.env
+      mode: 0600
+      contents:
+        local: secrets/lego.env
+    - path: /etc/omni/dex.yaml
+      mode: 0644
+      contents:
+        local: files/etc/dex.yaml
+    # Image pins, read by the units; omni-sync rewrites it.
+    - path: /etc/omni/images.env
+      mode: 0644
+      contents:
+        local: files/etc/images.env
+
+    # --- Network boot ----------------------------------------------------
+    # pxe-setup builds ipxe.efi from these into /var/lib/omni/tftp, and
+    # seeds the menu there; omni-sync keeps the menu current.
+    - path: /usr/local/lib/omni/pxe/build-ipxe.sh
+      mode: 0755
+      contents:
+        local: pxe/build-ipxe.sh
+    - path: /usr/local/lib/omni/pxe/embed.ipxe
+      mode: 0644
+      contents:
+        local: pxe/embed.ipxe
+    - path: /usr/local/lib/omni/pxe/boot.ipxe
+      mode: 0644
+      contents:
+        local: pxe/boot.ipxe
+    - path: /usr/local/bin/pxe-setup
+      mode: 0755
+      contents:
+        local: files/bin/pxe-setup
+
+    # --- Scripts ------------------------------------------------------------
+    - path: /usr/local/lib/omni/omni-lib.sh
+      mode: 0644
+      contents:
+        local: files/bin/omni-lib.sh
+    - path: /usr/local/bin/omni-backup
+      mode: 0755
+      contents:
+        local: files/bin/omni-backup
+    - path: /usr/local/bin/omni-restore
+      mode: 0755
+      contents:
+        local: files/bin/omni-restore
+    - path: /usr/local/bin/omni-sync
+      mode: 0755
+      contents:
+        local: files/bin/omni-sync
+    - path: /usr/local/bin/omni-health
+      mode: 0755
+      contents:
+        local: files/bin/omni-health
+    - path: /usr/local/bin/omni-cert-deploy
+      mode: 0755
+      contents:
+        local: files/bin/omni-cert-deploy
+    - path: /usr/local/bin/omni-gpg-init
+      mode: 0755
+      contents:
+        local: files/bin/omni-gpg-init
+
+    - path: /etc/tmpfiles.d/omni.conf
+      mode: 0644
+      contents:
+        local: files/etc/tmpfiles-omni.conf
+
+    # --- Host hardening -----------------------------------------------------
+    - path: /etc/nftables/omni-host.nft
+      mode: 0644
+      contents:
+        local: files/etc/omni-host.nft
+    - path: /etc/sysconfig/nftables.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        local: files/etc/nftables.conf
+    - path: /etc/systemd/logind.conf.d/10-omni-lid.conf
+      mode: 0644
+      contents:
+        local: files/etc/logind-lid.conf
+    - path: /etc/ssh/sshd_config.d/10-hardening.conf
+      mode: 0644
+      contents:
+        local: files/etc/sshd-hardening.conf
+    - path: /etc/zincati/config.d/55-updates-strategy.toml
+      mode: 0644
+      contents:
+        local: files/etc/zincati.toml
+
+systemd:
+  units:
+    - name: nftables.service
+      enabled: true
+    # Never sleep: the host is a laptop running with its lid closed.
+    - name: sleep.target
+      mask: true
+    - name: suspend.target
+      mask: true
+    - name: hibernate.target
+      mask: true
+    - name: hybrid-sleep.target
+      mask: true
+    - name: omni.service
+      enabled: true
+      contents_local: files/units/omni.service
+    - name: dex.service
+      enabled: true
+      contents_local: files/units/dex.service
+    - name: omni-cert-renew.service
+      contents_local: files/units/omni-cert-renew.service
+    - name: omni-tools-build.service
+      contents_local: files/units/omni-tools-build.service
+    - name: pxe-setup.service
+      contents_local: files/units/pxe-setup.service
+    - name: pxe-tftp.service
+      enabled: true
+      contents_local: files/units/pxe-tftp.service
+    - name: omni-cert-init.service
+      contents_local: files/units/omni-cert-init.service
+    - name: omni-gpg-init.service
+      contents_local: files/units/omni-gpg-init.service
+    - name: omni-cert-renew.timer
+      enabled: true
+      contents_local: files/units/omni-cert-renew.timer
+    - name: omni-backup.service
+      contents_local: files/units/omni-backup.service
+    - name: omni-backup.timer
+      enabled: true
+      contents_local: files/units/omni-backup.timer
+    - name: omni-sync.service
+      contents_local: files/units/omni-sync.service
+    - name: omni-sync.timer
+      enabled: true
+      contents_local: files/units/omni-sync.timer

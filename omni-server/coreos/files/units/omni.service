@@ -1,0 +1,66 @@
+# Sidero Omni, run by Docker. The image comes from /etc/omni/images.env,
+# which omni-sync rewrites when versions.yaml changes.
+[Unit]
+Description=Sidero Omni
+Requires=docker.service
+After=docker.service network-online.target dex.service omni-cert-init.service omni-gpg-init.service
+Wants=network-online.target dex.service omni-cert-init.service omni-gpg-init.service
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+EnvironmentFile=/etc/omni/images.env
+ExecStartPre=-/usr/bin/docker rm --force omni
+# --network host, NET_ADMIN and /dev/net/tun: the SideroLink WireGuard tunnel.
+# omni.env holds OMNI_AUTH_OIDC_CLIENT_SECRET (Omni 1.14 dropped the flag).
+# The OS CA bundle stands in for the image's, so Omni trusts what the host
+# does (Dex's issuer). /_out holds both databases; omni-backup archives it.
+ExecStart=/usr/bin/docker run --rm --name omni --log-driver journald \
+  --network host --cap-add NET_ADMIN --device /dev/net/tun \
+  --env-file /etc/omni/omni.env \
+  -v /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/etc/ssl/certs/ca-certificates.crt:ro \
+  -v /var/lib/omni/certs:/certs:ro \
+  -v /var/lib/omni/secrets:/secrets:ro \
+  -v /var/lib/omni/data:/_out \
+  ${OMNI_IMAGE} \
+  --name=omni \
+  --cert=/certs/server-chain.pem \
+  --key=/certs/server-key.pem \
+  --machine-api-cert=/certs/server-chain.pem \
+  --machine-api-key=/certs/server-key.pem \
+  --machine-api-bind-addr=0.0.0.0:8090 \
+  --machine-api-advertised-url=https://${OMNI_HOST}:8090/ \
+  --private-key-source=file:///secrets/omni.asc \
+  --public-key-files=/secrets/omni-public.asc \
+  --storage-kind=etcd \
+  --etcd-embedded \
+  --etcd-embedded-db-path=/_out/etcd \
+  --sqlite-storage-path=/_out/omni.db \
+  --event-sink-port=8091 \
+  --machine-log-max-lines-per-machine=200000 \
+  --machine-log-cleanup-older-than=720h \
+  --bind-addr=0.0.0.0:443 \
+  --k8s-proxy-bind-addr=0.0.0.0:8100 \
+  --metrics-bind-addr=127.0.0.1:2122 \
+  --advertised-api-url=https://${OMNI_HOST}/ \
+  --siderolink-wireguard-advertised-addr=${OMNI_LAN_IP}:50180 \
+  --advertised-kubernetes-proxy-url=https://${OMNI_HOST}:8100/ \
+  --auth-auth0-enabled=false \
+  --auth-oidc-enabled=true \
+  --auth-oidc-provider-url=https://${DEX_HOST}:5556 \
+  --auth-oidc-client-id=omni \
+  --auth-oidc-scopes=openid \
+  --auth-oidc-scopes=profile \
+  --auth-oidc-scopes=email \
+  --initial-users=${OMNI_ADMIN_EMAIL} \
+  "--eula-accept-name=${EULA_NAME}" \
+  --eula-accept-email=${EULA_EMAIL} \
+  --etcd-backup-s3
+ExecStop=/usr/bin/docker stop --time 60 omni
+Restart=always
+RestartSec=10
+# Omni migrates its databases on the first start of a new version.
+TimeoutStartSec=900
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

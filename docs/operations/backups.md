@@ -7,11 +7,12 @@ restore paths.
 ## Omni state
 
 Omni stores its embedded databases under the `data/` directory on its host.
-`omni-backup.timer`, installed by the
-[Omni host playbook](../ansible/omni-host/README.md#backups), stops the stack
+`omni-backup.timer` (on both the Compose host and the
+[CoreOS host](../omni-server/coreos/README.md#backups-and-restore)) stops the stack
 every Sunday at 02:45 (and before any Omni upgrade), archives `data/`, the GPG
 key, TLS and `.env`, and encrypts the archive to the repo's age recipient. It
-keeps eight weeks in `omni-server/backups/` on the host itself, so copy one off
+keeps eight weeks on the host itself (`omni-server/backups/`, or
+`/var/lib/omni/backups/` on CoreOS), so copy one off
 the host before risky changes; the
 [Omni runbook](../omni-server/README.md#backup-and-restore) has the restore
 steps.
@@ -131,8 +132,9 @@ Kustomizations reconcile.
 
 ## Recovery order
 
-1. Restore or start Omni: restore a host backup into `omni-server/`, then run
-   the [Omni host playbook](../ansible/omni-host/README.md).
+1. Restore or start Omni: install the
+   [CoreOS host](../omni-server/coreos/README.md) and `omni-restore` a host
+   backup into it.
 2. Recreate the Talos cluster and obtain a kubeconfig.
 3. Restore the SOPS age identity.
 4. Bootstrap or reconcile Flux.

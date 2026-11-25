@@ -1,0 +1,13 @@
+[Unit]
+Description=Issue the first Omni certificate
+# Only on a host with no certificate: a fresh install that was not restored
+# from a backup. Afterwards omni-cert-renew.timer keeps it current.
+ConditionPathExists=!/var/lib/omni/certs/server-chain.pem
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/systemctl start omni-cert-renew.service

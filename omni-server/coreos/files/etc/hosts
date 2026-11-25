@@ -1,0 +1,3 @@
+# Omni and Dex reach each other, and the health checks reach both, without
+# depending on LAN DNS.
+127.0.0.1 ${OMNI_HOST} ${DEX_HOST}

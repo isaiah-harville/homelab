@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Apply the images pinned in versions.yaml on main (VERSIONS_URL). Mirrors
+# what the old Ansible playbook did on a version change: pull, back up, swap,
+# then wait for Omni and Dex to report healthy.
+#
+#   omni-sync [--dry-run]
+#
+# The running pins live in /etc/omni/images.env, which the units read. A ref
+# without a digest (Flux's setters write tags) is resolved and pinned here.
+# There is no automatic rollback: Omni migrates its databases on start, so
+# going back means omni-restore of the pre-upgrade backup plus the previous
+# images.env (kept as images.env.prev).
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+
+dry_run=false
+[[ ${1:-} == --dry-run ]] && dry_run=true
+images=$OMNI_ETC/images.env
+
+versions=$(curl -fsSL --retry 3 --max-time 30 "$VERSIONS_URL")
+
+# The network-boot menu (pxe/boot.ipxe) needs no restart: TFTP reads it per
+# request. Install it only if it looks like an iPXE script.
+if [[ -n ${PXE_MENU_URL:-} ]] && menu=$(curl -fsSL --retry 3 --max-time 30 "$PXE_MENU_URL"); then
+  if [[ $menu == '#!ipxe'* ]] && ! cmp -s <(printf '%s\n' "$menu") "$OMNI_STATE/tftp/boot.ipxe"; then
+    log "boot.ipxe changed"
+    if ! $dry_run; then
+      printf '%s\n' "$menu" > "$OMNI_STATE/tftp/boot.ipxe.tmp"
+      chmod 0644 "$OMNI_STATE/tftp/boot.ipxe.tmp"
+      mv "$OMNI_STATE/tftp/boot.ipxe.tmp" "$OMNI_STATE/tftp/boot.ipxe"
+    fi
+  fi
+else
+  log "could not fetch $PXE_MENU_URL; keeping the current boot.ipxe"
+fi
+wanted() { sed -nE "s/^[[:space:]]*$1:[[:space:]]*([^[:space:]#]+).*/\1/p" <<< "$versions" | head -n1; }
+current() { sed -nE "s/^$1=(.*)/\1/p" "$images"; }
+pin() {
+  if [[ $1 == *@sha256:* ]]; then
+    printf '%s' "$1"
+  else
+    printf '%s@sha256:%s' "$1" "$(skopeo inspect --raw "docker://$1" | sha256sum | cut -d' ' -f1)"
+  fi
+}
+
+declare -A next=()
+for pair in omni:OMNI_IMAGE dex:DEX_IMAGE lego:LEGO_IMAGE; do
+  key=${pair%%:*} var=${pair#*:}
+  want=$(wanted "$key")
+  [[ -n $want ]] || { log "versions.yaml has no $key image"; exit 1; }
+  have=$(current "$var")
+  # A tag-only ref matches when the tag does; a pinned ref must match exactly.
+  if [[ $want == *@sha256:* && $want == "$have" ]] || [[ $want != *@sha256:* && $want == "${have%@*}" ]]; then
+    continue
+  fi
+  next[$var]=$(pin "$want")
+  log "$key: ${have:-none} -> ${next[$var]}"
+done
+
+((${#next[@]})) || { log "up to date"; exit 0; }
+$dry_run && exit 0
+
+for var in "${!next[@]}"; do docker pull -q "${next[$var]}" > /dev/null; done
+
+restart=()
+[[ -n ${next[DEX_IMAGE]:-} ]] && restart+=(dex.service)
+[[ -n ${next[OMNI_IMAGE]:-} ]] && restart+=(omni.service)
+if ((${#restart[@]})) && systemctl is-active --quiet omni.service; then
+  omni-backup pre-upgrade
+fi
+
+cp "$images" "$images.prev"
+tmp=$(mktemp "$images.XXXXXX")
+cp "$images" "$tmp"
+for var in "${!next[@]}"; do
+  sed -i -E "s|^$var=.*|$var=${next[$var]}|" "$tmp"
+done
+chmod 0644 "$tmp"
+mv "$tmp" "$images"
+
+if ((${#restart[@]})); then
+  systemctl restart "${restart[@]}"
+  if ! omni_health 120; then
+    log "upgrade failed its health check. To go back: copy $images.prev over"
+    log "$images, then omni-restore the pre-upgrade archive in $OMNI_STATE/backups"
+    exit 1
+  fi
+fi
+log "applied: ${!next[*]}"

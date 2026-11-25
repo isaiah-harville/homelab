@@ -1,0 +1,29 @@
+# Obtain or renew the *.${OMNI_DOMAIN} certificate with lego (Cloudflare
+# DNS-01). Started by omni-cert-renew.timer, and once by omni-cert-init on a
+# host with no certificate yet. omni-cert-deploy then installs a changed
+# certificate and restarts Omni and Dex.
+[Unit]
+Description=Renew the Omni *.${OMNI_DOMAIN} certificate (lego, Cloudflare DNS-01)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/omni/images.env
+# lego.env: CLOUDFLARE_DNS_API_TOKEN (plus any LEGO_* overrides).
+ExecStart=/usr/bin/docker run --rm --name omni-cert-renew --log-driver journald \
+  --network host \
+  --env-file /etc/omni/lego.env \
+  -v /var/lib/omni/.lego:/.lego \
+  ${LEGO_IMAGE} run \
+  --accept-tos \
+  --email ${ACME_EMAIL} \
+  --server ${ACME_SERVER} \
+  --dns cloudflare \
+  --domains *.${OMNI_DOMAIN} \
+  --path /.lego \
+  --renew-days 30 \
+  --reuse-key
+ExecStartPost=/usr/local/bin/omni-cert-deploy

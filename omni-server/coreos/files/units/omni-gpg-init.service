@@ -1,0 +1,12 @@
+[Unit]
+Description=Create the GPG key that seals Omni's etcd
+# A restored backup brings its own key; only a brand-new instance needs one.
+ConditionPathExists=!/var/lib/omni/secrets/omni.asc
+RequiresMountsFor=/var/lib/omni
+Wants=omni-tools-build.service
+After=omni-tools-build.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/omni-gpg-init

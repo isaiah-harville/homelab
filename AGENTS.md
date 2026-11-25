@@ -18,7 +18,7 @@ host configuration). Omni applies the lifecycle operations, while
 
 ```
 omni-server/         Self-hosted Omni (Compose stack + runbook) — the management plane
-ansible/omni-host/   Playbook that builds/converges the Omni host (outside Flux's reach)
+omni-server/coreos/  The Omni host as Fedora CoreOS (Butane + Ignition), replacing the Compose host
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
@@ -36,11 +36,31 @@ configuration.
    the cluster (must survive a node wipe), retains its independent Dex static
    break-glass login, and terminates the SideroLink WireGuard tunnel machines
    join through. The in-cluster Authentik deployment does not manage Omni/Dex.
-   `ansible/omni-host` manages the host (SSH, firewall, Docker, lego, backups,
-   the Compose stack); change the host through it, never by hand. The Dex client
-   secret and admin password hash live only in the host's gitignored
-   `omni-server/.env`, so `dex.yaml` holds no secrets.
-   See `omni-server/README.md` and `ansible/omni-host/README.md`.
+   Production (10.1.10.88) still runs the Compose stack (`omni-server/compose.yaml`,
+   secrets in the host's gitignored `omni-server/.env`), with no config
+   management since the Ansible playbook was removed. Change it by hand,
+   per `omni-server/README.md`, until it is replaced.
+
+   **The replacement:** `omni-server/coreos/` builds the host as Fedora CoreOS
+   from one Butane file (`omni.bu`). It was validated in VMs; cutting over is
+   the migration in its README. On that host:
+   - Omni, Dex and lego run as Docker containers from systemd units with
+     `compose.yaml`'s flags. Image pins live in `coreos/versions.yaml`, which
+     Flux's `omni-host` image automation also bumps.
+   - Secrets come from `coreos/secrets.sops.yaml`. `render.sh` decrypts them
+     into the Ignition config at build time, and `make iso` builds an
+     auto-installing ISO (`coreos/INSTALL-ISO.md` is the step-by-step guide).
+   - Changing the host means a reinstall, which keeps the LUKS `omni-data`
+     partition (`/var/lib/omni`). Image bumps are applied by the
+     `omni-sync` timer, which backs up first.
+   - The host is also the PXE server: TFTP-only dnsmasq plus an iPXE with an
+     embedded script, chaining `coreos/pxe/boot.ipxe`. UniFi keeps DHCP
+     (Network Boot → the Omni host, `ipxe.efi`). Regenerate the menu with
+     `coreos/pxe/presets.sh` after a Talos version change.
+
+   Read `omni-server/coreos/README.md` (findings section) before changing
+   partitions, LUKS or SELinux there. Several Ignition settings are
+   load-bearing.
 2. **Talos image** (`talos/image/schematic.yaml`) is an Image Factory schematic
    pinning the system extensions Longhorn needs (`iscsi-tools`, `util-linux-tools`).
 3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
@@ -218,7 +238,8 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
   namespace to those annotations** or the cert won't be there.
 - **Omni is external and can't use this in-cluster cert.** Its host mints its own
   `*.int.harville.dev` cert with **lego (Cloudflare DNS-01)**, same token, independent
-  renewal — see `omni-server/README.md`.
+  renewal — see `omni-server/README.md`. The CoreOS host does the same, with the
+  token in `omni-server/coreos/secrets.sops.yaml`.
 
 ## Storage (Longhorn on Talos)
 
@@ -280,7 +301,10 @@ that list**, or its requests time out. There is no cluster-wide default-deny.
   `clusters/homelab/.../secrets/`, then `sops --encrypt --in-place <file>` (run from repo
   root so `.sops.yaml` is picked up). The age **private** key is not in Git; the
   cluster has a copy in the `sops-age` Secret. Keep a secure external backup for
-  cluster recovery. Local decryption requires that identity.
+  cluster recovery. Local decryption requires that identity: on the workstation
+  it is the gitignored `.agekey` at the root of the main checkout
+  (`export SOPS_AGE_KEY_FILE=~/Projects/homelab/.agekey`; worktrees don't have
+  their own copy).
 - yamllint/pre-commit excludes `secrets/` dirs and `*.sops.yaml`.
 - During a cluster rebuild, restore the `sops-age` Secret in `flux-system` before
   reconciling `infra` or `apps`; both Kustomizations require it for decryption.

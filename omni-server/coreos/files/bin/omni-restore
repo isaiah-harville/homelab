@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Restore Omni's host state from an omni-backup archive, from this host or
+# from the Compose host (same layout).
+#
+#   omni-restore -i <age identity> omni-<stamp>.tar.gz.age
+#   age -d -i key omni-<stamp>.tar.gz.age | ssh core@omni sudo omni-restore -
+#
+# The second form keeps the age identity off this host. Secrets in the
+# archive's .env are not restored: /etc/omni comes from the Ignition config
+# (secrets.sops.yaml). The current state is kept in pre-restore-<stamp>/.
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+
+identity=
+while getopts i: opt; do
+  case $opt in
+    i) identity=$OPTARG ;;
+    *) exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+archive=${1:?usage: omni-restore [-i identity] <archive|->}
+
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+stage="$OMNI_STATE/.restore-$stamp"
+install -d -m 0700 "$stage"
+trap 'rm -rf "$stage"' EXIT
+
+if [[ -n $identity ]]; then
+  docker run --rm -i --network=none -v "$identity:/identity:ro" \
+    omni-tools:local age -d -i /identity < "$archive" | tar -xzf - -C "$stage"
+elif [[ $archive == - ]]; then
+  tar -xzf - -C "$stage"
+else
+  tar -xzf "$archive" -C "$stage"
+fi
+
+for need in data secrets/omni.asc secrets/omni-public.asc; do
+  [[ -e $stage/$need ]] || { log "archive has no $need; refusing"; exit 1; }
+done
+
+# Say what the archive expected that differs from this host. Hostnames must
+# match: certificates, Dex's issuer and joined machines all name them.
+if [[ -f $stage/.env ]]; then
+  for k in OMNI_HOST DEX_HOST OMNI_LAN_IP OMNI_ADMIN_EMAIL; do
+    old=$(sed -nE "s/^$k='?([^']*)'?\$/\1/p" "$stage/.env")
+    if [[ -n $old && $old != "${!k}" ]]; then
+      log "WARNING: archive has $k=$old, this host has ${!k}"
+    fi
+  done
+fi
+
+systemctl stop omni.service dex.service
+keep="$OMNI_STATE/pre-restore-$stamp"
+install -d -m 0700 "$keep"
+for d in data secrets certs .lego; do
+  [[ -e $OMNI_STATE/$d ]] && mv "$OMNI_STATE/$d" "$keep/"
+  if [[ -e $stage/$d ]]; then mv "$stage/$d" "$OMNI_STATE/$d"; fi
+done
+install -d -m 0700 "$OMNI_STATE/.lego"
+log "previous state kept in $keep"
+
+# The Compose host owned these as its admin user; here everything is root's,
+# and Dex reads the key through its group.
+chown -R root:root "$OMNI_STATE/data" "$OMNI_STATE/secrets" "$OMNI_STATE/.lego"
+chmod 0750 "$OMNI_STATE/data"
+chmod 0700 "$OMNI_STATE/secrets" "$OMNI_STATE/.lego"
+chmod 0600 "$OMNI_STATE/secrets/omni.asc"
+if [[ -d $OMNI_STATE/certs ]]; then
+  chown -R root:"$DEX_GID" "$OMNI_STATE/certs"
+  chmod 0750 "$OMNI_STATE/certs"
+  chmod 0644 "$OMNI_STATE/certs/server-chain.pem"
+  chmod 0640 "$OMNI_STATE/certs/server-key.pem"
+fi
+
+systemctl start dex.service omni.service
+omni_health 120

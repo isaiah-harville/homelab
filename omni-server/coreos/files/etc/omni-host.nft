@@ -1,0 +1,29 @@
+# Host firewall: the Compose host's ufw rules in nftables. Loaded by
+# nftables.service from /etc/sysconfig/nftables.conf. Omni and Dex use host
+# networking, so their ports are governed by this input chain directly.
+#
+# Default drop closes Omni's unauthenticated metrics (127.0.0.1:2122 anyway)
+# and its internal API on 10000 to the LAN. Forwarding is left to Docker.
+destroy table inet omni_host
+table inet omni_host {
+  set allowed_v4 {
+    type ipv4_addr
+    flags interval
+    elements = { ${ALLOWED_CIDRS} }
+  }
+
+  chain input {
+    type filter hook input priority filter; policy drop;
+    ct state established,related accept
+    ct state invalid drop
+    iif lo accept
+    meta l4proto { icmp, ipv6-icmp } accept
+    # Everything machines do after joining (event sink, logs, discovery)
+    # travels inside the SideroLink WireGuard tunnel.
+    iifname "siderolink" accept
+    ip saddr @allowed_v4 tcp dport { 22, 443, 5556, 8090, 8100 } accept
+    ip saddr @allowed_v4 udp dport 50180 accept
+    # TFTP for network boot (pxe-tftp runs with --tftp-single-port).
+    ip saddr @allowed_v4 udp dport 69 accept
+  }
+}

@@ -1,0 +1,24 @@
+# TFTP for network boot: serves ipxe.efi (the filename UniFi's "Network Boot"
+# hands out) and boot.ipxe (the menu it chains). dnsmasq with DNS disabled
+# (--port=0) and no DHCP: UniFi stays the DHCP server. --tftp-single-port
+# keeps the whole transfer on 69/udp, so the firewall needs only that port.
+[Unit]
+Description=TFTP server for network boot (iPXE)
+Requires=docker.service omni-tools-build.service
+Wants=network-online.target pxe-setup.service
+After=docker.service omni-tools-build.service pxe-setup.service network-online.target
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+ExecStartPre=-/usr/bin/docker rm --force pxe-tftp
+ExecStart=/usr/bin/docker run --rm --name pxe-tftp --log-driver journald \
+  --network host \
+  -v /var/lib/omni/tftp:/tftp:ro \
+  omni-tools:local dnsmasq --keep-in-foreground --log-facility=- \
+  --port=0 --enable-tftp --tftp-root=/tftp --tftp-single-port --user=root
+ExecStop=/usr/bin/docker stop pxe-tftp
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

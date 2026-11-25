@@ -1,0 +1,9 @@
+[Unit]
+Description=Encrypted backup of Omni's host state
+RequiresMountsFor=/var/lib/omni
+Wants=omni-tools-build.service
+After=omni-tools-build.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/omni-backup
