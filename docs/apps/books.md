@@ -27,23 +27,78 @@ to the mail server or to eReader addresses are reset on the next restart.
   missing from the map gets no automatic delivery; their books still land in
   the library.
 
-To add someone:
+## Adding someone
 
-1. Find their Shelfmark username (Shelfmark admin → Users; it is their Authentik
-   username).
-2. From the main checkout:
+Every step is in Git or in the person's own accounts; nothing is configured in
+CWA's or Shelfmark's admin pages.
+
+1. **Give them access.** In Authentik, add them to the **Books Users** group.
+2. **Have them sign in once** at `https://books.harville.dev`. Shelfmark creates
+   their user on first login.
+3. **Get their exact Shelfmark username.** In Shelfmark: Settings → Users. It is
+   their Authentik username. It must match exactly (case does not matter): a
+   typo means their books still reach the library but never their Kindle.
+4. **Get their Kindle address.** On Amazon: Content & Devices → Devices → their
+   Kindle → Email (ends in `@kindle.com`). The Kindle app on a phone has its own
+   address under the same page.
+5. **Approve the sender.** In *their* Amazon account: Content & Devices →
+   Preferences → Personal Document Settings → Approved Personal Document E-mail
+   List → add `books@harville.dev`. Amazon silently drops mail from any sender
+   not on that list, so skipping this looks exactly like a delivery bug.
+6. **Add them to the recipients secret** from the main checkout (worktrees have
+   no `.agekey`):
 
    ```bash
    export SOPS_AGE_KEY_FILE=~/Projects/homelab/.agekey
    sops apps/media/books/app/kindle-recipients.sops.yaml
    ```
 
-   and add `"username": "them@kindle.com"` (or a list) to `recipients.json`.
-3. In their Amazon account, add `books@harville.dev` under Content & Devices →
-   Preferences → Personal Document Settings → Approved Personal Document E-mail
-   List. Amazon silently drops mail from any other sender.
-4. Commit and merge. Reloader restarts the pod when the secret changes, and the
-   initContainer applies it.
+   `sops` opens the decrypted file in your editor and re-encrypts it on save.
+   Add an entry to the `recipients.json` object. A value is one address or a
+   list (for example a Kindle and the Kindle app):
+
+   ```json
+   {"anna": "anna_xyz@kindle.com", "sam": ["sam_1@kindle.com", "sam_2@kindle.com"]}
+   ```
+
+   The value must stay valid JSON. Before committing, check it still decrypts
+   and parses:
+
+   ```bash
+   sops -d --extract '["stringData"]["recipients.json"]' \
+     apps/media/books/app/kindle-recipients.sops.yaml | python3 -m json.tool
+   ```
+
+7. **Commit, open a PR and merge.** Flux applies the secret, Reloader restarts
+   the books pod, and the initContainer creates their delivery user.
+8. **Check it applied:**
+
+   ```bash
+   kubectl -n media logs deploy/books -c cwa-config
+   ```
+
+   expect `created delivery user <name> with auto-send on`. Then have them
+   download a small public-domain book and confirm it arrives (CWA waits
+   `auto_send_delay_minutes`, 5 by default, before sending).
+
+To remove someone, delete their entry the same way. Their CWA user stays, with
+no address and auto-send off.
+
+## Troubleshooting delivery
+
+- **`cwa-config` logged `ERROR: settings NOT applied`.** The script fails soft:
+  it exits 0 so CWA and Shelfmark still start (they share the pod), and CWA
+  keeps its previous settings. Common causes are invalid JSON in the recipients
+  file or a CWA upgrade that changed `app.db`'s schema. Fix the cause and
+  restart the pod: `kubectl -n media rollout restart deploy/books`.
+- **The book is in the library but never arrived.** In CWA (Admin → Tasks),
+  look for the auto-send task. "too large" means the file is over the 3.5 MiB
+  cap. No task at all means the book was not in a folder named after a
+  recipient: check `/cwa-book-ingest/` and the username in the recipients file.
+  A task that succeeded with nothing on the Kindle almost always means
+  `books@harville.dev` is not an approved sender in that Amazon account.
+- **A setting changed in CWA's UI went back.** Expected: mail settings and
+  eReader addresses are owned by Git and re-applied on every restart.
 
 ## First-run setup
 
@@ -57,9 +112,7 @@ To add someone:
    direct download action.
 4. From the LAN, open `https://calibre.int.harville.dev`, complete CWA's initial
    library setup, and change any bootstrap administrator password immediately.
-5. Add the user to `kindle-recipients.sops.yaml` as described above, then test
-   with a public-domain EPUB: download it in Shelfmark, confirm it appears in
-   CWA, and confirm it reaches the Kindle.
+5. Add each reader as described in "Adding someone".
 
 ## Operational constraints
 
@@ -69,9 +122,15 @@ caps CWA's attachment size at 3.5 MiB; larger books import but are not sent.
 Check CWA's task log when an import succeeds but Kindle delivery does not.
 
 Shelfmark's download sources are IRCHighway `#ebooks` (IRC) and Prowlarr,
-limited to the indexers that return ebooks (`PROWLARR_INDEXERS`). Anna's
-Archive (Direct Download) is off: its search sits behind a DDoS-Guard challenge
-Shelfmark's bypasser cannot solve.
+limited to the indexers that return ebooks (`PROWLARR_INDEXERS`, by Prowlarr
+indexer ID; add an ID there when adding a book indexer). Anna's Archive (Direct
+Download) is off: its search sits behind a DDoS-Guard challenge Shelfmark's
+bypasser cannot solve.
+
+Network exposure differs by source. Torrents go through qBittorrent, whose
+traffic leaves through its gluetun NordVPN sidecar. IRC searches and DCC
+transfers come from the Shelfmark container itself and leave from the home IP.
+IRC transfers only download (they never upload), unlike torrents, which seed.
 
 Shelfmark runs in Universal search mode with Hardcover as the metadata
 provider, pinned by the `SEARCH_MODE` and `METADATA_PROVIDER` environment

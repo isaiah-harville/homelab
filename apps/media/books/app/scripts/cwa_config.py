@@ -25,8 +25,10 @@ from werkzeug.security import generate_password_hash
 CONFIG_DIR = Path(os.environ.get("CWA_CONFIG_DIR", "/config"))
 APP_DB = CONFIG_DIR / "app.db"
 KEY_FILE = CONFIG_DIR / ".key"
-RECIPIENTS_FILE = Path(os.environ["KINDLE_RECIPIENTS_FILE"])
-SMTP_PASSWORD_FILE = Path(os.environ["SMTP_PASSWORD_FILE"])
+RECIPIENTS_FILE = Path(os.environ.get("KINDLE_RECIPIENTS_FILE", "/run/secrets/kindle/recipients.json"))
+SMTP_PASSWORD_FILE = Path(
+    os.environ.get("SMTP_PASSWORD_FILE", "/run/secrets/books-smtp/cloudflare-smtp-token")
+)
 
 # CWA's mail_use_ssl values: 0 none, 1 STARTTLS, 2 SSL/TLS.
 SSL_MODES = {"none": 0, "starttls": 1, "ssl": 2}
@@ -132,6 +134,8 @@ def main() -> None:
         log(f"{APP_DB} does not exist yet; skipping until CWA has initialised it")
         return
     recipients = load_recipients()
+    # One transaction: either every setting lands or none does, so a failure
+    # never leaves CWA half-configured.
     with sqlite3.connect(APP_DB, timeout=30) as db:
         apply_mail_settings(db)
         apply_recipients(db, recipients)
@@ -139,4 +143,15 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Fail soft. This container shares a pod with CWA and Shelfmark, so a
+    # non-zero exit would keep the whole books site down (for example after a
+    # CWA upgrade changes app.db's schema, or a typo in the recipients file).
+    # Instead, log loudly and let CWA start with its last good settings;
+    # only Kindle delivery is affected. Check with:
+    #   kubectl -n media logs deploy/books -c cwa-config
+    try:
+        main()
+    except BaseException as error:  # noqa: BLE001 - includes sys.exit from validation
+        log(f"ERROR: settings NOT applied, CWA keeps its previous ones: {error!r}")
+        log("ERROR: Kindle delivery may be wrong until this is fixed; see docs/apps/books.md")
+    sys.exit(0)
