@@ -113,11 +113,15 @@ omnictl get machines        # empty until machines join (see ../talos/README.md)
 
 ## Upgrades
 
-Omni and Dex versions are pinned in `compose.yaml`; bump them in git, then
-re-run the playbook (or `git pull && docker compose up -d`). The playbook takes
-an encrypted host backup first whenever the Omni image changes, because Omni
-migrates its databases on start and a downgrade can't undo that. Read the
-release notes for removed flags: Omni refuses to start with one.
+Omni and Dex versions are pinned in `compose.yaml`. Flux image automation
+commits patch releases there; minor versions are a deliberate edit. Apply
+either by running the [playbook](../ansible/omni-host/README.md), never with a
+hand `git pull` on the host. It backs up first, because Omni migrates its
+databases on start and a downgrade can't undo that, then waits for Omni and
+Dex to report healthy. Read the release notes for removed flags: Omni refuses
+to start with one. Upgrade `omnictl` alongside Omni; an older client is
+refused once the API version moves. Talos and Kubernetes follow Omni, in that
+order: see [Upgrades](https://github.com/isaiah-harville/homelab/blob/main/docs/operations/upgrades.md).
 
 Authentik deliberately does not front Omni or Dex: logging in must keep working
 when the cluster is down.

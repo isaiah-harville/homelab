@@ -35,3 +35,13 @@ Preserve the imported identity scheme:
 Use `omnictl get machinesets`, `omnictl get machinesetnodes`, and
 `omnictl get configpatches` to inspect the live IDs before importing or changing
 identity fields.
+
+## Provider 0.1.0-beta.0: `name` versus `id`
+
+Up to `0.1.0-alpha.3`, `omni_machine_set.name` held the full Omni ID
+(`homelab-control-planes`). From `0.1.0-beta.0` it holds only the configured
+name (`control-planes`), and a new computed `id` holds the full ID. Other
+resources must reference `omni_machine_set.<name>.id`. Referencing `.name`
+after the upgrade planned a replacement of every `omni_machine_set_node` and
+of the control-plane config patches, which would have taken all five machines
+out of their machine sets; the plan was caught before apply.
