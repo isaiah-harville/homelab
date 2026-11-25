@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Prepare the TFTP root (/var/lib/omni/tftp) for network boot:
+# - build ipxe.efi with pxe/build-ipxe.sh in the pinned Debian image, when
+#   its inputs (script, embedded script, arch, server, image) changed;
+# - seed boot.ipxe from the Ignition copy if there is none yet (afterwards
+#   omni-sync keeps it in step with git).
+# The result lives on omni-data, so a reinstall doesn't rebuild it.
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+load_env "$OMNI_ETC/images.env"
+
+src=/usr/local/lib/omni/pxe
+dir=$OMNI_STATE/tftp
+install -d -m 0755 "$dir"
+[[ -f $dir/boot.ipxe ]] || install -m 0644 "$src/boot.ipxe" "$dir/boot.ipxe"
+
+key=$(cat "$src/build-ipxe.sh" "$src/embed.ipxe" <(echo "$PXE_ARCH $OMNI_LAN_IP $IPXE_BUILD_IMAGE") |
+  sha256sum | cut -c1-16)
+if [[ -f $dir/ipxe.efi && $(cat "$dir/.ipxe-key" 2> /dev/null) == "$key" ]]; then
+  exit 0
+fi
+docker run --rm --network host -v "$src:/pxe:ro" -v "$dir:/out" "$IPXE_BUILD_IMAGE" \
+  sh /pxe/build-ipxe.sh "$PXE_ARCH" "$OMNI_LAN_IP" /pxe/embed.ipxe /out/ipxe.efi.new
+chmod 0644 "$dir/ipxe.efi.new"
+mv "$dir/ipxe.efi.new" "$dir/ipxe.efi"
+echo "$key" > "$dir/.ipxe-key"

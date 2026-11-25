@@ -29,6 +29,7 @@ Makefile              make ign | make iso
 files/units/          omni, dex, lego, tools-image, backup, sync units + timers
 files/bin/            omni-backup, omni-restore, omni-sync, omni-health, ...
 files/etc/            dex.yaml, nftables, Zincati, sshd, /etc/hosts, tmpfiles
+pxe/                  network boot: iPXE build, embedded script, menu, Omni presets
 test/                 QEMU harness used for validation
 build/                rendered output: contains secrets, gitignored
 ```
@@ -45,7 +46,8 @@ build/                rendered output: contains secrets, gitignored
 | TLS | lego (Cloudflare DNS-01) in a container, `omni-cert-renew.timer` weekly; `omni-cert-deploy` installs a changed cert (key `root:1001 0640`, readable by Dex's uid) and restarts Omni and Dex |
 | Backups | `omni-backup.timer` weekly, plus one before every upgrade; same age-encrypted archive as the Ansible host |
 | Day 2 | `omni-sync.timer` daily: reads `versions.yaml` from main, backs up, swaps images, checks `/healthz` |
-| Firewall | nftables (FCOS has no firewalld): 10.1.0.0/16 to 22, 443, 5556, 8090, 8100 and 50180/udp; anything on `siderolink`; everything else dropped (closes 2122 and 10000) |
+| Network boot | TFTP only (dnsmasq, no DHCP or DNS) serving an iPXE build with an embedded script and a menu that chains Talos from the Image Factory into Omni ([Network boot](#network-boot)) |
+| Firewall | nftables (FCOS has no firewalld): 10.1.0.0/16 to 22, 443, 5556, 8090, 8100, 50180/udp and 69/udp; anything on `siderolink`; everything else dropped (closes 2122 and 10000) |
 | SSH | keys only, `core` only; FCOS already disables passwords |
 | SELinux | Off (`selinux=0`); see [findings](#findings) |
 
@@ -53,6 +55,72 @@ State on `omni-data` (`/var/lib/omni`) has the same layout as the Compose
 host's `omni-server/` directory: `data/` (etcd + SQLite), `secrets/omni.asc`
 and `omni-public.asc` (the GPG key that seals etcd), `certs/`, `.lego/` and
 `backups/`. That keeps backups interchangeable between the two hosts.
+
+## Network boot
+
+The host is also the homelab's PXE server, so a blank or wiped machine
+boots straight into Talos and shows up in Omni in maintenance mode. No USB
+stick is needed.
+
+```
+UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
+         ──TFTP ipxe.efi ── iPXE, embedded script: dhcp, chain boot.ipxe
+         ──TFTP boot.ipxe ── menu ── HTTPS pxe.factory.talos.dev (kernel, initramfs)
+         ──Talos maintenance mode ── SideroLink ── Omni
+```
+
+- **DHCP stays on UniFi.** The host only answers TFTP (`pxe-tftp`:
+  dnsmasq with `--port=0` and no DHCP range). It uses `--tftp-single-port`
+  so the whole transfer stays on 69/udp, which is the only port the firewall
+  opens for it.
+- **`ipxe.efi`** is iPXE's `snponly.efi`, built from a pinned commit
+  (v2.0.0, `pxe/build-ipxe.sh`) in the pinned Debian image from
+  `versions.yaml`, with HTTPS on and `pxe/embed.ipxe` embedded. The embedded
+  script is what makes this work with UniFi. UniFi can't give iPXE a
+  different filename from the firmware, so a stock iPXE would chainload
+  `ipxe.efi` forever. This one runs `dhcp` and then chains `boot.ipxe` from
+  the same server. The host builds it itself on first boot (`pxe-setup`,
+  a few minutes) into `/var/lib/omni/tftp`, and rebuilds only when its
+  inputs change. The binary doesn't fit in the ISO's 256 KiB embedded
+  Ignition.
+- **`boot.ipxe`** is the menu: Talos (`iscsi-tools`, `util-linux-tools`,
+  the default after 15 s), Talos for GPU nodes (plus the NVIDIA driver and
+  container toolkit), local disk, iPXE shell. It picks `amd64`/`arm64` at
+  boot. The URLs come from Omni installation-media presets, and since Omni
+  1.14 the join configuration is embedded in the schematic:
+
+  ```bash
+  omni-server/coreos/pxe/presets.sh   # needs omnictl for this Omni; writes pxe/boot.ipxe
+  git commit omni-server/coreos/pxe/boot.ipxe
+  ```
+
+  Run it again after a Talos upgrade (the URL pins the version, taken
+  from `terraform/omni/locals.tf`) or an extension change. `omni-sync` picks
+  the new menu up from main; no restart needed. The URLs carry Omni's join
+  token inside the schematic, as any Omni install media does, so treat
+  `boot.ipxe` as config, not a secret. Until the presets script has run,
+  the menu says so and falls back to the local disk.
+- **HTTPS trust:** iPXE is built with the Mozilla roots from the pinned
+  Debian image's `ca-certificates` embedded and trusted (`TRUST=`/`CERT=`).
+  iPXE's default trust is only its own root, which reaches public CAs
+  through cross-signed certificates fetched from `ca.ipxe.org` over plain
+  HTTP. That default **rejected** `pxe.factory.talos.dev` ("Permission
+  denied", ipxe.org/0216eb8f; chain ZeroSSL → Sectigo R46 → USERTrust RSA).
+
+**UniFi (you):** Settings → Networks → the 10.1.10.0/24 network → DHCP →
+Network Boot: server `10.1.10.88` (the Omni host), filename `ipxe.efi`.
+
+**Each machine's firmware (you):**
+
+- UEFI boot mode with the UEFI network stack and IPv4 PXE enabled (often
+  "Network Stack" plus "IPv4 PXE Support" on the boot or advanced page).
+- Boot order: local disk first, then network. An installed machine boots
+  its disk; a blank or wiped one falls through to PXE. With network first,
+  every restart would boot the network image instead of the installed
+  system.
+- Secure Boot off. To keep it on, create the presets with `--secureboot`
+  and enroll Sidero's keys; iPXE itself would also need a signed build,
+  which this setup doesn't provide.
 
 ## Bootstrap a new host
 
@@ -211,6 +279,15 @@ step, and a joined Talos VM whose SideroLink `Link` had to come back as
 | Talos 1.14.7 (latest) joins the restored instance | Connected |
 | lego against a local Pebble ACME server (in place of Let's Encrypt + Cloudflare) | Certificate issued into `.lego/`. `omni-cert-deploy` installed it (key `root:1001 0640`) and restarted Dex and Omni |
 | Firewall | 5556 and 8090 reachable from the allowed CIDR; 10000 and 2122 dropped (time out). Omni 1.14 binds metrics to loopback and nothing on 10000 |
+| Network boot: host side (reinstall on FCOS 45) | `pxe-setup` built `ipxe.efi` on first boot from the pinned iPXE commit. `pxe-tftp` (dnsmasq, DNS off, single port) served `ipxe.efi` and `boot.ipxe` to a TFTP client through the firewall. `presets.sh` created both presets, and `omni-sync` installed the new menu from the served copy of git |
+| Network boot: blank UEFI VM, empty disk | Firmware PXE → `ipxe.efi` → embedded `dhcp` → `tftp://<server>/boot.ipxe` → menu (default entry) → HTTPS Image Factory → Talos 1.14.7 with `iscsi-tools` + `util-linux-tools` in Omni, connected, maintenance mode. The NVIDIA entry's URL was generated but not booted (no GPU in the lab) |
+
+The Mac can't bind 69/udp without root, so in the boot test QEMU's own
+DHCP/TFTP handed the VM the `ipxe.efi` and `boot.ipxe` just fetched from
+the host's TFTP server (byte-identical). The host's TFTP serving was
+checked separately with a real TFTP client. In production the machines
+talk to the host directly; UniFi's DHCP is the only piece the lab didn't
+exercise.
 
 Not tested: a real Let's Encrypt + Cloudflare issuance (no token in the
 test, and it would have touched the production DNS zone), a browser login
@@ -255,6 +332,15 @@ Things that didn't work at first, and are now handled in the config:
   `moby-engine` from FCOS before. If that happens, the units convert back
   to quadlets almost line for line.
 
+- **The ISO's embedded Ignition is capped at 256 KiB (compressed).** A
+  1.1 MB `ipxe.efi` can't ride along, and even the 300 KB `snponly.efi`
+  would sit at the limit. So the host builds iPXE itself from pinned
+  inputs, once, onto `omni-data`.
+- **iPXE's default HTTPS trust rejected the Image Factory** (see Network
+  boot): the build embeds the Mozilla roots instead.
+- **A failing `iseq` ends an iPXE script** unless followed by `||`. The
+  menu's first version aborted on "Result too large" (ipxe.org/46022085).
+
 Test-environment only (no change to the host config):
 
 - Omni needs SNI: clients must use its hostname, not an IP.
@@ -262,6 +348,10 @@ Test-environment only (no change to the host config):
   machine API, the SideroLink URL must be `grpc://`: Talos still tries TLS
   with the `http://` URL Omni advertises when it has no machine-API cert.
   Production uses Let's Encrypt, so it is unaffected.
+- QEMU's user network offers IPv6, so iPXE preferred the factory's AAAA
+  record, and the Mac had no IPv6 route out ("Network unreachable"). The
+  PXE VM runs with `ipv6=off`. On the LAN this only matters if machines get
+  IPv6 addresses without IPv6 connectivity.
 - On Apple Silicon (HVF) QEMU's TPM needs `ppi=off`. A UEFI-booted Talos VM
   needs `virtio-rng-pci`, or it blocks on entropy. Direct kernel boot has
   no SMBIOS, so Talos never registers.
@@ -272,6 +362,9 @@ Open points before production:
   real machine.
 - `secrets.sops.yaml` doesn't exist yet: it needs the age identity
   (step 1 of Bootstrap).
+- `pxe/boot.ipxe` has no URLs yet: run `pxe/presets.sh` against the
+  production Omni and commit the result. Then set UniFi's Network Boot and
+  each machine's firmware as described under Network boot.
 - Flux's setters write tag-only refs; `omni-sync` pins the digest at apply
   time. To have Flux write digests into git instead, add
   `digestReflectionPolicy: Always` to the `omni` and `dex` ImagePolicies.

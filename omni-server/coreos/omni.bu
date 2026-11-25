@@ -74,6 +74,8 @@ storage:
       mode: 0755
     - path: /usr/local/lib/omni
       mode: 0755
+    - path: /usr/local/lib/omni/pxe
+      mode: 0755
 
   files:
     - path: /etc/hostname
@@ -110,6 +112,26 @@ storage:
       mode: 0644
       contents:
         local: files/etc/images.env
+
+    # --- Network boot ----------------------------------------------------
+    # pxe-setup builds ipxe.efi from these into /var/lib/omni/tftp, and
+    # seeds the menu there; omni-sync keeps the menu current.
+    - path: /usr/local/lib/omni/pxe/build-ipxe.sh
+      mode: 0755
+      contents:
+        local: pxe/build-ipxe.sh
+    - path: /usr/local/lib/omni/pxe/embed.ipxe
+      mode: 0644
+      contents:
+        local: pxe/embed.ipxe
+    - path: /usr/local/lib/omni/pxe/boot.ipxe
+      mode: 0644
+      contents:
+        local: pxe/boot.ipxe
+    - path: /usr/local/bin/pxe-setup
+      mode: 0755
+      contents:
+        local: files/bin/pxe-setup
 
     # --- Scripts ------------------------------------------------------------
     - path: /usr/local/lib/omni/omni-lib.sh
@@ -179,6 +201,11 @@ systemd:
       contents_local: files/units/omni-cert-renew.service
     - name: omni-tools-build.service
       contents_local: files/units/omni-tools-build.service
+    - name: pxe-setup.service
+      contents_local: files/units/pxe-setup.service
+    - name: pxe-tftp.service
+      enabled: true
+      contents_local: files/units/pxe-tftp.service
     - name: omni-cert-init.service
       contents_local: files/units/omni-cert-init.service
     - name: omni-gpg-init.service

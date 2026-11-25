@@ -5,6 +5,7 @@
 #   WORK=<dir> test/vm.sh start     boot the installed disk (background)
 #   WORK=<dir> test/vm.sh stop      power off the Omni VM
 #   WORK=<dir> test/vm.sh talos [iso]  boot a Talos VM from a join ISO (background)
+#   WORK=<dir> test/vm.sh pxe       boot a blank VM from the network (background)
 #   WORK=<dir> test/vm.sh ssh [cmd] ssh core@ the Omni VM
 #   WORK=<dir> test/vm.sh omnictl <args>  omnictl run inside the Omni VM
 #
@@ -25,7 +26,7 @@ for p in 443 5556 8090 8100 2122 10000; do
   off=$((p == 443 ? 8443 : p))
   fwd+=",hostfwd=tcp:127.0.0.1:$off-:$p"
 done
-fwd+=",hostfwd=udp:127.0.0.1:50180-:50180"
+fwd+=",hostfwd=udp:127.0.0.1:50180-:50180,hostfwd=udp:127.0.0.1:1069-:69"
 
 firmware() {
   local vars=$1
@@ -96,6 +97,27 @@ case $cmd in
       chmod +x /var/tmp/omnictl-\$v
       OMNI_ENDPOINT=https://\$(sed -n 's/^OMNI_HOST=//p' /etc/omni/host.env)/ \
       OMNI_SERVICE_ACCOUNT_KEY=\$(sudo cat /var/lib/omni/data/initial-sa.key) /var/tmp/omnictl-\$v $*"
+    ;;
+  pxe)
+    # A blank UEFI machine that network-boots. The Mac can't bind 69/udp
+    # without root, so the Omni VM's TFTP is forwarded on 1069: fetch
+    # ipxe.efi and boot.ipxe from it with a real TFTP client, then let QEMU's
+    # DHCP/TFTP hand exactly those files to the VM (next-server 10.0.2.2).
+    # ipv6=off: otherwise iPXE prefers the factory's AAAA record, and the
+    # Mac has no IPv6 route out.
+    mkdir -p "$WORK/tftp-mirror"
+    for f in ipxe.efi boot.ipxe; do
+      curl -fsS -o "$WORK/tftp-mirror/$f" "tftp://127.0.0.1:1069/$f"
+    done
+    qemu-img create -f qcow2 "$WORK/pxe.qcow2" 10G > /dev/null
+    # shellcheck disable=SC2046
+    qemu-system-aarch64 -machine virt,accel=hvf -cpu host -smp 2 -m 2048 \
+      $(firmware "$WORK/pxe-vars.fd") \
+      -uuid 7a1c0d2e-0000-4000-8000-0000000000b2 \
+      -drive "if=virtio,format=qcow2,file=$WORK/pxe.qcow2" \
+      -netdev "user,id=n0,ipv6=off,tftp=$WORK/tftp-mirror,bootfile=ipxe.efi" \
+      -device virtio-net-pci,netdev=n0 -device virtio-rng-pci \
+      -display none -serial "file:$WORK/pxe-console.log" -pidfile "$WORK/pxe.pid" -daemonize
     ;;
   ssh)
     exec ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \

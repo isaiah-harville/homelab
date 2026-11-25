@@ -13,3 +13,5 @@ images:
   lego: docker.io/goacme/lego:v5.7.0@sha256:9fe6151508c0e1ddc51a6d3e474353520f4b008782bf0c6d31676da72e6d4766
   # Base of the local omni-tools image (age, gnupg) used by backups.
   tools: docker.io/library/alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+  # Builds the network-boot iPXE on the host (pxe/build-ipxe.sh).
+  ipxe-build: docker.io/library/debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0

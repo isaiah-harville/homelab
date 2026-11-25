@@ -21,6 +21,17 @@ test/vm.sh ssh sudo omni-health
 test/vm.sh omnictl jointoken kernel-args
 ```
 
+Network boot: with the Omni VM up, generate a menu and serve it where
+`PXE_MENU_URL` points (`http://10.0.2.2:8000/boot.ipxe`, next to
+`versions.yaml`), let `omni-sync` install it, then boot a blank VM:
+
+```bash
+OMNICTL="$PWD/test/vm.sh omnictl" ARCH=arm64 pxe/presets.sh $WORK/serve/boot.ipxe
+test/vm.sh ssh sudo omni-sync
+test/vm.sh pxe      # fetches ipxe.efi + boot.ipxe from the host's TFTP on :1069
+test/vm.sh omnictl get links
+```
+
 For the Talos VM, put those kernel args (plus `console=ttyAMA0`) in an
 Image Factory schematic's `extraKernelArgs`, download its
 `metal-arm64.iso` to `$WORK/talos-join.iso` and run `test/vm.sh talos`.
@@ -36,5 +47,9 @@ Image Factory schematic's `extraKernelArgs`, download its
   advertises `grpc://10.0.2.2:8090/`, because Talos in maintenance mode
   can't trust a private CA. It also adds an initial Admin service account
   for omnictl.
+- The host's 69/udp is forwarded on 1069 (the Mac can't bind 69 without
+  root). `vm.sh pxe` fetches the two files from there and lets QEMU's
+  DHCP/TFTP serve them to the PXE VM, which runs with `ipv6=off`.
+- `test/host.env` sets `PXE_ARCH=arm64`.
 - `vm.sh` gives the TPM `ppi=off` (HVF rejects the PPI region's alignment)
   and adds `virtio-rng-pci` (Talos blocks on entropy without it).

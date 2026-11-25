@@ -23,5 +23,7 @@ table inet omni_host {
     iifname "siderolink" accept
     ip saddr @allowed_v4 tcp dport { 22, 443, 5556, 8090, 8100 } accept
     ip saddr @allowed_v4 udp dport 50180 accept
+    # TFTP for network boot (pxe-tftp runs with --tftp-single-port).
+    ip saddr @allowed_v4 udp dport 69 accept
   }
 }

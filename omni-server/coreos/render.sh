@@ -4,8 +4,9 @@
 # build/secrets/, then `butane --strict`. Output: $OUT/omni.ign (contains
 # secrets; build/ is gitignored).
 #
-# Overrides (for test hosts): HOST_ENV, SECRETS, VERSIONS, OUT,
-# SSH_AUTHORIZED_KEYS (a public key file; default ~/.ssh/id_ed25519.pub).
+# Overrides (for test hosts): HOST_ENV, SECRETS, VERSIONS, OUT, PXE_MENU
+# (default pxe/boot.ipxe), SSH_AUTHORIZED_KEYS (a public key file; default
+# ~/.ssh/id_ed25519.pub).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -14,6 +15,7 @@ SECRETS=${SECRETS:-secrets.sops.yaml}
 VERSIONS=${VERSIONS:-versions.yaml}
 OUT=${OUT:-build}
 SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS:-$HOME/.ssh/id_ed25519.pub}
+PXE_MENU=${PXE_MENU:-pxe/boot.ipxe}
 
 for tool in butane envsubst sops; do
   command -v "$tool" > /dev/null || { echo "render.sh: $tool is required" >&2; exit 1; }
@@ -30,12 +32,13 @@ while IFS='=' read -r k v; do
 done < "$HOST_ENV"
 
 image() { sed -nE "s/^[[:space:]]*$1:[[:space:]]*([^[:space:]#]+).*/\1/p" "$VERSIONS" | head -n1; }
-export OMNI_IMAGE DEX_IMAGE LEGO_IMAGE TOOLS_IMAGE
+export OMNI_IMAGE DEX_IMAGE LEGO_IMAGE TOOLS_IMAGE IPXE_BUILD_IMAGE
 OMNI_IMAGE=$(image omni)
 DEX_IMAGE=$(image dex)
 LEGO_IMAGE=$(image lego)
 TOOLS_IMAGE=$(image tools)
-image_vars=(OMNI_IMAGE DEX_IMAGE LEGO_IMAGE TOOLS_IMAGE)
+IPXE_BUILD_IMAGE=$(image ipxe-build)
+image_vars=(OMNI_IMAGE DEX_IMAGE LEGO_IMAGE TOOLS_IMAGE IPXE_BUILD_IMAGE)
 for v in "${vars[@]}" "${image_vars[@]}"; do
   [[ -n ${!v} ]] || { echo "render.sh: $v is empty" >&2; exit 1; }
 done
@@ -73,6 +76,12 @@ printf 'DEX_OMNI_CLIENT_SECRET=%s\nDEX_ADMIN_PASSWORD_HASH=%s\n' \
 printf 'CLOUDFLARE_DNS_API_TOKEN=%s\n' "$(secret cloudflare_dns_api_token)" > "$OUT/secrets/lego.env"
 # LUKS key for the omni-data partition; changing it orphans the existing data.
 printf '%s' "$(secret omni_data_luks_key)" > "$OUT/secrets/omni-data.key"
+
+# Network boot: the host builds ipxe.efi itself (too big for the ISO's
+# embedded Ignition), so only its inputs and the menu go in.
+mkdir -p "$OUT/pxe"
+cp pxe/build-ipxe.sh pxe/embed.ipxe "$OUT/pxe/"
+cp "$PXE_MENU" "$OUT/pxe/boot.ipxe"
 
 butane --strict --files-dir "$OUT" "$OUT/omni.bu" > "$OUT/omni.ign"
 echo "wrote $OUT/omni.ign"

@@ -1,0 +1,12 @@
+#!ipxe
+# Embedded in ipxe.efi by pxe/build.sh. Gets an address, then chains the
+# menu from the TFTP server DHCP named (UniFi's "Network Boot" server), or
+# from the Omni host's address if DHCP named none.
+echo Homelab network boot
+:dhcp
+dhcp || goto dhcp
+isset ${next-server} || set next-server @DEFAULT_SERVER@
+chain tftp://${next-server}/boot.ipxe || goto failed
+:failed
+echo Could not load boot.ipxe from ${next-server}. Dropping to a shell.
+shell
