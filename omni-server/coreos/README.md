@@ -19,6 +19,8 @@ production host (10.1.10.88) still runs the Compose stack. Cutover is the
 ## Layout
 
 ```
+check.sh              static checks, run by CI (validate.yaml) on every PR
+set-dex-password.sh   set the Dex break-glass password in secrets.sops.yaml
 omni.bu               Butane config (the host)
 host.env              non-secret settings: names, LAN IP, firewall CIDRs, disk
 versions.yaml         pinned images; Flux bumps omni/dex patch releases here

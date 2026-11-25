@@ -1,4 +1,8 @@
+# shellcheck shell=bash
 # Shared helpers for the omni-* scripts. Sourced, not executed.
+
+# Used by the scripts that source this file.
+# shellcheck disable=SC2034
 
 OMNI_STATE=/var/lib/omni
 OMNI_ETC=/etc/omni
