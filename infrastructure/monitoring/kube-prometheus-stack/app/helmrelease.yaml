@@ -124,7 +124,6 @@ spec:
           args:
             - >-
               rm -rfv
-              /var/lib/grafana/dashboards/networking
               /var/lib/grafana/dashboards/storage
               /var/lib/grafana/dashboards/kubernetes/nodes.json
           securityContext:
@@ -186,6 +185,14 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/kubernetes
+            - name: networking
+              orgId: 1
+              folder: Networking
+              type: file
+              disableDeletion: true
+              editable: false
+              options:
+                path: /var/lib/grafana/dashboards/networking
             - name: homelab
               orgId: 1
               folder: Homelab
@@ -195,9 +202,9 @@ spec:
               options:
                 path: /var/lib/grafana/dashboards/homelab
       # The Homelab folder (generated JSON in ./dashboards) is the starting
-      # point: nodes, storage, services, networking, inference and logs. It
-      # replaced the grafana.com Traefik, Longhorn and Kubernetes "Nodes"
-      # dashboards, which covered the same ground less usefully.
+      # point: nodes, storage, services, inference and logs. It replaced the
+      # grafana.com Longhorn and Kubernetes "Nodes" dashboards, which covered
+      # the same ground less usefully. Networking stays on the Traefik one.
       dashboardsConfigMaps:
         homelab: grafana-dashboards-homelab
       # Kubernetes drill-downs the Homelab set doesn't repeat: per-namespace
@@ -215,6 +222,11 @@ spec:
           pods:
             gnetId: 15760
             revision: 39
+            datasource: Prometheus
+        networking:
+          traefik:
+            gnetId: 17346
+            revision: 9
             datasource: Prometheus
       service:
         type: ClusterIP
