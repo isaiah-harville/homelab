@@ -58,7 +58,13 @@ spec:
     persistence:
       enabled: true
       accessMode: ReadWriteMany
-      size: 15Gi
+      # A 6-hour radar frame cache for every NEXRAD station: ~325 MB in
+      # practice. 15Gi left Longhorn copying 15Gi of stale blocks on every
+      # rebuild (it can't reclaim deleted blocks on this RWX volume), which
+      # held a Talos upgrade drain for over an hour. Longhorn can't shrink a
+      # volume in place; changing this means deleting the PVC (the cache
+      # refills within ORION_NEXRAD_HISTORY_HOURS).
+      size: 2Gi
     api:
       replicaCount: 2
     nexrad:
