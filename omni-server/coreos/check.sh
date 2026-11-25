@@ -59,9 +59,9 @@ echo "== pinned images exist"
 for key in omni dex lego tools ipxe-build; do
   ref=$(sed -nE "s/^[[:space:]]*$key:[[:space:]]*([^[:space:]#]+).*/\1/p" versions.yaml | head -n1)
   [[ -n $ref ]] || { fail "versions.yaml has no $key image"; continue; }
-  # Flux's setters write tag-only refs for omni and dex (omni-sync pins those
-  # on the host); the rest must carry a digest.
-  if [[ $key != omni && $key != dex && $ref != *@sha256:* ]]; then
+  # Flux writes tag@digest for omni and dex (digestReflectionPolicy), so every
+  # image must carry a digest; otherwise a fresh install runs by tag.
+  if [[ $ref != *@sha256:* ]]; then
     fail "$key is not pinned by digest: $ref"
   fi
   # A tag@digest ref must still name a tag that points at that digest.
