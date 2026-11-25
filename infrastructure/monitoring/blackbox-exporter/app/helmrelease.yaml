@@ -1,0 +1,59 @@
+---
+# Synthetic checks: Prometheus asks blackbox-exporter to fetch a URL and
+# records probe_success / probe_duration_seconds / probe_http_status_code. Apps
+# declare what to probe with a Probe resource next to their manifests (see
+# apps/media/books/app/monitoring.yaml); alert rules then fire on
+# probe_success == 0. This catches what pod-level metrics cannot: a broken
+# ingress, certificate, DNS name or an app that is Running but not answering.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: prometheus-blackbox-exporter
+      version: ">=12.0.0 <13.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  values:
+    # Stable Service name for Probe resources:
+    # blackbox-exporter.monitoring.svc:9115
+    fullnameOverride: blackbox-exporter
+    config:
+      modules:
+        # 2xx over HTTP(S), following redirects, with a valid certificate.
+        http_2xx:
+          prober: http
+          timeout: 10s
+          http:
+            preferred_ip_protocol: ip4
+            follow_redirects: true
+            fail_if_not_ssl: false
+    # The chart's default securityContext already meets the restricted Pod
+    # Security profile (non-root, read-only root, all capabilities dropped).
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 64Mi
+    serviceMonitor:
+      selfMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
