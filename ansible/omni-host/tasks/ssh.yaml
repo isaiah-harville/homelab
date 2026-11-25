@@ -29,9 +29,13 @@
       MaxAuthTries 3
       AllowUsers {{ omni_user }}
   register: sshd_hardening
+  # The reload is notified here, where the change happens. (A notify on the
+  # validation below never fired: that task always reports "ok".)
+  notify: Reload sshd
 
+# Handlers run at the end of the play, so a broken config fails here first
+# and sshd is never reloaded onto it.
 - name: Validate sshd configuration  # noqa: no-handler
   ansible.builtin.command: /usr/sbin/sshd -t
   changed_when: false
   when: sshd_hardening is changed
-  notify: Reload sshd

@@ -1,0 +1,86 @@
+---
+# Patch releases of Omni and Dex for the self-hosted Omni host. Flux commits
+# the bump to omni-server/compose.yaml on main; nothing changes on the host
+# until ansible/omni-host runs, which backs up first and checks health after.
+# Minor versions stay a deliberate edit: Omni releases remove flags, and
+# Talos/Kubernetes upgrades (terraform/omni) depend on the Omni minor.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: omni
+  namespace: flux-system
+spec:
+  image: ghcr.io/siderolabs/omni
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: omni
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: omni
+  filterTags:
+    pattern: '^v(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '~1.14'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: dex
+  namespace: flux-system
+spec:
+  image: ghcr.io/dexidp/dex
+  interval: 6h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: dex
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: dex
+  filterTags:
+    pattern: '^v(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '~2.46'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: omni-host
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: homelab-image-automation
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: Flux Image Automation
+        email: flux-image-automation@users.noreply.github.com
+      messageTemplate: |
+        chore(omni): update Omni host images
+
+        Apply on the host with ansible/omni-host (backs up first).
+        {{- range $resource, $changes := .Changed.Objects }}
+        {{- range $_, $change := $changes }}
+        - {{ $change.OldValue }} -> {{ $change.NewValue }}
+        {{- end }}
+        {{- end }}
+    push:
+      branch: main
+  update:
+    path: ./omni-server
+    strategy: Setters

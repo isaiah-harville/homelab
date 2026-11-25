@@ -1,7 +1,7 @@
 ---
 services:
   dex:
-    image: ghcr.io/dexidp/dex:v2.46.1
+    image: ghcr.io/dexidp/dex:v2.46.1 # {"$imagepolicy": "flux-system:dex"}
     container_name: dex
     restart: unless-stopped
     command: ["dex", "serve", "/etc/dex/dex.yaml"]
@@ -23,7 +23,7 @@ services:
       - "1000"
 
   omni:
-    image: ghcr.io/siderolabs/omni:v1.14.0
+    image: ghcr.io/siderolabs/omni:v1.14.0 # {"$imagepolicy": "flux-system:omni"}
     container_name: omni
     restart: unless-stopped
     depends_on:
