@@ -178,6 +178,10 @@ storage:
       overwrite: true
       contents:
         local: files/etc/nftables.conf
+    - path: /etc/systemd/logind.conf.d/10-omni-lid.conf
+      mode: 0644
+      contents:
+        local: files/etc/logind-lid.conf
     - path: /etc/ssh/sshd_config.d/10-hardening.conf
       mode: 0644
       contents:
@@ -191,6 +195,15 @@ systemd:
   units:
     - name: nftables.service
       enabled: true
+    # Never sleep: the host is a laptop running with its lid closed.
+    - name: sleep.target
+      mask: true
+    - name: suspend.target
+      mask: true
+    - name: hibernate.target
+      mask: true
+    - name: hybrid-sleep.target
+      mask: true
     - name: omni.service
       enabled: true
       contents_local: files/units/omni.service

@@ -138,6 +138,9 @@ Docker for coreos-installer.
    sops --encrypt --in-place omni-server/coreos/secrets.sops.yaml
    ```
 
+   Set the Dex break-glass password with
+   `SOPS_AGE_KEY_FILE=~/Projects/homelab/.agekey ./set-dex-password.sh`
+   (prompts; stores the bcrypt hash and the plaintext).
    For a migration, copy `DEX_OMNI_CLIENT_SECRET` and the
    `DEX_ADMIN_PASSWORD_HASH` from the old host's `.env`. This keeps the
    break-glass password. The client secret could just as well be new.
@@ -324,6 +327,9 @@ Things that didn't work at first, and are now handled in the config:
   Compose host's hand-copied `certs/ca.pem` and follows OS updates.
 - **Docker won't create missing bind-mount sources** under the data
   partition: `tmpfiles.d` creates them each boot.
+- **The production host is a laptop run with its lid closed.** CoreOS's
+  logind would suspend it on boot. Found on the real host, not in the VMs:
+  the lid handling there was a hand edit the playbook never recorded.
 - **FCOS has no firewalld** (the task asked for it). The rules are plain
   nftables, loaded by FCOS's `nftables.service`, without layering a
   package.
@@ -361,8 +367,15 @@ Test-environment only (no change to the host config):
 
 Open points before production:
 
-- `INSTALL_DEVICE` in `host.env` is a guess (`/dev/sda`); check it on the
-  real machine.
+- The production host is a Dell Latitude 5521 (x86_64, one 512 GB NVMe,
+  TPM 2.0, UEFI with Secure Boot off) that runs with its **lid closed**.
+  `INSTALL_DEVICE=/dev/nvme0n1`. The config ignores the lid switch and masks
+  the sleep targets, as the Ubuntu host had been set up by hand. Open the
+  lid while the installer runs (the live ISO would suspend) and to reach the
+  boot menu (F12).
+- It gets 10.1.10.88 from UniFi DHCP for MAC `b4:45:06:11:73:55`
+  (`enp0s31f6`). CoreOS uses the same NIC, so make that a fixed IP in UniFi
+  if it isn't already.
 - `secrets.sops.yaml` exists. It reuses cert-manager's Cloudflare token
   and has a new client secret, LUKS key and break-glass password
   (`sops -d --extract '["stringData"]["dex_admin_password"]' ...`). To keep
