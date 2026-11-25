@@ -5,8 +5,9 @@
 # every pod's logs and the cluster's Events here; Grafana queries it as the
 # "Loki" data source.
 #
-# Single binary on one Longhorn volume: Longhorn already keeps three replicas,
-# so Loki's own replication stays at 1 (see AGENTS.md, Storage).
+# Single binary, no replication anywhere: Loki's replication_factor is 1 and
+# its volume is a one-replica Longhorn volume (longhorn-single). Logs don't
+# need to survive a disk failure; if that node is down, Loki waits for it.
 #
 # A sliding window, not a growing pile: the compactor deletes chunks older
 # than retention_period, the volume sits in the Longhorn `rolling` job group
@@ -83,7 +84,7 @@ spec:
       persistence:
         enabled: true
         size: 10Gi
-        storageClass: longhorn
+        storageClass: longhorn-single
         labels:
           recurring-job-group.longhorn.io/rolling: enabled
       resources:
