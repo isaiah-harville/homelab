@@ -37,6 +37,12 @@ spec:
       enabled: false
     kubeProxy:
       enabled: false
+    defaultRules:
+      disabled:
+        # The nodes are 8/16/64/64 GB and llama-cpp (34Gi) plus primer-lab
+        # (21Gi) can only ever fit on a 64 GB node, so the cluster can never
+        # tolerate losing one. That's by design; the alert fired non-stop.
+        KubeMemoryOvercommit: true
     prometheus:
       prometheusSpec:
         retention: 30d
