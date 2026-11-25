@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,7 +23,7 @@ spec:
         fsGroup: 1001
       containers:
         - name: backend
-          image: docker.io/zimengxiong/excalidash-backend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-backend"}
+          image: docker.io/zimengxiong/excalidash-backend:0.7.0 # {"$imagepolicy": "flux-system:excalidash-backend"}
           env:
             - name: DATABASE_PROVIDER
               value: sqlite
@@ -55,12 +54,14 @@ spec:
               value: "false"
             - name: TRUST_PROXY
               value: "1"
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=768
             - name: BACKUP_SCHEDULE
               value: "0 0 4 * * *"
             - name: BACKUP_DIR
               value: /app/backups
             - name: BACKUP_RETENTION_DAYS
-              value: "14"
+              value: "7"
           volumeMounts:
             - name: data
               mountPath: /app/prisma
@@ -71,9 +72,9 @@ spec:
           resources:
             requests:
               cpu: 25m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           readinessProbe:
             httpGet:
               path: /health
@@ -86,7 +87,7 @@ spec:
             periodSeconds: 30
             failureThreshold: 6
         - name: frontend
-          image: docker.io/zimengxiong/excalidash-frontend:0.6.9 # {"$imagepolicy": "flux-system:excalidash-frontend"}
+          image: docker.io/zimengxiong/excalidash-frontend:0.7.0 # {"$imagepolicy": "flux-system:excalidash-frontend"}
           env:
             - name: BACKEND_URL
               value: 127.0.0.1:8000

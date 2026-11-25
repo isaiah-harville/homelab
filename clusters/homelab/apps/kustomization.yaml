@@ -23,6 +23,7 @@ resources:
   - ../../../apps/home-automation
   - ../../../apps/homepage
   - ../../../apps/inference
+  - ../../../apps/inquizitive
   - ../../../apps/media
   - ../../../apps/mlflow
   - ../../../apps/openvitae

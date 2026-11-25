@@ -50,18 +50,19 @@ spec:
   values:
     api:
       image:
-        tag: 1.0.6
+        tag: 1.2.0
         pullPolicy: Always
     frontend:
       image:
-        tag: 1.0.6
+        tag: 1.2.0
         pullPolicy: Always
       extraEnv:
         BODY_SIZE_LIMIT: 16M
     auth:
       admin:
         email: isaiah@harville.dev
-      # Authentik protects /admin and /api; the public CV and S3 host stay anonymous.
+      # Authentik protects /admin and /api; the public CV stays anonymous and the
+      # S3 host only honours presigned URLs.
       mode: proxy
       proxy:
         emailHeader: X-authentik-email

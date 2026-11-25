@@ -25,6 +25,14 @@ spec:
         name: seaweedfs
         namespace: flux-system
   values:
+    global:
+      # ServiceMonitors for master/volume/filer/S3/admin plus the upstream
+      # SeaweedFS Grafana dashboard. The release label is what the
+      # kube-prometheus-stack Prometheus selects on.
+      monitoring:
+        enabled: true
+        additionalLabels:
+          release: kube-prometheus-stack
     master:
       replicas: 1
       data:
@@ -75,6 +83,11 @@ spec:
       enabled: true
       replicas: 1
       port: 8333
+      # Without enableAuth the chart never mounts existingConfigSecret, so the
+      # gateway ran wide open: anonymous list/read/write on every bucket, including
+      # openvitae via its public Ingress. Every client signs with a key from this
+      # secret; OpenVitae visitors use presigned URLs, which still work.
+      enableAuth: true
       existingConfigSecret: seaweedfs-s3-config
       logs:
         type: emptyDir
@@ -83,6 +96,7 @@ spec:
         - name: backups
         - name: mlflow
         - name: openvitae
+        - name: inquizitive
         - name: primer-sources
       resources:
         requests:

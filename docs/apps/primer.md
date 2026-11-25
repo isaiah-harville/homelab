@@ -107,24 +107,24 @@ Laptop (Ampere, SM86) and a Quadro T1000 (Turing, SM75). The device plugin hands
 out whole cards, so **two GPU models is the hard ceiling** — a third GPU deployment
 does not run slowly, it sits `Pending` forever.
 
-Both cards are therefore spoken for: Primer's Lab has the A2000, for
-Qwen3-1.7B in bf16 (about 3.4GB), and Qwen3.5-4B has the T1000. Lab loads its
-model with transformers rather than llama.cpp, so it cannot share a card with
-a llama-server. Qwen3.5-9B and Ministral reasoning run on CPU on
-`talos-6t5-q1d`, which has 16 cores and 64GB. They use one request slot each
-to bound memory use, and answer more slowly than the GPU model. vLLM remains
-scaled to zero.
+Primer's Lab uses neither card: it loads Qwen3.5-4B with transformers on CPU.
+No llama-server uses one either. The only chat model, Inkling 2 Mini, is a
+26B mixture-of-experts model with about 3B parameters active per token. Its
+17.6GB IQ4_NL GGUF is far too big for a 4GB card, so it runs on CPU on
+`talos-6t5-q1d`, which has 16 cores and 64GB. vLLM remains scaled to zero.
 
-Qwen3.5-4B is also what builds Primer's knowledge graph: with no extraction
-model named, the chart extracts with the chat model, one call per passage as
-a document is indexed.
+Inkling 2 Mini does every model job Primer has: chat, building the knowledge
+graph (with no extraction model named, the chart extracts with the chat
+model, one call per passage as a document is indexed), and describing the
+figures in each document, for which its llama-server loads the vision
+projector. It has a 512k-token context shared by two request slots, so a large upload
+leaves one for chat. The model allows 1M, but that KV cache would leave the
+64GB node too little headroom.
+Its chat template defaults to high reasoning effort; the server sets `low`,
+and a request can raise it with
+`chat_template_kwargs: {"reasoning_effort": "high"}`.
 
-Qwen3.5-9B describes the figures in each document as it is indexed, so its
-llama-server loads the vision projector the others skip (`--no-mmproj`). It is
-on CPU so that a large upload does not hold the T1000's one request slot that
-chat needs. Expect a minute or more a figure.
-
-Another GPU model means taking a card from one of these two. Primer can also
+Both cards are free for a GPU model. Primer can also
 reach hosted or self-hosted providers configured from its settings page.
 
 Two consequences of the hardware are worth knowing before changing a model:

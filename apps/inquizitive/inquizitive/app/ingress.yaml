@@ -1,0 +1,67 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inquizitive
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik-forwardauth@kubernetescrd
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Inquizitive
+    gethomepage.dev/description: Flashcards and spaced repetition
+    gethomepage.dev/href: https://quiz.harville.dev
+    gethomepage.dev/siteMonitor: https://quiz.harville.dev/api/health/
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: quiz.harville.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inquizitive
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - quiz.harville.dev
+---
+# No ForwardAuth: the desktop app syncs here with bearer tokens, which can't
+# follow Authentik's redirect. Every request is still authenticated by the app
+# (device token or app session; in OIDC mode it ignores proxy headers).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inquizitive-sync
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: quiz.harville.dev
+      http:
+        paths:
+          - path: /api/sync
+            pathType: Prefix
+            backend:
+              service:
+                name: inquizitive
+                port:
+                  name: http
+          - path: /api/media
+            pathType: Prefix
+            backend:
+              service:
+                name: inquizitive
+                port:
+                  name: http
+          - path: /api/health
+            pathType: Prefix
+            backend:
+              service:
+                name: inquizitive
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - quiz.harville.dev
