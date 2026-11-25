@@ -11,6 +11,7 @@ locals {
   ]
   worker_nodes = [
     "9ba21500-a881-11e5-ae5a-d524518f0c00",
+    "4c4c4544-0059-3710-8032-c3c04f573233", # i5-9500T, 8 GB, 256 GB NVMe
   ]
   otbr_nodes = [
     "9ba21500-a881-11e5-ae5a-d524518f0c00", # thinkcentre-01
@@ -21,6 +22,7 @@ locals {
     "4c4c4544-0039-4210-8046-b8c04f314a33" = { file = "install-le400gb.yaml", name = "install-256" }
     "4c4c4544-0052-3610-8039-cac04f484733" = { file = "install-ge100gb.yaml", name = "install-single" }
     "9ba21500-a881-11e5-ae5a-d524518f0c00" = { file = "install-ge100gb.yaml", name = "install-single" }
+    "4c4c4544-0059-3710-8032-c3c04f573233" = { file = "install-ge100gb.yaml", name = "install-single" }
   }
 
   dedicated_storage_nodes = [
@@ -30,6 +32,7 @@ locals {
   root_storage_nodes = [
     "4c4c4544-0052-3610-8039-cac04f484733",
     "9ba21500-a881-11e5-ae5a-d524518f0c00",
+    "4c4c4544-0059-3710-8032-c3c04f573233",
   ]
   storage_nodes = concat(local.dedicated_storage_nodes, local.root_storage_nodes)
 

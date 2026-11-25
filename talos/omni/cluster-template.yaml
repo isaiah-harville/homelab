@@ -30,6 +30,7 @@ patches:
 kind: Workers
 machines:
   - 9ba21500-a881-11e5-ae5a-d524518f0c00
+  - 4c4c4544-0059-3710-8032-c3c04f573233
 ---
 kind: Machine
 name: 4c4c4544-0030-5910-805a-c6c04f503133
@@ -92,3 +93,16 @@ patches:
     file: patches/longhorn-storage-node.yaml
   - name: otbr-host
     file: patches/otbr-host.yaml
+---
+kind: Machine
+name: 4c4c4544-0059-3710-8032-c3c04f573233
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
+patches:
+  - name: install-single
+    file: patches/install-ge100gb.yaml
+  - name: longhorn-root-disk
+    file: patches/longhorn-root-disk.yaml
+  - name: longhorn-storage-node
+    file: patches/longhorn-storage-node.yaml
