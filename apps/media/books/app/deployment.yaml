@@ -114,6 +114,11 @@ spec:
               value: hardcover
             - name: RELEASE_SEARCH_TIMEOUT
               value: "90"
+            # Anna's Archive gates search behind a DDoS-Guard challenge the
+            # built-in bypasser can't solve, so the Direct Download tab only
+            # times out and delays Prowlarr results. Torrents via Prowlarr only.
+            - name: DIRECT_DOWNLOAD_ENABLED
+              value: "false"
             - name: BOOKS_OUTPUT_MODE
               value: folder
             - name: INGEST_DIR
