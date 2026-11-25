@@ -2,8 +2,9 @@
 
 The documentation site is built with [Zensical](https://zensical.org), configured
 in `zensical.toml`. Existing READMEs remain the source of truth for directory
-guides and runbooks; thin pages under `docs/` include them with
-`{% include-markdown "../../path/README.md" %}`.
+guides and runbooks; thin pages under `docs/` include them with a one-line
+`include-markdown` tag (copy an existing stub such as `docs/talos/README.md`;
+Zensical requires the tag on a line of its own).
 
 Included READMEs are inlined as-is: Zensical never rewrites their relative
 links. A link between two READMEs that are both included at matching paths
@@ -45,7 +46,7 @@ paths listed under `watch`; re-run the generator to refresh reference pages.
 ```bash
 uv lock --check
 uv run python scripts/generate_reference.py
-uv run zensical build --strict
+uv run zensical build --strict --clean
 ```
 
 The generated `site/` directory is disposable and must not be committed.

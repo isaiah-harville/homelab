@@ -26,3 +26,4 @@ docs/superpowers
 docs/reference/helm-releases.md
 docs/reference/sources.md
 docs/reference/flux-kustomizations.md
+.cache/
