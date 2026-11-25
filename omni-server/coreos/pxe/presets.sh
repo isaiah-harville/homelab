@@ -1,25 +1,33 @@
 #!/usr/bin/env bash
-# (Re)create the Omni installation-media presets for network boot and write
-# their Image Factory PXE URLs into boot.ipxe. Run it with omnictl pointed at
-# the Omni this host serves, after a Talos or extension change, and commit
-# boot.ipxe; omni-sync installs it on the host.
+# (Re)create the Omni installation-media presets for network boot, fill
+# their Image Factory PXE URLs into the menu template (pxe/boot.ipxe) and
+# install the result on the Omni host's TFTP root. Run it with omnictl pointed
+# at that Omni after a Talos or extension change. TFTP serves the new menu at
+# once; it lives on omni-data, so a reinstall keeps it.
 #
-#   pxe/presets.sh [output]        default: pxe/boot.ipxe
+#   pxe/presets.sh                 install on the Omni host (OMNI_LAN_IP)
+#   pxe/presets.sh --output FILE   write the menu to FILE instead
+#
+# The filled-in menu never goes into git: anyone can read a schematic at
+# factory.talos.dev/schematics/<id>, and Omni's schematics embed its join
+# token. The committed pxe/boot.ipxe is only the template.
 #
 # TALOS_VERSION defaults to talos_version in terraform/omni/locals.tf; the
 # extensions mirror base_extensions and gpu_extensions there (Talos is
 # immutable, so the NVIDIA driver and toolkit come as system extensions; the
-# GPU operator runs on top with its driver and toolkit disabled). The URLs carry
-# Omni's join token inside the schematic (as any Omni install media does):
-# treat boot.ipxe as config, not a secret.
+# GPU operator runs on top with its driver and toolkit disabled).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
-out=${1:-$here/boot.ipxe}
 omnictl=${OMNICTL:-omnictl}
 locals="$here/../../../terraform/omni/locals.tf"
 TALOS_VERSION=${TALOS_VERSION:-$(sed -nE 's/^[[:space:]]*talos_version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$locals")}
 : "${TALOS_VERSION:?set TALOS_VERSION}"
 ARCH=${ARCH:-amd64}
+host=${OMNI_SSH:-core@$(sed -nE 's/^OMNI_LAN_IP=(.*)/\1/p' "$here/../host.env")}
+output=
+if [[ ${1:-} == --output ]]; then
+  output=${2:?usage: pxe/presets.sh [--output FILE]}
+fi
 
 base=(--extensions siderolabs/iscsi-tools --extensions siderolabs/util-linux-tools)
 gpu=("${base[@]}" --extensions siderolabs/nonfree-kmod-nvidia-production
@@ -44,7 +52,18 @@ talos=$(url_for homelab-talos "${base[@]}")
 nvidia=$(url_for homelab-talos-nvidia "${gpu[@]}")
 [[ $talos == https://* && $nvidia == https://* ]] || { echo "presets.sh: no PXE URL from omnictl" >&2; exit 1; }
 
-sed -E -e "s|^set talos-url .*|set talos-url $talos|" -e "s|^set nvidia-url .*|set nvidia-url $nvidia|" \
-  "$here/boot.ipxe" > "$out.tmp"
-mv "$out.tmp" "$out"
-echo "wrote $out (Talos $TALOS_VERSION)"
+menu() {
+  sed -E -e "s|^set talos-url .*|set talos-url $talos|" -e "s|^set nvidia-url .*|set nvidia-url $nvidia|" \
+    "$here/boot.ipxe"
+}
+
+if [[ -n $output ]]; then
+  umask 077
+  menu > "$output"
+  echo "wrote $output (Talos $TALOS_VERSION); it holds Omni's join token, keep it out of git"
+else
+  menu | ssh "$host" 'sudo sh -c "cat > /var/lib/omni/tftp/boot.ipxe.tmp &&
+    chmod 0644 /var/lib/omni/tftp/boot.ipxe.tmp &&
+    mv /var/lib/omni/tftp/boot.ipxe.tmp /var/lib/omni/tftp/boot.ipxe"'
+  echo "installed the menu on $host (Talos $TALOS_VERSION)"
+fi

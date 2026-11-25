@@ -54,9 +54,11 @@ configuration.
      partition (`/var/lib/omni`). Image bumps are applied by the
      `omni-sync` timer, which backs up first.
    - The host is also the PXE server: TFTP-only dnsmasq plus an iPXE with an
-     embedded script, chaining `coreos/pxe/boot.ipxe`. UniFi keeps DHCP
-     (Network Boot → the Omni host, `ipxe.efi`). Regenerate the menu with
-     `coreos/pxe/presets.sh` after a Talos version change.
+     embedded script, chaining a menu built from `coreos/pxe/boot.ipxe`. UniFi
+     keeps DHCP (Network Boot → the Omni host, `ipxe.efi`). After a Talos
+     version change, `coreos/pxe/presets.sh` regenerates the menu and installs
+     it on the host over SSH. **Never commit the filled-in menu:** its Image
+     Factory URLs reveal Omni's join token, and this repo is public.
 
    Read `omni-server/coreos/README.md` (findings section) before changing
    partitions, LUKS or SELinux there. Several Ignition settings are

@@ -97,16 +97,17 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
   1.14 the join configuration is embedded in the schematic:
 
   ```bash
-  omni-server/coreos/pxe/presets.sh   # needs omnictl for this Omni; writes pxe/boot.ipxe
-  git commit omni-server/coreos/pxe/boot.ipxe
+  omni-server/coreos/pxe/presets.sh   # needs omnictl and SSH to the host; installs the menu there
   ```
 
   Run it again after a Talos upgrade (the URL pins the version, taken
-  from `terraform/omni/locals.tf`) or an extension change. `omni-sync` picks
-  the new menu up from main; no restart needed. The URLs carry Omni's join
-  token inside the schematic, as any Omni install media does, so treat
-  `boot.ipxe` as config, not a secret. Until the presets script has run,
-  the menu says so and falls back to the local disk.
+  from `terraform/omni/locals.tf`) or an extension change; TFTP serves the
+  new menu at once. The menu lives on `omni-data`, so a reinstall keeps it.
+  **The filled-in menu stays out of git:** anyone can read a schematic at
+  `factory.talos.dev/schematics/<id>`, and Omni's schematics embed its join
+  token. The repo holds only the template (`pxe/boot.ipxe`, no URLs). Until
+  the presets script has run, the menu says so and falls back to the local
+  disk.
 - **HTTPS trust:** iPXE is built with the Mozilla roots from the pinned
   Debian image's `ca-certificates` embedded and trusted (`TRUST=`/`CERT=`).
   iPXE's default trust is only its own root, which reaches public CAs
@@ -307,7 +308,7 @@ whose SideroLink `Link` had to come back as `connected: true`.
 | Talos 1.14.7 (latest) joins the restored instance | Connected |
 | lego against a local Pebble ACME server (in place of Let's Encrypt + Cloudflare) | Certificate issued into `.lego/`. `omni-cert-deploy` installed it (key `root:1001 0640`) and restarted Dex and Omni |
 | Firewall | 5556 and 8090 reachable from the allowed CIDR; 10000 and 2122 dropped (time out). Omni 1.14 binds metrics to loopback and nothing on 10000 |
-| Network boot: host side (reinstall on FCOS 45) | `pxe-setup` built `ipxe.efi` on first boot from the pinned iPXE commit. `pxe-tftp` (dnsmasq, DNS off, single port) served `ipxe.efi` and `boot.ipxe` to a TFTP client through the firewall. `presets.sh` created both presets, and `omni-sync` installed the new menu from the served copy of git |
+| Network boot: host side (reinstall on FCOS 45) | `pxe-setup` built `ipxe.efi` on first boot from the pinned iPXE commit. `pxe-tftp` (dnsmasq, DNS off, single port) served `ipxe.efi` and `boot.ipxe` to a TFTP client through the firewall. `presets.sh` created both presets and generated the menu (installed then via `omni-sync`; `presets.sh` now installs it directly over SSH) |
 | Network boot: blank UEFI VM, empty disk | Firmware PXE → `ipxe.efi` → embedded `dhcp` → `tftp://<server>/boot.ipxe` → menu (default entry) → HTTPS Image Factory → Talos 1.14.7 with `iscsi-tools` + `util-linux-tools` in Omni, connected, maintenance mode. The NVIDIA entry's URL was generated but not booted (no GPU in the lab) |
 
 The Mac can't bind 69/udp without root, so in the boot test QEMU's own
@@ -401,7 +402,7 @@ Open points before production:
   the sleep targets, as the Ubuntu host had been set up by hand. Open the
   lid while the installer runs (the live ISO would suspend) and to reach the
   boot menu (F12).
-- It gets 10.1.10.88 from UniFi DHCP for MAC `b4:45:06:11:73:55`
+- It gets 10.1.10.88 from UniFi DHCP on its wired NIC
   (`enp0s31f6`). CoreOS uses the same NIC, so make that a fixed IP in UniFi
   if it isn't already.
 - `secrets.sops.yaml` exists. It reuses cert-manager's Cloudflare token
@@ -409,6 +410,6 @@ Open points before production:
   (`sops -d --extract '["stringData"]["dex_admin_password"]' ...`). To keep
   the current host's admin password instead, copy `DEX_ADMIN_PASSWORD_HASH`
   from its `.env` into `dex_admin_password_hash`, and drop the plaintext.
-- `pxe/boot.ipxe` has no URLs yet: run `pxe/presets.sh` against the
-  production Omni and commit the result. Then set UniFi's Network Boot and
+- The host's network-boot menu has no URLs yet: run `pxe/presets.sh`
+  against the production Omni. Then set UniFi's Network Boot and
   each machine's firmware as described under Network boot.

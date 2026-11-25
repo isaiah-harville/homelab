@@ -19,20 +19,6 @@ images=$OMNI_ETC/images.env
 
 versions=$(curl -fsSL --retry 3 --max-time 30 "$VERSIONS_URL")
 
-# The network-boot menu (pxe/boot.ipxe) needs no restart: TFTP reads it per
-# request. Install it only if it looks like an iPXE script.
-if [[ -n ${PXE_MENU_URL:-} ]] && menu=$(curl -fsSL --retry 3 --max-time 30 "$PXE_MENU_URL"); then
-  if [[ $menu == '#!ipxe'* ]] && ! cmp -s <(printf '%s\n' "$menu") "$OMNI_STATE/tftp/boot.ipxe"; then
-    log "boot.ipxe changed"
-    if ! $dry_run; then
-      printf '%s\n' "$menu" > "$OMNI_STATE/tftp/boot.ipxe.tmp"
-      chmod 0644 "$OMNI_STATE/tftp/boot.ipxe.tmp"
-      mv "$OMNI_STATE/tftp/boot.ipxe.tmp" "$OMNI_STATE/tftp/boot.ipxe"
-    fi
-  fi
-else
-  log "could not fetch $PXE_MENU_URL; keeping the current boot.ipxe"
-fi
 wanted() { sed -nE "s/^[[:space:]]*$1:[[:space:]]*([^[:space:]#]+).*/\1/p" <<< "$versions" | head -n1; }
 current() { sed -nE "s/^$1=(.*)/\1/p" "$images"; }
 pin() {

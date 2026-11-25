@@ -15,7 +15,7 @@ Build a new ISO for:
 
 You don't need one for Omni or Dex version bumps: `omni-sync` applies those
 from `versions.yaml`. Nor for OS updates (Zincati) or boot-menu changes
-(`omni-sync` again).
+(`pxe/presets.sh` installs the menu over SSH).
 
 ## 1. Prerequisites (once, on the Mac)
 

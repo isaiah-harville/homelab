@@ -2,8 +2,8 @@
 # Prepare the TFTP root (/var/lib/omni/tftp) for network boot:
 # - build ipxe.efi with pxe/build-ipxe.sh in the pinned Debian image, when
 #   its inputs (script, embedded script, arch, server, image) changed;
-# - seed boot.ipxe from the Ignition copy if there is none yet (afterwards
-#   omni-sync keeps it in step with git).
+# - seed boot.ipxe from the Ignition copy (the template, no URLs) if there is
+#   none yet; pxe/presets.sh installs the real menu.
 # The result lives on omni-data, so a reinstall doesn't rebuild it.
 set -euo pipefail
 . /usr/local/lib/omni/omni-lib.sh
