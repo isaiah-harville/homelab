@@ -6,7 +6,7 @@ a self-hosted **Omni**, with **Flux** reconciling the k8s layer.
 ## Layout
 
 ```
-omni-server/      — Self-hosted Omni Compose stack and runbook
+omni-server/      — Self-hosted Omni runbook; coreos/ builds its Fedora CoreOS host
 talos/            — Talos image schematic, Omni template, and machine patches
 terraform/omni/   — Terraform representation of the Omni cluster
 clusters/homelab/ — Flux composition and cluster-specific secrets

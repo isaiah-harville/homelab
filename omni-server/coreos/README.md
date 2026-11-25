@@ -8,14 +8,13 @@ change git and reinstall. Omni's state lives on its own partition, which
 the reinstall keeps.
 
 Omni and Dex run as Docker containers from plain systemd units, with the
-same flags as [`compose.yaml`](../compose.yaml). That is Sidero's supported
+same flags as the Docker Compose stack they replaced. That is Sidero's supported
 container-on-Linux path. Docker is FCOS's `moby-engine`, which ships in
 the OS; nothing is layered.
 
-**Status:** validated in VMs (see [Validation](#validation)) and fitted to the
-production hardware. The production host (10.1.10.88) still runs the
-Compose stack; cutover is the [migration](#migrate-from-the-compose-host)
-below. To build and use the install ISO, follow
+**Status:** in production on 10.1.10.88 since 2026-11-25, replacing the
+Ubuntu Docker Compose host (see [the migration](#migration-from-the-compose-host-done-2026-11-25)).
+To install or change the host, follow
 [Build the install ISO](INSTALL-ISO.md).
 
 ## Layout
@@ -267,7 +266,10 @@ health. Secrets in the archive's `.env` aren't applied: `/etc/omni` comes
 from `secrets.sops.yaml`. Start the Omni version the backup came from,
 then upgrade.
 
-## Migrate from the Compose host
+## Migration from the Compose host (done 2026-11-25)
+
+Kept as a record, and for restoring an old Compose-era archive.
+
 
 1. Pin `versions.yaml` to the version the old host runs (they share Flux's
    bumps, so normally nothing to do).
@@ -290,8 +292,8 @@ then upgrade.
 5. Restore: `age -d -i <identity> omni-<stamp>.tar.gz.age | ssh core@<host>
    sudo omni-restore -`. Machines reconnect over SideroLink within a minute
    or two; check `omnictl get links`.
-6. Retire `omni-server/compose.yaml`, `dex.yaml` and `.env.example`, and point the
-   Flux setters (already scoped to `./omni-server`) only at `versions.yaml`.
+6. Retire the Compose files (done: `compose.yaml`, `dex.yaml` and
+   `.env.example` are gone; Flux's setters now only touch `versions.yaml`).
 
 ## Validation
 
@@ -412,22 +414,18 @@ Test-environment only (no change to the host config):
   needs `virtio-rng-pci`, or it blocks on entropy. Direct kernel boot has
   no SMBIOS, so Talos never registers.
 
-Open points before production:
+## The production host
 
-- The production host is a Dell Latitude 5521 (x86_64, one 512 GB NVMe,
-  TPM 2.0, UEFI with Secure Boot off) that runs with its **lid closed**.
-  `INSTALL_DEVICE=/dev/nvme0n1`. The config ignores the lid switch and masks
-  the sleep targets, as the Ubuntu host had been set up by hand. Open the
-  lid while the installer runs (the live ISO would suspend) and to reach the
-  boot menu (F12).
-- It gets 10.1.10.88 from UniFi DHCP on its wired NIC
-  (`enp0s31f6`). CoreOS uses the same NIC, so make that a fixed IP in UniFi
-  if it isn't already.
-- `secrets.sops.yaml` exists. It reuses cert-manager's Cloudflare token
-  and has a new client secret, LUKS key and break-glass password
-  (`sops -d --extract '["stringData"]["dex_admin_password"]' ...`). To keep
-  the current host's admin password instead, copy `DEX_ADMIN_PASSWORD_HASH`
-  from its `.env` into `dex_admin_password_hash`, and drop the plaintext.
-- Network boot needs the one-time `pxe/set-service-account.sh` and a
-  reinstall, then UniFi's Network Boot and each machine's firmware as
-  described under Network boot.
+- A Dell Latitude 5521 (x86_64, one 512 GB NVMe, TPM 2.0, UEFI with Secure
+  Boot off) that runs with its **lid closed**. `INSTALL_DEVICE=/dev/nvme0n1`.
+  The config ignores the lid switch and masks the sleep targets. Open the lid
+  while the installer runs (the live ISO would suspend) and to reach the boot
+  menu (F12).
+- It gets 10.1.10.88 from UniFi DHCP on its wired NIC (`enp0s31f6`); keep
+  that a fixed IP in UniFi.
+- `secrets.sops.yaml` reuses cert-manager's Cloudflare token. It holds the
+  Dex client secret, the `omni-data` LUKS key, the break-glass password
+  (`sops -d --extract '["stringData"]["dex_admin_password"]' ...`, set with
+  `set-dex-password.sh`) and the `pxe-menu` bootstrap key.
+- Network boot is live once UniFi's Network Boot points at the host and each
+  machine's firmware is set as described under Network boot.

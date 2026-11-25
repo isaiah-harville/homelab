@@ -1,8 +1,7 @@
 ---
 # Patch releases of Omni and Dex for the self-hosted Omni host. Flux commits
-# the bump to omni-server/coreos/versions.yaml (and compose.yaml, until the
-# Compose host is retired) on main; the CoreOS host's omni-sync applies it,
-# backing up first and checking health after.
+# the bump to omni-server/coreos/versions.yaml on main; the Omni host's
+# omni-sync applies it, backing up first and checking health after.
 # Minor versions stay a deliberate edit: Omni releases remove flags, and
 # Talos/Kubernetes upgrades (terraform/omni) depend on the Omni minor.
 apiVersion: image.toolkit.fluxcd.io/v1

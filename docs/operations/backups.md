@@ -7,14 +7,13 @@ restore paths.
 ## Omni state
 
 Omni stores its embedded databases under the `data/` directory on its host.
-`omni-backup.timer` (on both the Compose host and the
-[CoreOS host](../omni-server/coreos/README.md#backups-and-restore)) stops the stack
+`omni-backup.timer` on the
+[CoreOS host](../omni-server/coreos/README.md#backups-and-restore) stops Omni and Dex
 every Sunday at 02:45 (and before any Omni upgrade), archives `data/`, the GPG
 key, TLS and `.env`, and encrypts the archive to the repo's age recipient. It
-keeps eight weeks on the host itself (`omni-server/backups/`, or
-`/var/lib/omni/backups/` on CoreOS), so copy one off
+keeps eight weeks on the host itself (`/var/lib/omni/backups/`), so copy one off
 the host before risky changes; the
-[Omni runbook](../omni-server/README.md#backup-and-restore) has the restore
+[CoreOS host runbook](../omni-server/coreos/README.md#backups-and-restore) has the restore
 steps.
 
 Omni also creates interval-based etcd snapshots in object storage. Snapshot

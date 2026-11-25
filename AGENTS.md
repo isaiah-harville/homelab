@@ -17,8 +17,8 @@ host configuration). Omni applies the lifecycle operations, while
 ## Layout
 
 ```
-omni-server/         Self-hosted Omni (Compose stack + runbook) — the management plane
-omni-server/coreos/  The Omni host as Fedora CoreOS (Butane + Ignition), replacing the Compose host
+omni-server/         Self-hosted Omni runbook — the management plane
+omni-server/coreos/  The Omni host: Fedora CoreOS from one Butane file (+ Ignition, ISO)
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
@@ -36,17 +36,13 @@ configuration.
    the cluster (must survive a node wipe), retains its independent Dex static
    break-glass login, and terminates the SideroLink WireGuard tunnel machines
    join through. The in-cluster Authentik deployment does not manage Omni/Dex.
-   Production (10.1.10.88) still runs the Compose stack (`omni-server/compose.yaml`,
-   secrets in the host's gitignored `omni-server/.env`), with no config
-   management since the Ansible playbook was removed. Change it by hand,
-   per `omni-server/README.md`, until it is replaced.
-
-   **The replacement:** `omni-server/coreos/` builds the host as Fedora CoreOS
-   from one Butane file (`omni.bu`). It was validated in VMs; cutting over is
-   the migration in its README. On that host:
-   - Omni, Dex and lego run as Docker containers from systemd units with
-     `compose.yaml`'s flags. Image pins live in `coreos/versions.yaml`, which
-     Flux's `omni-host` image automation also bumps.
+   The host (10.1.10.88, a Dell Latitude run lid-closed) is Fedora CoreOS
+   built from one Butane file, `omni-server/coreos/omni.bu`. It replaced a
+   Docker Compose stack on Ubuntu and its Ansible playbook on 2026-11-25. On
+   that host:
+   - Omni, Dex and lego run as Docker containers from systemd units. Image
+     pins (tag@digest) live in `coreos/versions.yaml`, which Flux's
+     `omni-host` image automation bumps.
    - Secrets come from `coreos/secrets.sops.yaml`. `render.sh` decrypts them
      into the Ignition config at build time, and `make iso` builds an
      auto-installing ISO (`coreos/INSTALL-ISO.md` is the step-by-step guide).

@@ -8,7 +8,7 @@ talos:
 features:
   # etcd backups to the seaweedfs "backups" bucket (EtcdBackupS3Configs
   # resource, applied separately with omnictl). Requires the omni container
-  # to run with --etcd-backup-s3 (see omni-server/compose.yaml). Interval is
+  # to run with --etcd-backup-s3 (see omni-server/coreos/files/units/omni.service). Interval is
   # relative (since last backup), not clock-aligned to a specific time.
   backupConfiguration:
     interval: 24h

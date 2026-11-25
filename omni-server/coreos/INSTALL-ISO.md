@@ -8,7 +8,7 @@ no questions asked.
 
 Build a new ISO for:
 
-- the first install, or the cutover from the Compose host;
+- a first install on new hardware;
 - any change to the host itself: `omni.bu`, `files/`, `host.env`, the
   secrets, or the network-boot inputs in `pxe/`;
 - recovering a broken host (Omni's state survives on `omni-data`).
