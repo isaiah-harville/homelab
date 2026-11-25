@@ -55,7 +55,7 @@
 
 - name: Reload sshd if it still offers password login
   ansible.builtin.debug:
-    msg: "sshd still offers: {{ sshd_offered.stderr | regex_search('Permission denied \\(([^)]*)\\)', '\\1') | first | default('?') }}; reloading it."
+    msg: "sshd still offers password login ({{ sshd_offered.stderr | trim }}); reloading it."
   changed_when: true
   notify: Reload sshd
-  when: sshd_offered.stderr is search('Permission denied \\([^)]*(password|keyboard-interactive)')
+  when: sshd_offered.stderr is search('Permission denied [(][^)]*(password|keyboard-interactive)')
