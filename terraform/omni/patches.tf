@@ -10,7 +10,7 @@ resource "omni_config_patch" "controlplane_vip" {
   cluster = omni_cluster.homelab.name
   weight  = 400
   selector = {
-    machine_set = omni_machine_set.control_plane.name
+    machine_set = omni_machine_set.control_plane.id
   }
   data = file("${local.patch_dir}/controlplane-vip.yaml")
 }
@@ -20,7 +20,7 @@ resource "omni_config_patch" "kubernetes_oidc" {
   cluster = omni_cluster.homelab.name
   weight  = 401
   selector = {
-    machine_set = omni_machine_set.control_plane.name
+    machine_set = omni_machine_set.control_plane.id
   }
   data = file("${local.patch_dir}/kubernetes-oidc.yaml")
 }
