@@ -123,26 +123,6 @@ spec:
             memory: 256Mi
       deploymentStrategy:
         type: Recreate
-      # Downloaded dashboards live on the persistent volume, so dropping one
-      # from `dashboards` below leaves its JSON behind and Grafana keeps
-      # loading it. This runs after the download and removes the retired
-      # ones. Add a path here whenever a grafana.com dashboard is removed.
-      extraInitContainers:
-        - name: prune-retired-dashboards
-          image: "{{ .Values.downloadDashboardsImage.registry }}/{{ .Values.downloadDashboardsImage.repository }}:{{ .Values.downloadDashboardsImage.tag }}"
-          command: ["/bin/sh", "-c"]
-          args:
-            - >-
-              rm -rfv
-              /var/lib/grafana/dashboards/storage
-              /var/lib/grafana/dashboards/kubernetes/nodes.json
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: [ALL]
-          volumeMounts:
-            - name: storage
-              mountPath: /var/lib/grafana
       env:
         GF_AUTH_ANONYMOUS_ENABLED: "true"
         GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
