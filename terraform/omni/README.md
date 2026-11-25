@@ -75,7 +75,10 @@ Editing requires the age identity matching `.sops.yaml`.
 - **github-config** — a `github_token` PAT (classic, `repo` scope) that registers the
   runner (a GitHub App with repo Administration r/w + Actions read also works).
 - **omni-terraform** — a dedicated Omni service account:
-  `omnictl serviceaccount create --role Admin terraform`.
+  `omnictl serviceaccount create --role Admin terraform`. Omni caps its key at
+  a year; `.github/workflows/omni-service-account-renewal.yaml` renews it on
+  the 1st of each month and merges the re-encrypted secret itself, so it never
+  expires. Run that workflow by hand (`workflow_dispatch`) to renew now.
 
 ### 3. Verify ARC
 
