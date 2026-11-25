@@ -12,11 +12,18 @@ set -euo pipefail
 . /usr/local/lib/omni/omni-lib.sh
 load_env "$OMNI_ETC/images.env"
 
-if [[ ! -s $OMNI_ETC/omnictl.env ]]; then
-  log "no service account key in $OMNI_ETC/omnictl.env; leaving the menu as it is"
+# The current key lives on omni-data (kept across reinstalls, in every
+# backup); the one from secrets.sops.yaml (/etc/omni/omnictl.env) only
+# bootstraps a host that has none yet.
+keyfile=$OMNI_STATE/secrets/pxe-menu.key
+if [[ -s $keyfile ]]; then
+  OMNI_SERVICE_ACCOUNT_KEY=$(< "$keyfile")
+elif [[ -s $OMNI_ETC/omnictl.env ]]; then
+  load_env "$OMNI_ETC/omnictl.env"
+else
+  log "no service account key (pxe/set-service-account.sh); leaving the menu as it is"
   exit 0
 fi
-load_env "$OMNI_ETC/omnictl.env"
 export OMNI_ENDPOINT="https://$OMNI_HOST/" OMNI_SERVICE_ACCOUNT_KEY
 omni_health 60
 
@@ -37,6 +44,22 @@ if [[ ! -x $omnictl ]]; then
   echo "$sum  $omnictl.tmp" | sha256sum --check --quiet
   chmod 0755 "$omnictl.tmp"
   mv "$omnictl.tmp" "$omnictl"
+fi
+
+# Renew the key every 30 days, well inside its one-year lifetime, so it
+# never lapses. A failed renewal leaves the current key in place.
+if [[ ! -s $keyfile || -n $(find "$keyfile" -mtime +30) ]]; then
+  # Never log omnictl's output here: on success it contains the new key.
+  new=$("$omnictl" serviceaccount renew pxe-menu --ttl 8760h 2> /dev/null |
+    sed -nE 's/^OMNI_SERVICE_ACCOUNT_KEY=//p') || true
+  if [[ -n $new ]]; then
+    (umask 077 && printf '%s' "$new" > "$keyfile.tmp")
+    mv "$keyfile.tmp" "$keyfile"
+    OMNI_SERVICE_ACCOUNT_KEY=$new
+    log "renewed the pxe-menu service account key"
+  else
+    log "could not renew the pxe-menu service account key; keeping the current one"
+  fi
 fi
 
 # (Re)create one preset and print its PXE URL with the arch left to iPXE.

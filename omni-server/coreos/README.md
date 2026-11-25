@@ -118,10 +118,14 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
   SOPS_AGE_KEY_FILE=~/Projects/homelab/.agekey omni-server/coreos/pxe/set-service-account.sh
   ```
 
-  This creates the `pxe-menu` service account (role Operator, key valid 10
-  years) and stores its key in `secrets.sops.yaml`. Commit that, then
-  reinstall. Run the same script to renew the key before it expires. Until a
-  key is set, the menu says so and falls back to the local disk.
+  This creates the `pxe-menu` service account and stores its key in
+  `secrets.sops.yaml`. Commit that, then reinstall. Omni caps keys at a year,
+  so `pxe-menu` renews its own key every 30 days and keeps the current one on
+  `omni-data` (kept across reinstalls, included in backups). The key in SOPS
+  only bootstraps; there's no yearly chore. The account has the Admin role
+  so it can renew itself. That adds no real exposure, since root on the Omni
+  host controls Omni anyway. Until a key is set, the menu says so and falls
+  back to the local disk.
 - **HTTPS trust:** iPXE is built with the Mozilla roots from the pinned
   Debian image's `ca-certificates` embedded and trusted (`TRUST=`/`CERT=`).
   iPXE's default trust is only its own root, which reaches public CAs
