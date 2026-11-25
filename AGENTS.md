@@ -49,7 +49,7 @@ configuration.
      Flux's `omni-host` image automation also bumps.
    - Secrets come from `coreos/secrets.sops.yaml`. `render.sh` decrypts them
      into the Ignition config at build time, and `make iso` builds an
-     auto-installing ISO.
+     auto-installing ISO (`coreos/INSTALL-ISO.md` is the step-by-step guide).
    - Changing the host means a reinstall, which keeps the LUKS `omni-data`
      partition (`/var/lib/omni`). Image bumps are applied by the
      `omni-sync` timer, which backs up first.

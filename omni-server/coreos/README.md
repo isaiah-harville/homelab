@@ -1,4 +1,4 @@
-# Omni host on Fedora CoreOS (prototype)
+# Omni host on Fedora CoreOS
 
 An image-based replacement for the Ubuntu + Docker Compose Omni host
 ([`omni-server/`](../README.md)). The whole host is
@@ -12,13 +12,16 @@ same flags as [`compose.yaml`](../compose.yaml). That is Sidero's supported
 container-on-Linux path. Docker is FCOS's `moby-engine`, which ships in
 the OS; nothing is layered.
 
-**Status:** validated in a throwaway VM (see [Validation](#validation)). The
-production host (10.1.10.88) still runs the Compose stack. Cutover is the
-[migration](#migrate-from-the-compose-host) below.
+**Status:** validated in VMs (see [Validation](#validation)) and fitted to the
+production hardware. The production host (10.1.10.88) still runs the
+Compose stack; cutover is the [migration](#migrate-from-the-compose-host)
+below. To build and use the install ISO, follow
+[Build the install ISO](INSTALL-ISO.md).
 
 ## Layout
 
 ```
+INSTALL-ISO.md        step-by-step guide: build the ISO, write the USB stick, install
 check.sh              static checks, run by CI (validate.yaml) on every PR
 set-dex-password.sh   set the Dex break-glass password in secrets.sops.yaml
 omni.bu               Butane config (the host)
@@ -152,11 +155,12 @@ Docker for coreos-installer.
    sees it (`lsblk`). `OMNI_LAN_IP` is the address machines' WireGuard
    endpoint uses; keep 10.1.10.88 when replacing the current host.
 
-3. Build the install ISO and boot the machine from it (USB or virtual media):
+3. Build the install ISO and boot the machine from it, following
+   [Build the install ISO](INSTALL-ISO.md):
 
    ```bash
    cd omni-server/coreos
-   make iso            # build/omni-install.iso, x86_64 stable stream
+   SOPS_AGE_KEY_FILE=~/Projects/homelab/.agekey make iso   # build/omni-install.iso
    ```
 
    The ISO installs to `INSTALL_DEVICE` without asking, keeping only an
@@ -180,7 +184,8 @@ root.
 ## Change the host
 
 Everything except image versions is a reinstall: edit `omni.bu`, `files/`,
-`host.env` or the secrets, `make iso`, boot it. The installer keeps
+`host.env` or the secrets, then build and boot a new ISO
+([guide](INSTALL-ISO.md)). The installer keeps
 `omni-data`, and Ignition reuses its partition, LUKS volume and filesystem.
 Omni comes back with all its state, and joined machines reconnect on their
 own. A reinstall takes about as long as a reboot plus a minute.
@@ -249,10 +254,17 @@ then upgrade.
    bumps, so normally nothing to do).
 2. Create `secrets.sops.yaml` (above), reusing the old `.env` values if you
    want the same admin password.
-3. On the old host: `sudo systemctl start omni-backup` and copy the newest
-   `omni-server/backups/omni-*.tar.gz.age` off it. Then stop the stack
-   (`docker compose down`): from here, management is down until step 5. The
-   cluster keeps running.
+3. On the old host: `sudo systemctl start omni-backup`, then copy the newest
+   archive off it. `backups/` is root-only, so stage it in your home first
+   (the names sort by time):
+
+   ```bash
+   ssh -t isaiah@10.1.10.88 'sudo install -m 0600 -o isaiah "$(sudo find /home/isaiah/homelab/omni-server/backups -name "omni-*.tar.gz.age" | sort | tail -1)" ~/'
+   scp 'isaiah@10.1.10.88:omni-*.tar.gz.age' ~/Projects/homelab/
+   ```
+
+   Then stop the stack (`docker compose down`). From here, management is
+   down until step 5; the cluster keeps running.
 4. Install the new host on the same IP (10.1.10.88) and hostnames, so
    machines' SideroLink endpoint and DNS stay valid. On the same hardware
    the install wipes the Ubuntu disk, so check you have the archive first.

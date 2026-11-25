@@ -11,7 +11,8 @@ and the host itself, and allow the connections declared in `compose.yaml`.
 DNS is split-horizon.
 
 **Hosts:** the replacement host is Fedora CoreOS, built from
-[`coreos/`](coreos/README.md); new hosts and the migration start there.
+[`coreos/`](coreos/README.md); new hosts and the migration start there, with
+[the install ISO guide](coreos/INSTALL-ISO.md).
 Production (10.1.10.88) still runs this Compose stack on Ubuntu until it is
 cut over. The Ansible playbook that built and converged it has been removed,
 so the host is maintained by hand with the steps below. The renewal and
