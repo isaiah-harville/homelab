@@ -9,7 +9,7 @@
 # Minor versions are a deliberate edit: Omni releases remove flags.
 images:
   omni: ghcr.io/siderolabs/omni:v1.14.0@sha256:289c05ab1ec4a11223d50593239be9288409deb93a7060db36b5f7b7ef6c99ba # {"$imagepolicy": "flux-system:omni"}
-  dex: ghcr.io/dexidp/dex:v2.46.1 # {"$imagepolicy": "flux-system:dex"}
+  dex: ghcr.io/dexidp/dex:v2.46.1@sha256:65b72ca0f4b0bf6d4ada84ec21da8851782563404ac7b8f926923d27ceced9ab # {"$imagepolicy": "flux-system:dex"}
   lego: docker.io/goacme/lego:v5.7.0@sha256:9fe6151508c0e1ddc51a6d3e474353520f4b008782bf0c6d31676da72e6d4766
   # Base of the local omni-tools image (age, gnupg) used by backups.
   tools: docker.io/library/alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
