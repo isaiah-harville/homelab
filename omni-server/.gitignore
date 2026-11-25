@@ -5,6 +5,9 @@ dex.db
 .env
 .lego/
 .lego-cf.env
+backups/
+*.orig
+*.rej
 
 # Override the root .env.* rule.
 !.env.example

@@ -1,4 +1,11 @@
 ---
+# Dex for Omni's OIDC login. Independent of the cluster on purpose: the static
+# admin below is the break-glass account that still works when the cluster
+# (and Authentik) is down.
+#
+# No secrets live in this file. Both come from omni-server/.env via the dex
+# service's environment in compose.yaml, so the host's copy of this file never
+# differs from git and `git pull` can't conflict on it.
 issuer: https://omni-dex.int.harville.dev:5556
 
 storage:
@@ -17,8 +24,7 @@ oauth2:
 staticClients:
   - name: Omni
     id: omni
-    # Must match DEX_OMNI_CLIENT_SECRET in .env.
-    secret: change-me-long-random
+    secretEnv: DEX_OMNI_CLIENT_SECRET
     redirectURIs:
       - https://omni.int.harville.dev/oidc/consume
 
@@ -26,5 +32,5 @@ enablePasswordDB: true
 staticPasswords:
   - email: admin@int.harville.dev
     username: admin
-    # htpasswd -bnBC 10 "" 'yourpassword' | tr -d ':\n'
-    hash: "$2y$10$REPLACE_WITH_BCRYPT_HASH"
+    # bcrypt hash: htpasswd -bnBC 10 "" '<password>' | tr -d ':\n'
+    hashFromEnv: DEX_ADMIN_PASSWORD_HASH

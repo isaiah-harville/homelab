@@ -1,0 +1,46 @@
+---
+# Builds or converges a self-hosted Omni host: OS hardening, firewall, Docker,
+# lego certificates, the omni-server Compose stack and its backups.
+#
+#   ansible-galaxy collection install -r requirements.yaml
+#   ansible-playbook site.yaml --ask-become-pass --diff --check   # dry run
+#   ansible-playbook site.yaml --ask-become-pass --diff
+#
+# A fresh host also needs, once (never committed):
+#   -e omni_admin_password_hash='<bcrypt>'   (htpasswd -bnBC 10 "" '<pw>' | tr -d ':\n')
+#   -e cloudflare_dns_api_token=<token>      (DNS-01 for *.int.harville.dev)
+# plus secrets/omni.asc + omni-public.asc (README step 1) or a restored backup.
+- name: Omni host
+  hosts: omni
+  become: true
+  handlers:
+    - name: Reload sshd
+      ansible.builtin.service:
+        name: ssh
+        state: reloaded
+    - name: Restart docker
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+  tasks:
+    - name: Base OS
+      ansible.builtin.import_tasks: tasks/base.yaml
+      tags: [base]
+    - name: SSH hardening
+      ansible.builtin.import_tasks: tasks/ssh.yaml
+      tags: [ssh]
+    - name: Firewall
+      ansible.builtin.import_tasks: tasks/firewall.yaml
+      tags: [firewall]
+    - name: Docker
+      ansible.builtin.import_tasks: tasks/docker.yaml
+      tags: [docker]
+    - name: Lego (ACME client)
+      ansible.builtin.import_tasks: tasks/lego.yaml
+      tags: [lego]
+    - name: Omni stack
+      ansible.builtin.import_tasks: tasks/omni.yaml
+      tags: [omni]

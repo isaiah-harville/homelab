@@ -10,6 +10,11 @@ and the host itself, and allow the connections declared in `compose.yaml`.
 
 DNS is split-horizon.
 
+**Provisioning:** `ansible/omni-host` builds and converges the host: SSH
+hardening, a LAN-only firewall, Docker, lego, the renewal and backup timers, and
+this Compose stack. It is the supported way to apply changes here; the steps
+below are what it automates, and what to do by hand when it can't (the GPG key).
+
 ## Ports
 
 | Port  | Purpose                        |
@@ -61,31 +66,35 @@ cp ".lego/certificates/_.${OMNI_DOMAIN}.crt" certs/server-chain.pem
 cp ".lego/certificates/_.${OMNI_DOMAIN}.key" certs/server-key.pem
 # CA bundle Omni trusts (Let's Encrypt roots are in the system store).
 cp /etc/ssl/certs/ca-certificates.crt          certs/ca.pem
-# Dex runs as uid 1001 and must be able to read the cert+key it mounts:
-chmod 644 certs/*.pem
+# Dex runs as uid 1001; compose.yaml adds it to the host user's group, so the
+# key stays out of reach of other users:
+chmod 644 certs/server-chain.pem certs/ca.pem
+chmod 640 certs/server-key.pem
 ```
 
 **Auto-renewal** is a systemd timer on this host: `omni-cert-renew.timer` runs
 `/usr/local/bin/omni-cert-renew.sh` weekly, which re-runs `lego run --renew-days 30
---reuse-key` (lego v5 has no `renew` subcommand) and, via `--deploy-hook`, re-copies
-the cert into `certs/` and `docker compose restart`s. The Cloudflare token lives in
-`~/omni-server/.lego-cf.env` (mode 600).
+--reuse-key` (lego v5 has no `renew` subcommand) and, via
+`/usr/local/bin/omni-cert-deploy.sh`, re-installs the cert into `certs/` and
+`docker compose restart`s. The Cloudflare token lives in `.lego-cf.env` (mode
+600). The playbook installs all three.
 
-### 3. Dex break-glass admin password
+### 3. Secrets in .env
+
+`dex.yaml` holds no secrets: Dex reads its Omni client secret and the
+break-glass admin's password hash from the environment (`secretEnv`,
+`hashFromEnv`), and Omni reads the same client secret as
+`OMNI_AUTH_OIDC_CLIENT_SECRET`. Compose fills all three from `.env`, so the
+host's checkout never differs from git. **Never edit secrets into `dex.yaml`**:
+that is what made `git pull` conflict on this host.
 
 ```bash
-htpasswd -bnBC 10 "" 'a-strong-password' | tr -d ':\n'
-# paste into dex.yaml staticPasswords[0].hash
+cp .env.example .env && chmod 600 .env
+openssl rand -hex 32                                  # DEX_OMNI_CLIENT_SECRET
+htpasswd -bnBC 10 "" 'a-strong-password' | tr -d ':\n'  # DEX_ADMIN_PASSWORD_HASH, in single quotes
 ```
 
-### 4. Config
-
-```bash
-cp .env.example .env      # fill in OMNI_LAN_IP, DEX_OMNI_CLIENT_SECRET, etc.
-# make dex.yaml staticClients[0].secret == DEX_OMNI_CLIENT_SECRET
-```
-
-### 5. Bring up
+### 4. Bring up
 
 ```bash
 docker compose up -d
@@ -95,23 +104,23 @@ docker compose logs -f omni      # wait for "Omni is ready"
 Open the Omni hostname configured in `.env`, then log in as the Dex break-glass
 admin.
 
-### 6. omnictl
+### 5. omnictl
 
 ```bash
 # Download omnictl from the Omni UI (it embeds your endpoint + service account).
 omnictl get machines        # empty until machines join (see ../talos/README.md)
 ```
 
-## Day-2: unified SSO via authelia
+## Upgrades
 
-Once the cluster is up and authelia is running:
+Omni and Dex versions are pinned in `compose.yaml`; bump them in git, then
+re-run the playbook (or `git pull && docker compose up -d`). The playbook takes
+an encrypted host backup first whenever the Omni image changes, because Omni
+migrates its databases on start and a downgrade can't undo that. Read the
+release notes for removed flags: Omni refuses to start with one.
 
-1. Register an OIDC client `dex` in authelia using the callback URL declared in
-   `dex.yaml`.
-2. Uncomment the `authelia` connector in `dex.yaml`, fill the client secret,
-   `docker compose restart dex`.
-3. Human logins now flow **omni → dex → authelia**. Keep the static admin as
-   break-glass for when the cluster is down.
+Authentik deliberately does not front Omni or Dex: logging in must keep working
+when the cluster is down.
 
 ## Machine logs after a crash
 
@@ -170,29 +179,31 @@ cluster's `id` sourced from the backup, or use the Omni UI "Restore from
 backup" flow when creating/re-pointing a cluster. This only restores Omni's
 view of cluster/machine state — Talos itself is unaffected.
 
-### Full host state, manual
+### Full host state, weekly
 
-The `data/` directory (etcd + SQLite) plus GPG/TLS/Dex secrets are what make
-this specific Omni instance work at all — the S3 etcd backups above don't
-cover them. Back up the full runtime state while the stack is stopped:
+The `data/` directory (etcd + SQLite) plus the GPG key, TLS and `.env` are what
+make this specific Omni instance work at all, and the S3 etcd backups above
+don't cover them. `omni-backup.timer` (Sundays 02:45) stops the stack for a
+moment, tars them, encrypts the archive to the repo's age recipient
+(`.sops.yaml`) and keeps eight weeks in `backups/`. Run one on demand with
+`sudo systemctl start omni-backup`. Restore on a fresh host:
 
 ```bash
-docker compose stop
-sudo tar -czf /secure/path/omni-backup.tgz \
-  data secrets certs .env dex.yaml compose.yaml
-docker compose start
+age -d -i <age identity> backups/omni-<stamp>.tar.gz.age | tar -xz -C omni-server
 ```
 
-The archive contains private keys and credentials; store it encrypted. Restore
-it on the same paths and start the pinned Omni version before upgrading.
+then run the playbook and start the same Omni version the backup came from
+before upgrading. The archives sit on the Omni host itself, so copy them
+somewhere else as well.
 
 ## Layout
 
 ```
 compose.yaml          Dex + Omni
-.env.example          copy to .env
-dex.yaml              OIDC config (static admin + authelia connector)
+.env.example          copy to .env (all secrets live there)
+dex.yaml              OIDC config (break-glass admin; no secrets)
 certs/                lego-minted TLS (gitignored)
 secrets/omni.asc      GPG etcd key (gitignored)
 data/                 embedded etcd + SQLite state (gitignored)
+backups/              encrypted weekly host backups (gitignored)
 ```

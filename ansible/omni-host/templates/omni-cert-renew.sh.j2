@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Managed by ansible/omni-host. Renews the wildcard cert for Omni and Dex
+# (Cloudflare DNS-01) once it is inside 30 days of expiry.
+set -euo pipefail
+dir={{ omni_dir }}
+cd "$dir"
+lego run \
+  --accept-tos \
+  --email {{ omni_acme_email }} \
+  --dns cloudflare \
+  --domains "*.{{ omni_domain }}" \
+  --path "$dir/.lego" \
+  --renew-days 30 \
+  --reuse-key \
+  --deploy-hook /usr/local/bin/omni-cert-deploy.sh
