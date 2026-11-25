@@ -134,6 +134,13 @@ spec:
                 secretKeyRef:
                   name: media-auth
                   key: PROWLARR_API_KEY
+            # Prowlarr indexer IDs 1 (The Pirate Bay) and 4 (Knaben), the only
+            # ones that return ebooks. Searching every indexer waits on the
+            # movie/TV ones (LimeTorrents hangs), so cap each search at 30s.
+            - name: PROWLARR_INDEXERS
+              value: "1,4"
+            - name: PROWLARR_INDEXER_TIMEOUT
+              value: "30"
             - name: PROWLARR_TORRENT_CLIENT
               value: qbittorrent
             - name: QBITTORRENT_URL
