@@ -140,6 +140,9 @@
     dest: "{{ omni_repo_dir }}"
     version: main
   register: omni_git
+  # In --check runs the dex.yaml reset above is only simulated, so git still
+  # sees the local edit; a real run has already reset it.
+  ignore_errors: "{{ ansible_check_mode }}"
 
 # --- Files and permissions --------------------------------------------------
 
