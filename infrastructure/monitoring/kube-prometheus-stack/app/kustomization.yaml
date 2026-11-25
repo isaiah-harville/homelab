@@ -21,5 +21,6 @@ configMapGenerator:
       - dashboards/homelab-services.json
       - dashboards/homelab-inference.json
       - dashboards/homelab-logs.json
+      - dashboards/homelab-books.json
     options:
       disableNameSuffixHash: true

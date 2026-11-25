@@ -100,6 +100,51 @@ no address and auto-send off.
 - **A setting changed in CWA's UI went back.** Expected: mail settings and
   eReader addresses are owned by Git and re-applied on every restart.
 
+## Monitoring and alerts
+
+Everything below emails the homelab alert address through Alertmanager, again
+when it clears. Rules are in `app/monitoring.yaml`; the Grafana dashboard is
+**Homelab / Books** (`grafana.int.harville.dev`).
+
+| Alert | Fires when | First thing to check |
+| --- | --- | --- |
+| `BooksSiteDown` (critical) | An uptime check fails for 5 min: the public URL `books.harville.dev/api/health`, or the Shelfmark or Calibre-Web Service | Public only: Traefik, DNS or the certificate. All three: the pod. |
+| `BooksPodUnavailable` (critical) | The books pod is not ready for 10 min | `kubectl -n media describe pod -l app.kubernetes.io/name=books` |
+| `BooksContainerRestarting` | A container restarts more than twice in 30 min | `kubectl -n media logs deploy/books -c <container> --previous` |
+| `BooksDownloaderUnavailable` | Prowlarr or qBittorrent is down for 15 min (the IRC tab still works) | Their pods in `media` |
+| `BooksKindleEmailFailed` | CWA logged an SMTP error sending to a Kindle | CWA → Admin → Tasks; the token in `cloudflare-smtp` |
+| `BooksKindleConfigNotApplied` | `cwa-config` could not apply the Git settings | `kubectl -n media logs deploy/books -c cwa-config` |
+| `BooksProbesMissing` | No uptime results for 15 min, so `BooksSiteDown` cannot fire | The `blackbox-exporter` pod in `monitoring` |
+
+The first two log-based alerts come from Loki's ruler, so they can lag by a
+minute or two. A one-off `BooksKindleConfigNotApplied` straight after a change
+to the recipients secret can be a race: the pod started before Flux had
+decrypted the new secret. Reloader restarts the pod once the decrypted secret
+lands, so check that the newest `cwa-config` log says `configured`.
+
+Two failures are not alerted because CWA does not log them: a book larger than
+3.5 MiB, and a book with no Kindle-compatible format. CWA marks both as a failed
+task in Admin → Tasks without sending.
+
+### Debugging with logs
+
+The **Homelab / Books** dashboard has one log panel per stage:
+
+1. **Downloads (Shelfmark):** the request, the IRC or Prowlarr transfer, and the
+   copy into the reader's ingest folder.
+2. **Kindle delivery (Calibre-Web):** the import and the auto-send, including
+   which reader's folder it came from.
+3. **Git-managed settings (cwa-config):** what the initContainer applied.
+4. **All books logs:** everything, with a search box.
+
+Logs are kept for 14 days. From a terminal:
+
+```bash
+kubectl -n media logs deploy/books -c shelfmark --since=1h
+kubectl -n media logs deploy/books -c calibre-web-automated --since=1h
+kubectl -n media logs deploy/books -c cwa-config
+```
+
 ## First-run setup
 
 1. In Authentik, add the intended user to **Books Users**. Authentik admins also

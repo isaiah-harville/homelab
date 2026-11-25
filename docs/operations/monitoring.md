@@ -53,3 +53,30 @@ Dashboard IDs and revisions are pinned in
 `infrastructure/monitoring/kube-prometheus-stack/app/helmrelease.yaml`. Review a dashboard before
 changing its revision; a newer Grafana.com revision is external code and may
 change queries or required metrics.
+
+## Alerts
+
+Alertmanager emails every `warning` and `critical` alert, and again when it
+resolves (routing and recipient are in the SOPS-encrypted
+`alertmanager-config.sops.yaml`). Three kinds of rule feed it:
+
+- **Metric rules:** `PrometheusRule` resources labelled
+  `release: kube-prometheus-stack`, in any namespace. Cluster-wide ones are in
+  `infrastructure/monitoring/kube-prometheus-stack/app/homelab-alerts.yaml`;
+  app-specific ones live beside the app (for example
+  `apps/media/books/app/monitoring.yaml`).
+- **Uptime checks:** `blackbox-exporter` (`infrastructure/monitoring/blackbox-exporter`)
+  fetches URLs for Prometheus. An app declares a `Probe` (prober
+  `blackbox-exporter.monitoring.svc:9115`, module `http_2xx`, label
+  `release: kube-prometheus-stack`) and alerts on `probe_success == 0`. Pair it
+  with an `absent(probe_success{job="..."})` rule so a broken exporter cannot
+  silence the alert.
+- **Log rules:** Loki's ruler evaluates LogQL alert rules and sends them to
+  Alertmanager. Put the rules in a ConfigMap labelled `loki_rule: "true"` in any
+  namespace, with the rule file as a data key; Loki's sidecar loads it within a
+  minute. Use these for failures that only appear in logs. Check what is loaded
+  with:
+
+  ```bash
+  kubectl get --raw /api/v1/namespaces/monitoring/services/loki:3100/proxy/loki/api/v1/rules
+  ```

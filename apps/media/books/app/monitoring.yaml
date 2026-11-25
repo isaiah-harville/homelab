@@ -1,0 +1,146 @@
+---
+# Monitoring for books.harville.dev (Shelfmark + Calibre-Web-Automated).
+# Every alert here is emailed by Alertmanager; see docs/apps/books.md
+# "Monitoring and alerts" for what each one means and how to debug it.
+#
+# Uptime: blackbox-exporter fetches each URL every minute.
+# - public: the full path a reader uses (DNS, traefik-public, TLS, Shelfmark).
+#   /api/health is exempt from Shelfmark's OIDC login.
+# - shelfmark / calibre: the Services directly, so an alert says which side
+#   broke (ingress vs app).
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: books
+  labels:
+    release: kube-prometheus-stack
+spec:
+  jobName: books
+  interval: 60s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.monitoring.svc:9115
+  targets:
+    staticConfig:
+      static:
+        - https://books.harville.dev/api/health
+        - http://shelfmark.media.svc:8084/api/health
+        - http://calibre-web-automated.media.svc:8083/
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: books
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: books
+      rules:
+        - alert: BooksSiteDown
+          # Five consecutive failed probes; a pod restart takes ~1-2 minutes.
+          expr: probe_success{job="books"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Books: {{ $labels.instance }} is not answering"
+            description: >-
+              {{ $labels.instance }} has failed its health check for 5 minutes.
+              If only the public URL fails, suspect Traefik, DNS or the
+              certificate; if the Service URLs fail too, the books pod is down.
+              Start with `kubectl -n media get pods -l app.kubernetes.io/name=books`
+              and the Homelab / Books dashboard.
+
+        - alert: BooksProbesMissing
+          # Without this, a broken blackbox-exporter would silence BooksSiteDown.
+          expr: absent(probe_success{job="books"})
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Books uptime checks are not running"
+            description: >-
+              Prometheus has no probe results for books for 15 minutes, so
+              BooksSiteDown cannot fire. Check the blackbox-exporter pod in
+              the monitoring namespace and the `books` Probe in media.
+
+        - alert: BooksPodUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{namespace="media", deployment="books"} < 1
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Books pod has been unavailable for 10 minutes"
+            description: >-
+              Shelfmark and Calibre-Web share this pod, so both are down.
+              `kubectl -n media describe pod -l app.kubernetes.io/name=books`
+              shows why (Pending on a volume, image pull, failed probe).
+
+        - alert: BooksContainerRestarting
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="media", pod=~"books-.*"}[30m]) > 2
+          labels:
+            severity: warning
+          annotations:
+            summary: "Books container {{ $labels.container }} is restarting"
+            description: >-
+              {{ $labels.container }} restarted more than twice in 30 minutes.
+              `kubectl -n media logs deploy/books -c {{ $labels.container }} --previous`
+              shows the last crash.
+
+        - alert: BooksDownloaderUnavailable
+          # Shelfmark's torrent path needs both; IRC keeps working without them.
+          expr: |
+            kube_deployment_status_replicas_available{namespace="media", deployment=~"prowlarr|qbittorrent"} < 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.deployment }} is down, so torrent book downloads fail"
+            description: >-
+              {{ $labels.deployment }} has had no available pod for 15 minutes.
+              Shelfmark's Prowlarr tab will fail; the IRC tab still works.
+---
+# Log-based alerts, evaluated by Loki's ruler (see
+# infrastructure/monitoring/loki). These cover failures no metric shows.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: books-loki-rules
+  labels:
+    loki_rule: "true"
+data:
+  books.yaml: |
+    groups:
+      - name: books-logs
+        rules:
+          - alert: BooksKindleConfigNotApplied
+            # cwa_config.py fails soft, so this is the only signal that the
+            # Git-managed mail settings or Kindle recipients did not apply.
+            expr: |
+              sum(count_over_time({namespace="media", container="cwa-config"} |= "ERROR: settings NOT applied" [15m])) > 0
+            labels:
+              severity: warning
+              namespace: media
+            annotations:
+              summary: "Books: Kindle settings from Git were not applied"
+              description: >-
+                The cwa-config initContainer could not write CWA's mail
+                settings or Kindle recipients, so CWA kept its previous ones.
+                Run `kubectl -n media logs deploy/books -c cwa-config` for the
+                error (usually invalid JSON in kindle-recipients.sops.yaml).
+          - alert: BooksKindleEmailFailed
+            # CWA logs SMTP failures from its mail task at ERROR level.
+            expr: |
+              sum(count_over_time({namespace="media", container="calibre-web-automated"} |~ `ERROR \{cps\.tasks\.mail` [15m])) > 0
+            labels:
+              severity: warning
+              namespace: media
+            annotations:
+              summary: "Books: a Kindle email failed to send"
+              description: >-
+                CWA could not hand a book to Cloudflare's SMTP server, so it
+                did not reach the Kindle. See CWA → Admin → Tasks, or the
+                "Kindle delivery" panel on the Homelab / Books dashboard.
