@@ -1,8 +1,18 @@
 # Documentation
 
-The documentation site uses MkDocs and Material for MkDocs. Existing READMEs
-remain the source of truth for directory guides and runbooks; thin pages under
-`docs/` include them in the generated site.
+The documentation site is built with [Zensical](https://zensical.org), configured
+in `zensical.toml`. Existing READMEs remain the source of truth for directory
+guides and runbooks; thin pages under `docs/` include them with a one-line
+`include-markdown` tag (copy an existing stub such as `docs/talos/README.md`;
+Zensical requires the tag on a line of its own).
+
+Included READMEs are inlined as-is: Zensical never rewrites their relative
+links. A link between two READMEs that are both included at matching paths
+(`omni-server/` and `ansible/omni-host/`, for example) works on GitHub and on
+the site. A link from an included README into `docs/` doesn't; use the page's
+GitHub URL (`https://github.com/isaiah-harville/homelab/blob/main/docs/...`)
+instead. Add any README you include to `watch` in `zensical.toml` so
+`zensical serve` rebuilds when it changes.
 
 ## Write in the right place
 
@@ -15,25 +25,28 @@ remain the source of truth for directory guides and runbooks; thin pages under
 - Link to a decision page from code when the rationale is useful but too large
   for an inline comment.
 
-Generated reference pages come from `scripts/generate_reference.py`. Extend the
-generator when a manifest relationship is more useful as a table than as prose.
-Do not commit generated output.
+Generated reference pages come from `scripts/generate_reference.py`, which
+writes them into `docs/reference/` before the build (Zensical has no gen-files
+plugin). The output is gitignored. Extend the generator when a manifest
+relationship is more useful as a table than as prose.
 
 ## Preview locally
 
 ```bash
 uv sync
-uv run mkdocs serve
+uv run python scripts/generate_reference.py
+uv run zensical serve
 ```
 
-Open the local URL printed by MkDocs. The server watches both `docs/` and the
-included READMEs.
+Open the local URL printed by Zensical. The server watches `docs/` and the
+paths listed under `watch`; re-run the generator to refresh reference pages.
 
 ## Validate
 
 ```bash
 uv lock --check
-uv run mkdocs build --strict
+uv run python scripts/generate_reference.py
+uv run zensical build --strict --clean
 ```
 
 The generated `site/` directory is disposable and must not be committed.

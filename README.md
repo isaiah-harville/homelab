@@ -34,12 +34,13 @@ plane) then [`talos/README.md`](talos/README.md) (cluster).
 
 ## Documentation
 
-The project documentation is built with MkDocs and includes the repository
-READMEs as its runbooks and component guides:
+The project documentation is built with [Zensical](https://zensical.org) and
+includes the repository READMEs as its runbooks and component guides:
 
 ```bash
 uv sync
-uv run mkdocs serve
+uv run python scripts/generate_reference.py
+uv run zensical serve
 ```
 
 ## Storage (Longhorn)

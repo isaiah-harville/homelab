@@ -1,13 +1,22 @@
+"""Generate the reference pages under docs/reference/ from repository manifests.
+
+Zensical has no gen-files plugin, so this runs before every docs build:
+
+    uv run python scripts/generate_reference.py && uv run zensical build --strict
+
+The output is gitignored; change the manifests or this script, not the pages.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-import mkdocs_gen_files
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
 MANIFEST_ROOTS = ("apps", "clusters", "infrastructure")
 SOURCE_URL = "https://github.com/isaiah-harville/homelab/blob/main"
 
@@ -106,7 +115,9 @@ def write_table(
     headers: list[str],
     rows: list[list[Any]],
 ) -> None:
-    with mkdocs_gen_files.open(output, "w") as page:
+    target = DOCS / output
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("w") as page:
         print(f"# {title}\n", file=page)
         print(f"{introduction}\n", file=page)
         print(
@@ -117,8 +128,6 @@ def write_table(
         print("| " + " | ".join("---" for _ in headers) + " |", file=page)
         for row in sorted(rows, key=lambda item: tuple(str(part) for part in item[:2])):
             print("| " + " | ".join(cell(item) for item in row) + " |", file=page)
-
-    mkdocs_gen_files.set_edit_path(output, "scripts/generate_reference.py")
 
 
 write_table(

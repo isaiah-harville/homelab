@@ -4,9 +4,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-yaml
-        # --unsafe: mkdocs.yml uses !!python/name tags (pymdownx), which the
-        # safe loader can't construct. This still checks syntax.
-        args: [--allow-multiple-documents, --unsafe]
+        args: [--allow-multiple-documents]
       - id: end-of-file-fixer
       - id: mixed-line-ending
         args: [--fix=lf]
