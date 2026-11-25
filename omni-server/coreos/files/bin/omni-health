@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Exit 0 once Omni and Dex both answer /healthz (waits up to ~5 minutes).
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+omni_health "${1:-60}"

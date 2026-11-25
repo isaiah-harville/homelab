@@ -1,0 +1,44 @@
+# Test-only additions merged on top of the production Ignition config.
+# Files here must not exist in omni.ign: Ignition lets the merged config
+# win. (build.sh patches omni.service in the render instead.)
+# Everything here exists because the VM has no real DNS, no Cloudflare token
+# and no publicly trusted certificate; see test/README.md.
+variant: fcos
+version: 1.6.0
+ignition:
+  config:
+    merge:
+      - local: omni.ign
+storage:
+  directories:
+    - path: /var/lib/omni/certs
+      mode: 0750
+      group:
+        id: 1001
+  files:
+    # Trust the throwaway CA on the host (curl health checks; the OS bundle
+    # mounted into Omni for Dex's issuer).
+    - path: /etc/pki/ca-trust/source/anchors/fcos-test-ca.pem
+      mode: 0644
+      contents:
+        local: ca.pem
+    # Pre-seeded wildcard certificate in place of lego's first issuance.
+    - path: /var/lib/omni/certs/server-chain.pem
+      mode: 0644
+      overwrite: true
+      contents:
+        local: server-chain.pem
+    - path: /var/lib/omni/certs/server-key.pem
+      mode: 0640
+      overwrite: true
+      group:
+        id: 1001
+      contents:
+        local: server-key.pem
+    # Hold OS updates until the Zincati step of the test.
+    - path: /etc/zincati/config.d/90-test-hold.toml
+      mode: 0644
+      contents:
+        inline: |
+          [updates]
+          enabled = false

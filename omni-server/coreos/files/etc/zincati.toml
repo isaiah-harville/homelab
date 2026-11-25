@@ -1,0 +1,9 @@
+# OS updates reboot only inside this window (UTC). Omni is down for the
+# minute a reboot takes; the cluster keeps running.
+[updates]
+strategy = "periodic"
+
+[[updates.periodic.window]]
+days = [ "${UPDATE_DAY}" ]
+start_time = "${UPDATE_START}"
+length_minutes = ${UPDATE_MINUTES}

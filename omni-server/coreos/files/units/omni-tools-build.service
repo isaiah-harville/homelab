@@ -1,0 +1,22 @@
+# Small local image with age and gnupg for omni-backup, omni-restore and
+# omni-gpg-init. FCOS ships neither, and layering packages onto the OS
+# would defeat the point of an image-based host. Made once per install
+# (a reinstall starts with an empty image store) by committing a container
+# rather than with `docker build`: FCOS has only Docker's deprecated legacy
+# builder, not buildx.
+[Unit]
+Description=Create the omni-tools image
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/omni/images.env
+ExecStart=/bin/sh -euc '\
+  docker image inspect omni-tools:local >/dev/null 2>&1 && exit 0; \
+  docker rm --force omni-tools-build >/dev/null 2>&1 || true; \
+  docker run --name omni-tools-build --network host "$TOOLS_IMAGE" apk add --no-cache age gnupg tar gzip; \
+  docker commit omni-tools-build omni-tools:local; \
+  docker rm omni-tools-build'

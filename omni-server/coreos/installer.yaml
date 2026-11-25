@@ -1,0 +1,5 @@
+# coreos-installer config embedded in the install ISO (make iso). The
+# destination device comes from INSTALL_DEVICE in host.env. Keep the
+# omni-data partition across reinstalls; everything else is rewritten.
+save-partlabel:
+  - omni-data

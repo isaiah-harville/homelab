@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply the Omni and Dex versions pinned in git
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/omni/host.env
+ExecStart=/usr/local/bin/omni-sync
+# A migration can take minutes; the health wait below allows for it.
+TimeoutStartSec=30min

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Create the GPG key that seals Omni's etcd key slot, for a brand-new
+# instance. Omni needs an encryption subkey, and both the public and the
+# secret key. Lose this and the etcd data is unreadable: it is in every
+# omni-backup archive.
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+
+dir="$OMNI_STATE/secrets"
+[[ -e $dir/omni.asc ]] && exit 0
+install -d -m 0700 "$dir"
+docker run --rm --network=none -v "$dir:/out" omni-tools:local sh -euc '
+  export GNUPGHOME=$(mktemp -d)
+  uid="Omni (etcd encryption) <omni@$1>"
+  gpg --batch --passphrase "" --quick-generate-key "$uid" rsa4096 cert never
+  fpr=$(gpg --list-keys --with-colons | awk -F: "/^fpr/{print \$10; exit}")
+  gpg --batch --passphrase "" --quick-add-key "$fpr" rsa4096 encrypt never
+  gpg --export --armor > /out/omni-public.asc
+  gpg --export-secret-keys --armor > /out/omni.asc.tmp
+  mv /out/omni.asc.tmp /out/omni.asc
+' sh "$OMNI_DOMAIN"
+chmod 0600 "$dir/omni.asc"
+log "created $dir/omni.asc"
