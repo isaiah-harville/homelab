@@ -76,11 +76,11 @@ for key in omni dex lego tools ipxe-build; do
 done
 
 echo "== iPXE scripts"
-for f in pxe/boot.ipxe pxe/embed.ipxe; do
+for f in pxe/boot.ipxe.tmpl pxe/embed.ipxe; do
   [[ $(head -n1 "$f") == '#!ipxe' ]] || fail "$f does not start with #!ipxe"
 done
 # A failing iseq ends an iPXE script unless followed by ||.
-bad=$(grep -nE '^[[:space:]]*iseq ' pxe/boot.ipxe pxe/embed.ipxe | grep -v '||' || true)
+bad=$(grep -nE '^[[:space:]]*iseq ' pxe/boot.ipxe.tmpl pxe/embed.ipxe | grep -v '||' || true)
 [[ -z $bad ]] || fail "iseq without || (ends the script when unequal): $bad"
 
 if ((failed)); then

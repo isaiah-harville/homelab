@@ -105,7 +105,7 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
   new menu at once. The menu lives on `omni-data`, so a reinstall keeps it.
   **The filled-in menu stays out of git:** anyone can read a schematic at
   `factory.talos.dev/schematics/<id>`, and Omni's schematics embed its join
-  token. The repo holds only the template (`pxe/boot.ipxe`, no URLs). Until
+  token. The repo holds only the template (`pxe/boot.ipxe.tmpl`, no URLs). Until
   the presets script has run, the menu says so and falls back to the local
   disk.
 - **HTTPS trust:** iPXE is built with the Mozilla roots from the pinned

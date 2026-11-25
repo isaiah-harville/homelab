@@ -79,7 +79,8 @@ printf '%s' "$(secret omni_data_luks_key)" > "$OUT/secrets/omni-data.key"
 # embedded Ignition), so only its inputs go in, plus the menu template that
 # seeds a host with no menu yet (pxe/presets.sh fills in the real one).
 mkdir -p "$OUT/pxe"
-cp pxe/build-ipxe.sh pxe/embed.ipxe pxe/boot.ipxe "$OUT/pxe/"
+cp pxe/build-ipxe.sh pxe/embed.ipxe "$OUT/pxe/"
+cp pxe/boot.ipxe.tmpl "$OUT/pxe/boot.ipxe"
 
 butane --strict --files-dir "$OUT" "$OUT/omni.bu" > "$OUT/omni.ign"
 echo "wrote $OUT/omni.ign"

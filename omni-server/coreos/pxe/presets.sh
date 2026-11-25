@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (Re)create the Omni installation-media presets for network boot, fill
-# their Image Factory PXE URLs into the menu template (pxe/boot.ipxe) and
+# their Image Factory PXE URLs into the menu template (pxe/boot.ipxe.tmpl) and
 # install the result on the Omni host's TFTP root. Run it with omnictl pointed
 # at that Omni after a Talos or extension change. TFTP serves the new menu at
 # once; it lives on omni-data, so a reinstall keeps it.
@@ -10,7 +10,10 @@
 #
 # The filled-in menu never goes into git: anyone can read a schematic at
 # factory.talos.dev/schematics/<id>, and Omni's schematics embed its join
-# token. The committed pxe/boot.ipxe is only the template.
+# token. The committed pxe/boot.ipxe.tmpl is only the template. (It isn't
+# named boot.ipxe so that hosts installed before this change, whose
+# omni-sync fetched pxe/boot.ipxe from main, find nothing there and keep
+# the menu this script installs.)
 #
 # TALOS_VERSION defaults to talos_version in terraform/omni/locals.tf; the
 # extensions mirror base_extensions and gpu_extensions there (Talos is
@@ -54,7 +57,7 @@ nvidia=$(url_for homelab-talos-nvidia "${gpu[@]}")
 
 menu() {
   sed -E -e "s|^set talos-url .*|set talos-url $talos|" -e "s|^set nvidia-url .*|set nvidia-url $nvidia|" \
-    "$here/boot.ipxe"
+    "$here/boot.ipxe.tmpl"
 }
 
 if [[ -n $output ]]; then
