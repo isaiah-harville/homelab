@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# (Re)create the Omni installation-media presets for network boot and write
-# their Image Factory PXE URLs into boot.ipxe. Run it with omnictl pointed at
+# (Re)create the Omni installation-media preset for network boot and write
+# its Image Factory PXE URL into boot.ipxe. Run it with omnictl pointed at
 # the Omni this host serves, after a Talos or extension change, and commit
 # boot.ipxe; omni-sync installs it on the host.
 #
 #   pxe/presets.sh [output]        default: pxe/boot.ipxe
 #
 # TALOS_VERSION defaults to talos_version in terraform/omni/locals.tf; the
-# extensions mirror base_extensions and gpu_extensions there. The URLs carry
+# extensions mirror base_extensions there. There is no GPU variant: the
+# network image only has to reach Omni in maintenance mode, and a machine's
+# machine set decides what is installed. The URL carries
 # Omni's join token inside the schematic (as any Omni install media does):
 # treat boot.ipxe as config, not a secret.
 set -euo pipefail
@@ -20,8 +22,6 @@ TALOS_VERSION=${TALOS_VERSION:-$(sed -nE 's/^[[:space:]]*talos_version[[:space:]
 ARCH=${ARCH:-amd64}
 
 base=(--extensions siderolabs/iscsi-tools --extensions siderolabs/util-linux-tools)
-gpu=("${base[@]}" --extensions siderolabs/nonfree-kmod-nvidia-production
-  --extensions siderolabs/nvidia-container-toolkit-production)
 
 url_for() {
   local name=$1
@@ -39,10 +39,8 @@ url_for() {
 }
 
 talos=$(url_for homelab-talos "${base[@]}")
-nvidia=$(url_for homelab-talos-nvidia "${gpu[@]}")
-[[ $talos == https://* && $nvidia == https://* ]] || { echo "presets.sh: no PXE URL from omnictl" >&2; exit 1; }
+[[ $talos == https://* ]] || { echo "presets.sh: no PXE URL from omnictl" >&2; exit 1; }
 
-sed -E -e "s|^set talos-url .*|set talos-url $talos|" -e "s|^set nvidia-url .*|set nvidia-url $nvidia|" \
-  "$here/boot.ipxe" > "$out.tmp"
+sed -E "s|^set talos-url .*|set talos-url $talos|" "$here/boot.ipxe" > "$out.tmp"
 mv "$out.tmp" "$out"
 echo "wrote $out (Talos $TALOS_VERSION)"
