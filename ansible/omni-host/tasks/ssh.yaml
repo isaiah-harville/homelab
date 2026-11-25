@@ -56,4 +56,3 @@
   when: >-
     'passwordauthentication no' not in sshd_effective.stdout_lines
     or 'permitrootlogin no' not in sshd_effective.stdout_lines
-
