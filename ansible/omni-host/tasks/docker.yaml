@@ -11,14 +11,13 @@
   register: docker_repo
 
 # The one-line source Docker's install docs write; two entries for the same
-# repository with different keyrings make apt refuse to update.
+# repository make apt refuse to update. Only the .list goes: the module above
+# keeps its key at /etc/apt/keyrings/docker.asc, the same path the old
+# install used.
 - name: Remove the legacy Docker source
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /etc/apt/sources.list.d/docker.list
     state: absent
-  loop:
-    - /etc/apt/sources.list.d/docker.list
-    - /etc/apt/keyrings/docker.asc
   register: docker_legacy
 
 - name: Refresh apt after changing the Docker source

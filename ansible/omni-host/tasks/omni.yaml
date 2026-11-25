@@ -38,6 +38,8 @@
   changed_when: false
   when: omni_env_exists and not omni_env_has_hash
   no_log: true
+  check_mode: false
+
 
 - name: Move the admin password hash into .env
   ansible.builtin.lineinfile:
@@ -78,9 +80,12 @@
   ansible.builtin.command: grep -cE "^(DEX_OMNI_CLIENT_SECRET|DEX_ADMIN_PASSWORD_HASH)='?[^'[:space:]]{8,}" {{ omni_dir }}/.env
   register: omni_env_check
   changed_when: false
-  failed_when: omni_env_check.stdout | int != 2
+  # In --check runs the hash hasn't really been moved yet.
+  failed_when: omni_env_check.stdout | int != 2 and not ansible_check_mode
 
 # --- Repository -------------------------------------------------------------
+  check_mode: false
+
 
 - name: List local changes in the checkout
   become: true
@@ -88,6 +93,8 @@
   ansible.builtin.command: git -C {{ omni_repo_dir }} status --porcelain --untracked-files=no  # noqa: command-instead-of-module
   register: omni_git_status
   changed_when: false
+  check_mode: false
+
 
 - name: Refuse to overwrite unexpected local changes
   ansible.builtin.assert:
@@ -100,6 +107,30 @@
   ansible.builtin.command: git -C {{ omni_repo_dir }} checkout -- omni-server/dex.yaml  # noqa: command-instead-of-module
   changed_when: true
   when: omni_git_status.stdout is search('omni-server/dex.yaml')
+
+# Hand-resolving the old dex.yaml conflicts left stashes holding the client
+# secret and password hash. Drop only stashes that touch nothing but
+# omni-server/dex.yaml; anything else is someone's work and stays.
+- name: Drop leftover dex.yaml stashes  # noqa: command-instead-of-module
+  become: true
+  become_user: "{{ omni_user }}"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd {{ omni_repo_dir }}
+    dropped=0
+    for ref in $(git stash list --format=%gd | sort -t'{' -k2 -rn); do
+      files=$(git stash show --name-only --include-untracked "$ref" 2>/dev/null || git stash show --name-only "$ref")
+      if [ "$files" = "omni-server/dex.yaml" ]; then
+        git stash drop -q "$ref"
+        dropped=$((dropped + 1))
+      fi
+    done
+    echo "dropped=$dropped"
+  args:
+    executable: /bin/bash
+  register: omni_stash_drop
+  changed_when: omni_stash_drop.stdout is not search('dropped=0')
+  when: not ansible_check_mode
 
 - name: Update the checkout
   become: true
@@ -205,6 +236,8 @@
   register: omni_running_image
   changed_when: false
   failed_when: false
+  check_mode: false
+
 
 - name: Read the image compose.yaml pins  # noqa: command-instead-of-module
   ansible.builtin.command: >-
@@ -214,6 +247,17 @@
 
 # An Omni upgrade migrates its databases in place and can't be rolled back
 # by changing the tag, so take a backup first.
+  check_mode: false
+
+
+- name: Note an Omni version change
+  ansible.builtin.debug:
+    msg: >-
+      Omni {{ omni_running_image.stdout | default('not running') }} ->
+      {{ omni_pinned_image.stdout }}. A backup runs first; if the new version
+      fails its health check, restore it and pin the old version again.
+  when: omni_running_image.stdout | default('') != omni_pinned_image.stdout
+
 - name: Back up before changing the Omni version
   ansible.builtin.systemd_service:
     name: omni-backup.service
@@ -230,3 +274,43 @@
     chdir: "{{ omni_dir }}"
   register: omni_compose
   changed_when: omni_compose.stderr is search('Recreated|Created|Started')
+
+# --- Health -----------------------------------------------------------------
+# An upgrade is done when both answer again. Omni migrates its databases on
+# the first start of a new version, which can take a minute or two.
+
+- name: Wait for Omni to report healthy
+  ansible.builtin.uri:
+    url: "https://omni.{{ omni_domain }}/healthz"
+    status_code: 200
+  register: omni_health
+  until: omni_health.status == 200
+  retries: 36
+  delay: 5
+  when: not ansible_check_mode
+
+- name: Wait for Dex to report healthy
+  ansible.builtin.uri:
+    url: "https://omni-dex.{{ omni_domain }}:5556/healthz"
+    status_code: 200
+  register: dex_health
+  until: dex_health.status == 200
+  retries: 24
+  delay: 5
+  when: not ansible_check_mode
+
+- name: Show the running versions
+  ansible.builtin.command: docker compose images --format json
+  args:
+    chdir: "{{ omni_dir }}"
+  become: true
+  become_user: "{{ omni_user }}"
+  register: omni_images
+  changed_when: false
+  check_mode: false
+
+- name: Report the running versions
+  ansible.builtin.debug:
+    msg: "{{ images | map(attribute='Repository') | zip(images | map(attribute='Tag')) | map('join', ':') | list }}"
+  vars:
+    images: "{{ omni_images.stdout | from_json }}"

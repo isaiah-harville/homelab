@@ -5,6 +5,8 @@
     dest: "/tmp/lego_v{{ lego_version }}.tar.gz"
     checksum: "sha256:{{ lego_sha256 }}"
     mode: "0644"
+  # Download for real in --check runs too, so the unarchive below can be checked.
+  check_mode: false
 
 - name: Install lego
   ansible.builtin.unarchive:
