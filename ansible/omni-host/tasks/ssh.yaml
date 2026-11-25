@@ -39,3 +39,21 @@
   ansible.builtin.command: /usr/sbin/sshd -t
   changed_when: false
   when: sshd_hardening is changed
+
+# A changed file alone isn't proof sshd picked it up (the first rollout wrote
+# it without reloading), so compare what sshd is actually enforcing.
+- name: Read sshd's effective settings
+  ansible.builtin.command: /usr/sbin/sshd -T
+  register: sshd_effective
+  changed_when: false
+  check_mode: false
+
+- name: Reload sshd if it isn't enforcing the hardening yet
+  ansible.builtin.debug:
+    msg: "sshd still allows password or root login; reloading it."
+  changed_when: true
+  notify: Reload sshd
+  when: >-
+    'passwordauthentication no' not in sshd_effective.stdout_lines
+    or 'permitrootlogin no' not in sshd_effective.stdout_lines
+
