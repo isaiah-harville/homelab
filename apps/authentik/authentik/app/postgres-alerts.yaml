@@ -37,9 +37,16 @@ spec:
         - alert: CNPGNoRecentBackup
           # Nightly schedule, so anything past 26h means a run was missed.
           # Also catches a cluster that has never produced a backup at all,
-          # where the timestamp sits at 0.
+          # where the timestamp sits at 0 -- but only once the pod is older
+          # than one backup cycle. A brand-new cluster otherwise paged as
+          # critical all night until its first scheduled backup (inquizitive,
+          # Nov 22).
           expr: |
-            barman_cloud_cloudnative_pg_io_last_available_backup_timestamp == 0
+            (
+              barman_cloud_cloudnative_pg_io_last_available_backup_timestamp == 0
+              unless on (namespace, pod)
+              (time() - kube_pod_created) < 26 * 3600
+            )
             or
             time()
               - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp

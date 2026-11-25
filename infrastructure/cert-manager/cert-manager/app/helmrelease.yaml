@@ -26,6 +26,14 @@ spec:
         namespace: flux-system
   values:
     installCRDs: true
+    # Certificate expiry/readiness metrics for the homelab-certificates alerts.
+    # The wildcard cert fronts every ingress, so a stuck renewal is an outage.
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
     resources:
       requests:
         memory: 32Mi

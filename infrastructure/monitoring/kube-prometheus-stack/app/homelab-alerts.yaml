@@ -21,9 +21,11 @@ spec:
         - alert: NodeRebooted
           # Uptime under 15 minutes. Fires once per boot and clears on its own;
           # a planned upgrade will trigger it too.
+          # max by (instance, nodename) keeps the join one-to-one while a
+          # node-exporter pod is being replaced and both pods' series exist.
           expr: |
-            ((time() - node_boot_time_seconds{job="node-exporter"}) < 900)
-              * on (instance) group_left (nodename) node_uname_info
+            ((time() - max by (instance) (node_boot_time_seconds{job="node-exporter"})) < 900)
+              * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info)
           labels:
             severity: warning
           annotations:
@@ -32,6 +34,24 @@ spec:
               {{ $labels.nodename }} has been up for less than 15 minutes.
               If nobody restarted it, check the node for a crash or power
               problem. Every reboot makes Longhorn rebuild that node's replicas.
+
+        - alert: NodeRebootLoop
+          # Two or more boots in 24h is not maintenance. Backtested over 30
+          # days: only talos-6t5-q1d, which rebooted ~daily from Nov 6 with
+          # plenty of free memory, normal temps and an idle CPU.
+          expr: |
+            changes((max by (instance) (node_boot_time_seconds{job="node-exporter"}))[24h:5m])
+              * on (instance) group_left (nodename) max by (instance, nodename) (node_uname_info)
+              >= 2
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.nodename }} rebooted {{ $value }} times in 24h"
+            description: >-
+              {{ $labels.nodename }} keeps rebooting on its own. Every pod on it
+              restarts and Longhorn rebuilds its replicas each time. Check
+              `talosctl -n {{ $labels.nodename }} dmesg` right after the next
+              boot for panics, NVRM/Xid (GPU driver) or MCE errors.
 
         - alert: NodeNetworkLinkFlapped
           # Any carrier change on a physical NIC. When every node fires at
@@ -107,3 +127,42 @@ spec:
             description: >-
               The resource has been failing for six hours. Check
               `flux get all -A --status-selector ready=false`.
+
+    - name: homelab-certificates
+      rules:
+        # cert-manager starts renewing Let's Encrypt certs 30 days before
+        # expiry, so a cert inside 14 days means renewal has been failing for
+        # two weeks. The wildcard cert fronts every ingress.
+        - alert: CertificateExpiringSoon
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 86400
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+            description: >-
+              cert-manager has not renewed the certificate. Check
+              `kubectl describe certificate -A` and the letsencrypt-dns
+              ClusterIssuer's Cloudflare token.
+
+        - alert: CertificateExpiryImminent
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3 * 86400
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "Certificate {{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+            description: >-
+              Every ingress serving this certificate will start failing TLS
+              when it expires.
+
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="False"} == 1
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} not ready for 6h"
+            description: >-
+              cert-manager could not issue or renew the certificate. Check its
+              CertificateRequest and Order for the ACME error.
