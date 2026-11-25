@@ -1,7 +1,9 @@
 locals {
   cluster_name  = "homelab"
   talos_version = "1.14.7"
-  k8s_version   = "1.37.2"
+  # Omni rejects changing Talos and Kubernetes in one update. Bump one, let
+  # the rollout finish, then the other.
+  k8s_version = "1.36.3"
 
   patch_dir = "${path.module}/../../talos/omni/patches"
   control_plane_nodes = [
