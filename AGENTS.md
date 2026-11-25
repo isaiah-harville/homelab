@@ -55,9 +55,10 @@ configuration.
      `omni-sync` timer, which backs up first.
    - The host is also the PXE server: TFTP-only dnsmasq plus an iPXE with an
      embedded script, chaining a menu built from `coreos/pxe/boot.ipxe.tmpl`. UniFi
-     keeps DHCP (Network Boot → the Omni host, `ipxe.efi`). After a Talos
-     version change, `coreos/pxe/presets.sh` regenerates the menu and installs
-     it on the host over SSH. **Never commit the filled-in menu:** its Image
+     keeps DHCP (Network Boot → the Omni host, `ipxe.efi`).
+     `coreos/pxe/presets.sh` generates the menu and installs it on the host
+     over SSH. Talos upgrades don't need a re-run: Omni installs the cluster's
+     version when a machine joins. **Never commit the filled-in menu:** its Image
      Factory URLs reveal Omni's join token, and this repo is public.
 
    Read `omni-server/coreos/README.md` (findings section) before changing

@@ -100,9 +100,13 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
   omni-server/coreos/pxe/presets.sh   # needs omnictl and SSH to the host; installs the menu there
   ```
 
-  Run it again after a Talos upgrade (the URL pins the version, taken
-  from `terraform/omni/locals.tf`) or an extension change; TFTP serves the
-  new menu at once. The menu lives on `omni-data`, so a reinstall keeps it.
+  It doesn't need re-running on Talos upgrades. The network image only
+  brings a machine up in maintenance mode, and when the machine joins the
+  cluster Omni installs the cluster's Talos version. Re-run it to refresh
+  the network image itself: for hardware that needs a newer kernel, after
+  an extension change, or once its Talos version (taken from
+  `terraform/omni/locals.tf` when it runs) is too old for Omni. TFTP serves
+  the new menu at once. The menu lives on `omni-data`, so a reinstall keeps it.
   **The filled-in menu stays out of git:** anyone can read a schematic at
   `factory.talos.dev/schematics/<id>`, and Omni's schematics embed its join
   token. The repo holds only the template (`pxe/boot.ipxe.tmpl`, no URLs). Until

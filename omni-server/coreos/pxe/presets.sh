@@ -2,8 +2,11 @@
 # (Re)create the Omni installation-media presets for network boot, fill
 # their Image Factory PXE URLs into the menu template (pxe/boot.ipxe.tmpl) and
 # install the result on the Omni host's TFTP root. Run it with omnictl pointed
-# at that Omni after a Talos or extension change. TFTP serves the new menu at
-# once; it lives on omni-data, so a reinstall keeps it.
+# at that Omni. Talos upgrades don't need a re-run: the network image only
+# reaches maintenance mode, and Omni installs the cluster's Talos version
+# when a machine joins. Re-run it for a newer network image (new hardware,
+# extension changes). TFTP serves the new menu at once; it lives on
+# omni-data, so a reinstall keeps it.
 #
 #   pxe/presets.sh                 install on the Omni host (OMNI_LAN_IP)
 #   pxe/presets.sh --output FILE   write the menu to FILE instead
