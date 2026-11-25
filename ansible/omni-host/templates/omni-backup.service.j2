@@ -1,0 +1,10 @@
+# Managed by ansible/omni-host.
+[Unit]
+Description=Encrypted backup of Omni's host state
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# root: Omni's etcd files under data/ are written by the container as root.
+ExecStart=/usr/local/bin/omni-backup.sh

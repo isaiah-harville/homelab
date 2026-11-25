@@ -1,0 +1,12 @@
+# Managed by ansible/omni-host.
+[Unit]
+Description=Renew the Omni *.{{ omni_domain }} certificate (lego, Cloudflare DNS-01)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ omni_user }}
+WorkingDirectory={{ omni_dir }}
+EnvironmentFile={{ omni_dir }}/.lego-cf.env
+ExecStart=/usr/local/bin/omni-cert-renew.sh

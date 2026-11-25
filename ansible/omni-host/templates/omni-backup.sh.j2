@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Managed by ansible/omni-host. Everything that makes this Omni instance work
+# and isn't in git: its databases, the GPG key that seals etcd, TLS, .env.
+# The etcd S3 backups only cover cluster state, not this.
+#
+# Omni and Dex stop for the copy so etcd and SQLite are consistent. The
+# archive is encrypted to the repo's age recipient; restore with
+#   age -d -i <identity> omni-*.tar.gz.age | tar -xz -C omni-server
+set -euo pipefail
+dir={{ omni_dir }}
+out="$dir/backups"
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+install -d -m 0700 "$out"
+cd "$dir"
+trap 'docker compose start' EXIT
+docker compose stop
+tar -C "$dir" -czf - data secrets certs .env .lego .lego-cf.env \
+  | age -r {{ omni_backup_age_recipient }} > "$out/omni-$stamp.tar.gz.age.tmp"
+mv "$out/omni-$stamp.tar.gz.age.tmp" "$out/omni-$stamp.tar.gz.age"
+find "$out" -name 'omni-*.tar.gz.age' -mtime +{{ omni_backup_keep_days }} -delete

@@ -1,0 +1,17 @@
+---
+- name: Download lego
+  ansible.builtin.get_url:
+    url: "https://github.com/go-acme/lego/releases/download/v{{ lego_version }}/lego_v{{ lego_version }}_linux_amd64.tar.gz"
+    dest: "/tmp/lego_v{{ lego_version }}.tar.gz"
+    checksum: "sha256:{{ lego_sha256 }}"
+    mode: "0644"
+
+- name: Install lego
+  ansible.builtin.unarchive:
+    src: "/tmp/lego_v{{ lego_version }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    include: [lego]
+    mode: "0755"
+    owner: root
+    group: root
