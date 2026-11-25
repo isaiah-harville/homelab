@@ -361,8 +361,11 @@ Open points before production:
 
 - `INSTALL_DEVICE` in `host.env` is a guess (`/dev/sda`); check it on the
   real machine.
-- `secrets.sops.yaml` doesn't exist yet: it needs the age identity
-  (step 1 of Bootstrap).
+- `secrets.sops.yaml` exists. It reuses cert-manager's Cloudflare token
+  and has a new client secret, LUKS key and break-glass password
+  (`sops -d --extract '["stringData"]["dex_admin_password"]' ...`). To keep
+  the current host's admin password instead, copy `DEX_ADMIN_PASSWORD_HASH`
+  from its `.env` into `dex_admin_password_hash`, and drop the plaintext.
 - `pxe/boot.ipxe` has no URLs yet: run `pxe/presets.sh` against the
   production Omni and commit the result. Then set UniFi's Network Boot and
   each machine's firmware as described under Network boot.
