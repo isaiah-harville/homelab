@@ -15,6 +15,10 @@
 # and the rate limits stop one runaway pod from filling the volume before
 # retention catches up. Measured Nov 2026: ~160MB/day of raw logs, so two
 # weeks is ~2GB before compression.
+#
+# Loki deletes by age only, never by size, so the 20Gi single-replica volume
+# is the hard ceiling on log storage (20GB total on disk). Retention keeps
+# normal use far below it; KubePersistentVolumeFillingUp warns if not.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -83,7 +87,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        size: 10Gi
+        size: 20Gi
         storageClass: longhorn-single
         labels:
           recurring-job-group.longhorn.io/rolling: enabled
