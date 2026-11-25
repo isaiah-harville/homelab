@@ -40,19 +40,22 @@
   changed_when: false
   when: sshd_hardening is changed
 
-# A changed file alone isn't proof sshd picked it up (the first rollout wrote
-# it without reloading), so compare what sshd is actually enforcing.
-- name: Read sshd's effective settings
-  ansible.builtin.command: /usr/sbin/sshd -T
-  register: sshd_effective
+# A changed file alone isn't proof the running daemon uses it (the first
+# rollout wrote it without reloading, and `sshd -T` reads the files, not the
+# daemon). Ask the live server which login methods it offers instead.
+- name: Ask the running sshd which login methods it offers
+  ansible.builtin.command: >-
+    ssh -o BatchMode=yes -o PreferredAuthentications=none
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ omni_user }}@127.0.0.1 true
+  register: sshd_offered
   changed_when: false
+  failed_when: false
   check_mode: false
 
-- name: Reload sshd if it isn't enforcing the hardening yet
+- name: Reload sshd if it still offers password login
   ansible.builtin.debug:
-    msg: "sshd still allows password or root login; reloading it."
+    msg: "sshd still offers: {{ sshd_offered.stderr | regex_search('Permission denied \\(([^)]*)\\)', '\\1') | first | default('?') }}; reloading it."
   changed_when: true
   notify: Reload sshd
-  when: >-
-    'passwordauthentication no' not in sshd_effective.stdout_lines
-    or 'permitrootlogin no' not in sshd_effective.stdout_lines
+  when: sshd_offered.stderr is search('Permission denied \\([^)]*(password|keyboard-interactive)')
