@@ -99,7 +99,9 @@ Jobs run on an **in-cluster GitHub Actions self-hosted runner** (ARC,
 `infrastructure/arc-systems/actions-runner-controller/app/`, namespaces `arc-systems` /
 `arc-runners`) so they can reach the **LAN-only** Omni. The runner pod gets
 `OMNI_*` creds via `envFrom` the `omni-terraform` SOPS secret (+ a `github_token`
-PAT in `github-config`), so the workflow needs no GitHub secrets.
+PAT in `github-config`), so the workflow needs no GitHub secrets. The Omni key
+renews itself monthly (`.github/workflows/omni-service-account-renewal.yaml`
+re-encrypts `omni-terraform.sops.yaml` and merges it).
 `.github/workflows/terraform.yaml`: plan on PR, apply on merge to `main`.
 **State** lives in a **Kubernetes Secret** (`tfstate-default-omni-homelab` in
 `arc-runners`) via the Terraform `kubernetes` backend — the runner reaches it with
