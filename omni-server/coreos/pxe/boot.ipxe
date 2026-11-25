@@ -1,27 +1,33 @@
 #!ipxe
 # Network boot menu, served over TFTP by the Omni host and chained from the
-# script embedded in ipxe.efi. The URL is written by pxe/presets.sh from
-# Omni's installation-media preset; omni-sync installs changes from
+# script embedded in ipxe.efi. The two URLs are written by pxe/presets.sh
+# from Omni's installation-media presets; omni-sync installs changes from
 # main. Talos boots into maintenance mode and joins Omni.
 #
 # A failing command ends an iPXE script, and `iseq` fails when the strings
 # differ: every test needs a trailing `||`.
 iseq ${buildarch} arm64 && set arch arm64 || set arch amd64
 set talos-url unset
+set nvidia-url unset
 
 :menu
 menu Homelab network boot (${arch}, from ${next-server})
 item --gap Talos joins Omni and waits in maintenance mode:
 item talos   Talos (iscsi-tools, util-linux-tools)
+item nvidia  Talos for GPU nodes (+ NVIDIA driver and container toolkit)
 item --gap Other:
 item local   Boot from local disk
-item shell   iPXE shell
+item shell   iPXE command line (bootloader troubleshooting, not Talos)
 choose --default talos --timeout 15000 target || goto local
 goto ${target}
 
 :talos
 iseq ${talos-url} unset && goto unconfigured ||
 chain ${talos-url} || goto failed
+
+:nvidia
+iseq ${nvidia-url} unset && goto unconfigured ||
+chain ${nvidia-url} || goto failed
 
 :local
 echo Booting from local disk...

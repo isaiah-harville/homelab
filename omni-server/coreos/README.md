@@ -84,11 +84,13 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
   inputs change. The binary doesn't fit in the ISO's 256 KiB embedded
   Ignition.
 - **`boot.ipxe`** is the menu: Talos (`iscsi-tools`, `util-linux-tools`,
-  the default after 15 s), local disk, iPXE shell. It picks `amd64`/`arm64`
-  at boot. There is no GPU entry: the network image only has to reach Omni
-  in maintenance mode, and the machine set a machine joins decides what gets
-  installed. The URL comes from an Omni installation-media preset, and
-  since Omni 1.14 the join configuration is embedded in the schematic:
+  the default after 15 s), Talos for GPU nodes (plus the NVIDIA driver and
+  container toolkit, which Talos needs baked in as system extensions because
+  it is immutable; the GPU operator then runs on top with its own driver and
+  toolkit disabled), local disk, and iPXE's command line (the bootloader's
+  prompt for troubleshooting a failed boot; Talos itself has no shell). It
+  picks `amd64`/`arm64` at boot. The URLs come from Omni installation-media presets, and since Omni
+  1.14 the join configuration is embedded in the schematic:
 
   ```bash
   omni-server/coreos/pxe/presets.sh   # needs omnictl for this Omni; writes pxe/boot.ipxe
@@ -97,9 +99,9 @@ UEFI PXE ──DHCP (UniFi: next-server = Omni host, file ipxe.efi)
 
   Run it again after a Talos upgrade (the URL pins the version, taken
   from `terraform/omni/locals.tf`) or an extension change. `omni-sync` picks
-  the new menu up from main; no restart needed. The URL carries Omni's join
+  the new menu up from main; no restart needed. The URLs carry Omni's join
   token inside the schematic, as any Omni install media does, so treat
-  `boot.ipxe` as config, not a secret. Until the preset script has run,
+  `boot.ipxe` as config, not a secret. Until the presets script has run,
   the menu says so and falls back to the local disk.
 - **HTTPS trust:** iPXE is built with the Mozilla roots from the pinned
   Debian image's `ca-certificates` embedded and trusted (`TRUST=`/`CERT=`).
@@ -280,8 +282,8 @@ step, and a joined Talos VM whose SideroLink `Link` had to come back as
 | Talos 1.14.7 (latest) joins the restored instance | Connected |
 | lego against a local Pebble ACME server (in place of Let's Encrypt + Cloudflare) | Certificate issued into `.lego/`. `omni-cert-deploy` installed it (key `root:1001 0640`) and restarted Dex and Omni |
 | Firewall | 5556 and 8090 reachable from the allowed CIDR; 10000 and 2122 dropped (time out). Omni 1.14 binds metrics to loopback and nothing on 10000 |
-| Network boot: host side (reinstall on FCOS 45) | `pxe-setup` built `ipxe.efi` on first boot from the pinned iPXE commit. `pxe-tftp` (dnsmasq, DNS off, single port) served `ipxe.efi` and `boot.ipxe` to a TFTP client through the firewall. `presets.sh` created the preset, and `omni-sync` installed the new menu from the served copy of git |
-| Network boot: blank UEFI VM, empty disk | Firmware PXE → `ipxe.efi` → embedded `dhcp` → `tftp://<server>/boot.ipxe` → menu (default entry) → HTTPS Image Factory → Talos 1.14.7 with `iscsi-tools` + `util-linux-tools` in Omni, connected, maintenance mode. |
+| Network boot: host side (reinstall on FCOS 45) | `pxe-setup` built `ipxe.efi` on first boot from the pinned iPXE commit. `pxe-tftp` (dnsmasq, DNS off, single port) served `ipxe.efi` and `boot.ipxe` to a TFTP client through the firewall. `presets.sh` created both presets, and `omni-sync` installed the new menu from the served copy of git |
+| Network boot: blank UEFI VM, empty disk | Firmware PXE → `ipxe.efi` → embedded `dhcp` → `tftp://<server>/boot.ipxe` → menu (default entry) → HTTPS Image Factory → Talos 1.14.7 with `iscsi-tools` + `util-linux-tools` in Omni, connected, maintenance mode. The NVIDIA entry's URL was generated but not booted (no GPU in the lab) |
 
 The Mac can't bind 69/udp without root, so in the boot test QEMU's own
 DHCP/TFTP handed the VM the `ipxe.efi` and `boot.ipxe` just fetched from
