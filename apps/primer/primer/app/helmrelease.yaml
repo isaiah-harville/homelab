@@ -230,11 +230,17 @@ spec:
       device: cpu
       dtype: bfloat16
       gpu: 0
-      # Requested rather than pinned to a node, so it lands on one of the
-      # two with 64GB and leaves the A2000 free.
+      # Lab sat idle at ~0.7Gi for 30 days while reserving 20Gi and 4 CPUs,
+      # which kept the scheduler from using that space. Request its idle
+      # footprint and let it burst when someone loads the model: ~10GB of
+      # weights (above) plus a run's activations. The small
+      # request no longer steers it to a big node, so pin it to the 64GB one
+      # that isn't running llama-cpp.
       resources:
-        requests: {cpu: "4", memory: 20Gi}
-        limits: {memory: 20Gi}
+        requests: {cpu: 500m, memory: 2Gi}
+        limits: {memory: 16Gi}
+      nodeSelector:
+        kubernetes.io/hostname: talos-h5j-x2r
       persistence:
         size: 50Gi
         storageClass: longhorn
