@@ -24,11 +24,25 @@ spec:
         kind: HelmRepository
         name: seaweedfs
         namespace: flux-system
+  # global.monitoring.enabled also ships the upstream SeaweedFS dashboard and
+  # the chart has no separate switch for it. Homelab / Storage Health covers
+  # SeaweedFS, so drop the ConfigMap and keep only the ServiceMonitors.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: ConfigMap
+              name: seaweedfs-seaweedfs-grafana-dashboard
+            patch: |
+              $patch: delete
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: seaweedfs-seaweedfs-grafana-dashboard
   values:
     global:
-      # ServiceMonitors for master/volume/filer/S3/admin plus the upstream
-      # SeaweedFS Grafana dashboard. The release label is what the
-      # kube-prometheus-stack Prometheus selects on.
+      # ServiceMonitors for master/volume/filer/S3/admin. The release label is
+      # what the kube-prometheus-stack Prometheus selects on.
       monitoring:
         enabled: true
         additionalLabels:

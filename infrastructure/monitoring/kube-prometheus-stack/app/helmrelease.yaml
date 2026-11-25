@@ -51,9 +51,19 @@ spec:
             memory: 1Gi
           limits:
             memory: 4Gi
+        # Whichever limit is hit first wins; in practice the size cap, which
+        # keeps about 17 days. It counts the WAL, and sits below the volume
+        # so KubePersistentVolumeFillingUp never fires.
         retentionSize: 18GB
         storageSpec:
           volumeClaimTemplate:
+            metadata:
+              # Longhorn `rolling` group: no snapshots, daily trim. Snapshots
+              # kept every block Prometheus had already deleted, so this 24Gi
+              # volume used 61Gi per replica. Only new PVCs get the label;
+              # the existing one is labelled by hand (see the PR).
+              labels:
+                recurring-job-group.longhorn.io/rolling: enabled
             spec:
               accessModes:
                 - ReadWriteOnce
@@ -150,6 +160,15 @@ spec:
         size: 10Gi
         accessModes:
           - ReadWriteOnce
+      # Logs from Loki (../../loki), shipped by Alloy (../../alloy).
+      additionalDataSources:
+        - name: Loki
+          uid: loki
+          type: loki
+          access: proxy
+          url: http://loki.monitoring.svc:3100
+          jsonData:
+            maxLines: 2000
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
@@ -162,14 +181,6 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/kubernetes
-            - name: storage
-              orgId: 1
-              folder: Storage
-              type: file
-              disableDeletion: true
-              editable: false
-              options:
-                path: /var/lib/grafana/dashboards/storage
             - name: networking
               orgId: 1
               folder: Networking
@@ -186,9 +197,14 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/homelab
-      # Node / storage / services health, generated JSON in ./dashboards.
+      # The Homelab folder (generated JSON in ./dashboards) is the starting
+      # point: nodes, storage, services, inference and logs. It replaced the
+      # grafana.com Longhorn and Kubernetes "Nodes" dashboards, which covered
+      # the same ground less usefully. Networking stays on the Traefik one.
       dashboardsConfigMaps:
         homelab: grafana-dashboards-homelab
+      # Kubernetes drill-downs the Homelab set doesn't repeat: per-namespace
+      # and per-pod resource use.
       dashboards:
         kubernetes:
           global:
@@ -199,18 +215,9 @@ spec:
             gnetId: 15758
             revision: 46
             datasource: Prometheus
-          nodes:
-            gnetId: 15759
-            revision: 40
-            datasource: Prometheus
           pods:
             gnetId: 15760
             revision: 39
-            datasource: Prometheus
-        storage:
-          longhorn:
-            gnetId: 16888
-            revision: 14
             datasource: Prometheus
         networking:
           traefik:

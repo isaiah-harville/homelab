@@ -1,0 +1,21 @@
+---
+# llama-server already runs with --metrics: tokens/s for prompt and
+# generation, requests in flight and waiting, and busy slots. These feed
+# Homelab / Inference. Add each new model's `app` label to the list.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: llama-cpp
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - llama-inkling-2-mini
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

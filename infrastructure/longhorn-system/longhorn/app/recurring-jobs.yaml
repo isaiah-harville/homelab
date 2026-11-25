@@ -47,3 +47,39 @@ spec:
   concurrency: 1
   labels:
     schedule: weekly
+---
+# The `rolling` group is for data that is its own sliding window and can be
+# rebuilt: Prometheus metrics and Loki logs. Both delete old data
+# continuously, so snapshots only pin deleted blocks (Prometheus used 61Gi
+# per replica for 17Gi of data). Volumes opt in with
+# `recurring-job-group.longhorn.io/rolling: enabled` on the PVC, which also
+# takes them out of the default group's daily snapshots.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: rolling-snapshot-delete
+  namespace: longhorn-system
+spec:
+  # Removes every snapshot, including the ones left from the default group
+  # and the system snapshots replica rebuilds create.
+  cron: "45 * * * *"
+  task: snapshot-delete
+  groups:
+    - rolling
+  retain: 0
+  concurrency: 2
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: rolling-filesystem-trim
+  namespace: longhorn-system
+spec:
+  # Hands blocks freed by deleted chunks and TSDB blocks back to Longhorn,
+  # so the volume's real size tracks the data instead of its high-water mark.
+  cron: "30 5 * * *"
+  task: filesystem-trim
+  groups:
+    - rolling
+  retain: 0
+  concurrency: 2

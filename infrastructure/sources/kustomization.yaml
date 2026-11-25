@@ -8,6 +8,7 @@ resources:
   - longhorn.helmrepository.yaml
   - metallb.helmrepository.yaml
   - prometheus-community.helmrepository.yaml
+  - grafana.helmrepository.yaml
   - traefik.helmrepository.yaml
   - authentik.helmrepository.yaml
   - cloudnative-pg.helmrepository.yaml
