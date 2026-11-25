@@ -45,9 +45,19 @@ spec:
             memory: 1Gi
           limits:
             memory: 4Gi
+        # Whichever limit is hit first wins; in practice the size cap, which
+        # keeps about 17 days. It counts the WAL, and sits below the volume
+        # so KubePersistentVolumeFillingUp never fires.
         retentionSize: 18GB
         storageSpec:
           volumeClaimTemplate:
+            metadata:
+              # Longhorn `rolling` group: no snapshots, daily trim. Snapshots
+              # kept every block Prometheus had already deleted, so this 24Gi
+              # volume used 61Gi per replica. Only new PVCs get the label;
+              # the existing one is labelled by hand (see the PR).
+              labels:
+                recurring-job-group.longhorn.io/rolling: enabled
             spec:
               accessModes:
                 - ReadWriteOnce
