@@ -6,4 +6,6 @@ RequiresMountsFor=/var/lib/omni
 
 [Service]
 Type=oneshot
+# omnictl refuses to start without $HOME, which system services don't get.
+Environment=HOME=/root
 ExecStart=/usr/local/bin/pxe-menu
