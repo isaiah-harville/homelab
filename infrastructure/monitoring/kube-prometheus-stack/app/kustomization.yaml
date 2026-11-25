@@ -19,5 +19,7 @@ configMapGenerator:
       - dashboards/homelab-node-health.json
       - dashboards/homelab-storage-health.json
       - dashboards/homelab-services.json
+      - dashboards/homelab-inference.json
+      - dashboards/homelab-logs.json
     options:
       disableNameSuffixHash: true

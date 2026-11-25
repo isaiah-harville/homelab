@@ -1,0 +1,116 @@
+---
+# Log storage for the cluster. Before this, a pod's logs lived only as long
+# as the pod and a node's only as long as its uptime, so the daily reboots on
+# talos-6t5-q1d left nothing behind to explain them. Alloy (../alloy) ships
+# every pod's logs and the cluster's Events here; Grafana queries it as the
+# "Loki" data source.
+#
+# Single binary, no replication anywhere: Loki's replication_factor is 1 and
+# its volume is a one-replica Longhorn volume (longhorn-single). Logs don't
+# need to survive a disk failure; if that node is down, Loki waits for it.
+#
+# A sliding window, not a growing pile: the compactor deletes chunks older
+# than retention_period, the volume sits in the Longhorn `rolling` job group
+# (no snapshots holding deleted chunks; daily trim hands freed blocks back),
+# and the rate limits stop one runaway pod from filling the volume before
+# retention catches up. Measured Nov 2026: ~160MB/day of raw logs, so two
+# weeks is ~2GB before compression.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: monitoring
+spec:
+  interval: 30m
+  timeout: 15m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: loki
+      # Stateful: minor versions have changed schema and storage defaults,
+      # so take them deliberately.
+      version: ">=7.7.0 <7.8.0"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  values:
+    deploymentMode: SingleBinary
+    loki:
+      auth_enabled: false
+      commonConfig:
+        replication_factor: 1
+      storage:
+        type: filesystem
+      schemaConfig:
+        configs:
+          - from: "2026-11-01"
+            store: tsdb
+            object_store: filesystem
+            schema: v13
+            index:
+              prefix: loki_index_
+              period: 24h
+      # Two weeks: long enough to look back across a week of node reboots,
+      # small enough to fit the volume below with room to spare.
+      limits_config:
+        retention_period: 336h
+        max_query_lookback: 336h
+        # ~25x the measured average, per cluster and per stream.
+        ingestion_rate_mb: 2
+        ingestion_burst_size_mb: 4
+        per_stream_rate_limit: 512KB
+        per_stream_rate_limit_burst: 2MB
+      compactor:
+        retention_enabled: true
+        delete_request_store: filesystem
+        compaction_interval: 10m
+        retention_delete_delay: 2h
+      pattern_ingester:
+        enabled: false
+      ui:
+        enabled: false
+    singleBinary:
+      replicas: 1
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: longhorn-single
+        labels:
+          recurring-job-group.longhorn.io/rolling: enabled
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1536Mi
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+    backend:
+      replicas: 0
+    gateway:
+      enabled: false
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+    lokiCanary:
+      enabled: false
+    test:
+      enabled: false
+    monitoring:
+      serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack

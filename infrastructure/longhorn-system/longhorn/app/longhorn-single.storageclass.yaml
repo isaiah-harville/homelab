@@ -1,0 +1,27 @@
+---
+# One replica, deleted with its claim, never snapshotted: for data that is
+# cheap to lose and rebuilds itself, like Loki's logs. If the node holding
+# the replica is down, the volume waits for it to come back.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-single
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    # StorageClass parameters are immutable; let Flux recreate it on change.
+    kustomize.toolkit.fluxcd.io/force: enabled
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataEngine: v1
+  dataLocality: best-effort
+  disableRevisionCounter: "true"
+  fsType: ext4
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  unmapMarkSnapChainRemoved: ignored
+  # Joins the `rolling` recurring-job group (recurring-jobs.yaml) when
+  # created: no snapshots, daily trim.
+  recurringJobSelector: '[{"name":"rolling","isGroup":true}]'

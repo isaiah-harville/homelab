@@ -7,6 +7,7 @@ resources:
   - local-path-storageclass.yaml
   - longhorn-retain.storageclass.yaml
   - longhorn-database.storageclass.yaml
+  - longhorn-single.storageclass.yaml
   - longhorn-media.storageclass.yaml
   - recurring-jobs.yaml
   - backuptarget.yaml

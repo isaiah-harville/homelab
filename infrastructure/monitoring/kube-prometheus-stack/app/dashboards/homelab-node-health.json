@@ -702,7 +702,7 @@
             "align": "auto",
             "filterable": true
           },
-          "noValue": "\u2014"
+          "noValue": "—"
         },
         "overrides": [
           {
@@ -1949,18 +1949,18 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (Hostname, modelName) (DCGM_FI_DEV_GPU_UTIL or 100 * DCGM_FI_DEV_GPU_UTIL_RATIO)",
+          "expr": "max by (hostname, modelName) (100 * DCGM_FI_DEV_GPU_UTIL_RATIO)",
           "refId": "A",
-          "legendFormat": "{{modelName}} util %"
+          "legendFormat": "{{hostname}} {{modelName}} util %"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (Hostname, modelName) (DCGM_FI_DEV_GPU_TEMP or DCGM_FI_DEV_GPU_TEMP_CELSIUS)",
+          "expr": "max by (hostname, modelName) (DCGM_FI_DEV_GPU_TEMP_CELSIUS)",
           "refId": "B",
-          "legendFormat": "{{modelName}} \u00b0C"
+          "legendFormat": "{{hostname}} {{modelName}} °C"
         }
       ],
       "options": {

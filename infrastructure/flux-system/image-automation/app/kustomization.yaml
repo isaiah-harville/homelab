@@ -15,4 +15,5 @@ resources:
   - nginx.yaml
   - pigeon-relay.yaml
   - pigeon-website.yaml
+  - omni-host.yaml
   - automation.yaml

@@ -1,0 +1,41 @@
+---
+# Refuse to turn off password logins unless key login already works for the
+# account Ansible is using, or this play would lock everyone out.
+- name: Check the admin account has an authorized key
+  ansible.builtin.stat:
+    path: "/home/{{ omni_user }}/.ssh/authorized_keys"
+  register: authorized_keys
+
+- name: Require key-based login before hardening
+  ansible.builtin.assert:
+    that:
+      - authorized_keys.stat.exists
+      - authorized_keys.stat.size > 0
+    fail_msg: "Add a key to /home/{{ omni_user }}/.ssh/authorized_keys first."
+
+# sshd keeps the first value it reads and includes sshd_config.d in lexical
+# order, so 10- wins over cloud-init's 50-cloud-init.conf.
+- name: Harden sshd
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    mode: "0644"
+    content: |
+      # Managed by ansible/omni-host.
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      PermitEmptyPasswords no
+      X11Forwarding no
+      MaxAuthTries 3
+      AllowUsers {{ omni_user }}
+  register: sshd_hardening
+  # The reload is notified here, where the change happens. (A notify on the
+  # validation below never fired: that task always reports "ok".)
+  notify: Reload sshd
+
+# Handlers run at the end of the play, so a broken config fails here first
+# and sshd is never reloaded onto it.
+- name: Validate sshd configuration  # noqa: no-handler
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  when: sshd_hardening is changed

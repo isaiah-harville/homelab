@@ -229,6 +229,9 @@ its `app/` holds a `GitRepository` and a `HelmRelease` instead.
 - The default recurring-job group retains seven daily snapshots and runs weekly
   filesystem trim. These snapshots are local recovery points, not off-cluster
   backups.
+- `longhorn-single` is one replica, deleted with its PVC and never snapshotted
+  (Longhorn `rolling` group: no snapshots, daily trim). Use it for data that is
+  cheap to lose, like Loki's logs.
 - `longhorn-retain` is available for new critical PVCs that should survive an
   accidental claim deletion and uses best-effort data locality. Existing PVCs
   cannot change StorageClass in place.
@@ -306,6 +309,8 @@ that list**, or its requests time out. There is no cluster-wide default-deny.
   currently unwired: it backed Open WebUI's web search, and Primer does not use
   it.
 - **kube-prometheus-stack** — monitoring (Grafana/Prometheus/Alertmanager).
+- **loki** + **alloy** — pod logs and Kubernetes events, 14-day window, queried
+  from Grafana; Loki is single-replica on `longhorn-single`.
 - **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.

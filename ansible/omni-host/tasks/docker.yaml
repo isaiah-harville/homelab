@@ -1,0 +1,60 @@
+---
+- name: Add Docker's apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: https://download.docker.com/linux/ubuntu
+    suites: ["{{ ansible_facts.distribution_release }}"]
+    components: [stable]
+    architectures: [amd64]
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+  register: docker_repo
+
+# The one-line source Docker's install docs write; two entries for the same
+# repository make apt refuse to update. Only the .list goes: the module above
+# keeps its key at /etc/apt/keyrings/docker.asc, the same path the old
+# install used.
+- name: Remove the legacy Docker source
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+  register: docker_legacy
+
+- name: Refresh apt after changing the Docker source
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_repo is changed or docker_legacy is changed
+
+- name: Install Docker Engine and Compose
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+# Default json-file logs grow without bound.
+- name: Cap container log size
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {"max-size": "20m", "max-file": "5"}
+      }
+  notify: Restart docker
+
+- name: Let the admin account run docker
+  ansible.builtin.user:
+    name: "{{ omni_user }}"
+    groups: docker
+    append: true
+
+- name: Start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
