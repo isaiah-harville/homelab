@@ -141,6 +141,21 @@ spec:
               value: "1,4"
             - name: PROWLARR_INDEXER_TIMEOUT
               value: "30"
+            # IRCHighway #ebooks: the largest ebook-focused source reachable
+            # without an invite. Shelfmark asks its search bot, then fetches
+            # the file over outbound DCC. The nick must be unique on the network.
+            - name: IRC_SERVER
+              value: irc.irchighway.net
+            - name: IRC_PORT
+              value: "6697"
+            - name: IRC_USE_TLS
+              value: "true"
+            - name: IRC_CHANNEL
+              value: ebooks
+            - name: IRC_NICK
+              value: harvbooks4127
+            - name: IRC_SEARCH_BOT
+              value: search
             - name: PROWLARR_TORRENT_CLIENT
               value: qbittorrent
             - name: QBITTORRENT_URL
