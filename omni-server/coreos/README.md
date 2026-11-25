@@ -1,7 +1,7 @@
 # Omni host on Fedora CoreOS (prototype)
 
-An image-based replacement for the Ubuntu + Ansible Omni host
-([`ansible/omni-host`](../../ansible/omni-host/README.md)). The whole host is
+An image-based replacement for the Ubuntu + Docker Compose Omni host
+([`omni-server/`](../README.md)). The whole host is
 one Butane file in git, rendered to Ignition with secrets from SOPS and
 installed from an ISO. Nothing is converged in place. To change the host,
 change git and reinstall. Omni's state lives on its own partition, which
@@ -14,7 +14,7 @@ the OS; nothing is layered.
 
 **Status:** validated in a throwaway VM (see [Validation](#validation)). The
 production host (10.1.10.88) still runs the Compose stack. Cutover is the
-[migration](#migrate-from-the-ansible-host) below.
+[migration](#migrate-from-the-compose-host) below.
 
 ## Layout
 
@@ -44,7 +44,7 @@ build/                rendered output: contains secrets, gitignored
 | Omni | `omni.service`: `docker run --network host --cap-add NET_ADMIN --device /dev/net/tun`, image pinned by digest, `OMNI_AUTH_OIDC_CLIENT_SECRET` from root-only `/etc/omni/omni.env`, metrics on `127.0.0.1:2122` |
 | Dex | `dex.service` on 5556 (host network), `dex.yaml` uses `secretEnv`/`hashFromEnv`; started before Omni |
 | TLS | lego (Cloudflare DNS-01) in a container, `omni-cert-renew.timer` weekly; `omni-cert-deploy` installs a changed cert (key `root:1001 0640`, readable by Dex's uid) and restarts Omni and Dex |
-| Backups | `omni-backup.timer` weekly, plus one before every upgrade; same age-encrypted archive as the Ansible host |
+| Backups | `omni-backup.timer` weekly, plus one before every upgrade; same age-encrypted archive as the Compose host |
 | Day 2 | `omni-sync.timer` daily: reads `versions.yaml` from main, backs up, swaps images, checks `/healthz` |
 | Network boot | TFTP only (dnsmasq, no DHCP or DNS) serving an iPXE build with an embedded script and a menu that chains Talos from the Image Factory into Omni ([Network boot](#network-boot)) |
 | Firewall | nftables (FCOS has no firewalld): 10.1.0.0/16 to 22, 443, 5556, 8090, 8100, 50180/udp and 69/udp; anything on `siderolink`; everything else dropped (closes 2122 and 10000) |
@@ -197,12 +197,12 @@ the host until `omni-sync` runs:
   rewrites `/etc/omni/images.env` (keeping `images.env.prev`) and restarts
   the changed services. Then it waits for `https://<omni>/healthz` and
   `https://<dex>:5556/healthz`.
-- There is no automatic rollback, as with the playbook: Omni migrates its
+- There is no automatic rollback: Omni migrates its
   databases on start. To go back, copy `images.env.prev` over `images.env`
   and `omni-restore` the `pre-upgrade` archive.
 
 Order still matters for Talos and Kubernetes:
-[Upgrades](../../docs/operations/upgrades.md). Upgrade `omnictl` alongside.
+[Upgrades](https://github.com/isaiah-harville/homelab/blob/main/docs/operations/upgrades.md). Upgrade `omnictl` alongside.
 
 **Sync vs. reinstall-on-change.** Both work. A reinstall for every image
 bump would mean a new ISO, console access and a reboot for each patch
@@ -238,7 +238,7 @@ health. Secrets in the archive's `.env` aren't applied: `/etc/omni` comes
 from `secrets.sops.yaml`. Start the Omni version the backup came from,
 then upgrade.
 
-## Migrate from the Ansible host
+## Migrate from the Compose host
 
 1. Pin `versions.yaml` to the version the old host runs (they share Flux's
    bumps, so normally nothing to do).
@@ -254,7 +254,7 @@ then upgrade.
 5. Restore: `age -d -i <identity> omni-<stamp>.tar.gz.age | ssh core@<host>
    sudo omni-restore -`. Machines reconnect over SideroLink within a minute
    or two; check `omnictl get links`.
-6. Retire `ansible/omni-host` and `omni-server/compose.yaml`, and point the
+6. Retire `omni-server/compose.yaml`, `dex.yaml` and `.env.example`, and point the
    Flux setters (already scoped to `./omni-server`) only at `versions.yaml`.
 
 ## Validation
@@ -277,8 +277,8 @@ step, and a joined Talos VM whose SideroLink `Link` had to come back as
 | Zincati update 44.20261023.3.1 to 45.20261030.3.1 (latest stable) | Staged, rebooted, healthy, state intact. The production window then parsed as "next window at 4:30 on Sun (UTC)" |
 | `omni-sync` patch upgrade, Omni v1.13.2 to v1.13.3 | Tag-only ref resolved and pinned by digest, `pre-upgrade` backup written, Omni restarted, both `/healthz` OK; second run "up to date" |
 | `omni-sync` minor upgrade to v1.14.0 (the repo's real `versions.yaml`) | Same, Omni reports `backendversion: v1.14.0`, state intact |
-| Restore an archive made by the playbook's own `omni-backup.sh.j2` (rendered unchanged, run against a Compose stack of Omni 1.14.0) | `omni-restore -` brought up the old instance on FCOS. Its users and GPG key, Omni 1.14.0 healthy on the restored etcd |
-| FCOS `omni-backup` + `omni-restore -i` round trip | Same top-level layout and `.env` format as the playbook's archive. A user created after the backup was gone after the restore |
+| Restore an archive made by the Compose host's backup script (the former playbook's `omni-backup.sh.j2`, rendered unchanged, run against a Compose stack of Omni 1.14.0) | `omni-restore -` brought up the old instance on FCOS. Its users and GPG key, Omni 1.14.0 healthy on the restored etcd |
+| FCOS `omni-backup` + `omni-restore -i` round trip | Same top-level layout and `.env` format as the Compose host's archive. A user created after the backup was gone after the restore |
 | Talos 1.14.7 (latest) joins the restored instance | Connected |
 | lego against a local Pebble ACME server (in place of Let's Encrypt + Cloudflare) | Certificate issued into `.lego/`. `omni-cert-deploy` installed it (key `root:1001 0640`) and restarted Dex and Omni |
 | Firewall | 5556 and 8090 reachable from the allowed CIDR; 10000 and 2122 dropped (time out). Omni 1.14 binds metrics to loopback and nothing on 10000 |

@@ -1,7 +1,8 @@
 ---
 # Patch releases of Omni and Dex for the self-hosted Omni host. Flux commits
-# the bump to omni-server/compose.yaml on main; nothing changes on the host
-# until ansible/omni-host runs, which backs up first and checks health after.
+# the bump to omni-server/coreos/versions.yaml (and compose.yaml, until the
+# Compose host is retired) on main; the CoreOS host's omni-sync applies it,
+# backing up first and checking health after.
 # Minor versions stay a deliberate edit: Omni releases remove flags, and
 # Talos/Kubernetes upgrades (terraform/omni) depend on the Omni minor.
 apiVersion: image.toolkit.fluxcd.io/v1
@@ -73,7 +74,7 @@ spec:
       messageTemplate: |
         chore(omni): update Omni host images
 
-        Apply on the host with ansible/omni-host (backs up first).
+        The CoreOS host applies it with omni-sync (backs up first).
         {{- range $resource, $changes := .Changed.Objects }}
         {{- range $_, $change := $changes }}
         - {{ $change.OldValue }} -> {{ $change.NewValue }}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Restore Omni's host state from an omni-backup archive, from this host or
-# from the Ansible/Compose host (same layout).
+# from the Compose host (same layout).
 #
 #   omni-restore -i <age identity> omni-<stamp>.tar.gz.age
 #   age -d -i key omni-<stamp>.tar.gz.age | ssh core@omni sudo omni-restore -

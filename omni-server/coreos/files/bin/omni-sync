@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Apply the images pinned in versions.yaml on main (VERSIONS_URL). Mirrors
-# what ansible/omni-host did on a version change: pull, back up, swap,
+# what the old Ansible playbook did on a version change: pull, back up, swap,
 # then wait for Omni and Dex to report healthy.
 #
 #   omni-sync [--dry-run]

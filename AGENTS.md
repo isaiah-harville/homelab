@@ -18,8 +18,7 @@ host configuration). Omni applies the lifecycle operations, while
 
 ```
 omni-server/         Self-hosted Omni (Compose stack + runbook) — the management plane
-omni-server/coreos/  Fedora CoreOS replacement for the Omni host (Butane, not yet in production)
-ansible/omni-host/   Playbook that builds/converges the Omni host (outside Flux's reach)
+omni-server/coreos/  The Omni host as Fedora CoreOS (Butane + Ignition), replacing the Compose host
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
@@ -37,16 +36,14 @@ configuration.
    the cluster (must survive a node wipe), retains its independent Dex static
    break-glass login, and terminates the SideroLink WireGuard tunnel machines
    join through. The in-cluster Authentik deployment does not manage Omni/Dex.
-   `ansible/omni-host` manages the host (SSH, firewall, Docker, lego, backups,
-   the Compose stack); change the host through it, never by hand. The Dex client
-   secret and admin password hash live only in the host's gitignored
-   `omni-server/.env`, so `dex.yaml` holds no secrets.
-   See `omni-server/README.md` and `ansible/omni-host/README.md`.
+   Production (10.1.10.88) still runs the Compose stack (`omni-server/compose.yaml`,
+   secrets in the host's gitignored `omni-server/.env`), with no config
+   management since the Ansible playbook was removed. Change it by hand,
+   per `omni-server/README.md`, until it is replaced.
 
-   **Replacement in progress:** `omni-server/coreos/` rebuilds the same host as
-   Fedora CoreOS from one Butane file (`omni.bu`). It was validated in VMs but
-   isn't in production yet; until the cutover, the Ansible host above is what
-   runs. On that host:
+   **The replacement:** `omni-server/coreos/` builds the host as Fedora CoreOS
+   from one Butane file (`omni.bu`). It was validated in VMs; cutting over is
+   the migration in its README. On that host:
    - Omni, Dex and lego run as Docker containers from systemd units with
      `compose.yaml`'s flags. Image pins live in `coreos/versions.yaml`, which
      Flux's `omni-host` image automation also bumps.

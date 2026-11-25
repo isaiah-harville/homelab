@@ -3,7 +3,7 @@
 # databases, the GPG key that seals etcd, TLS and the secrets. Omni's etcd S3
 # backups only cover cluster state, not this.
 #
-# The archive has the same layout as ansible/omni-host's omni-backup.sh
+# The archive has the same layout as the Compose host's omni-backup.sh
 # (data secrets certs .env .lego .lego-cf.env), so either host can restore
 # the other's. Omni and Dex stop for the copy so etcd and SQLite are
 # consistent. Encrypted to BACKUP_AGE_RECIPIENT; restore with omni-restore.

@@ -21,7 +21,6 @@ watch = [
   "omni-server/coreos/README.md",
   "talos/README.md",
   "terraform/omni/README.md",
-  "ansible/omni-host/README.md",
   "scripts/generate_reference.py",
 ]
 nav = [
@@ -43,7 +42,6 @@ nav = [
   ] },
   { "Runbooks" = [
     { "Omni management plane" = "omni-server/README.md" },
-    { "Omni host playbook" = "ansible/omni-host/README.md" },
     { "Omni host on Fedora CoreOS (prototype)" = "omni-server/coreos/README.md" },
     { "Upgrades (Omni, Talos, Kubernetes)" = "operations/upgrades.md" },
     { "Talos cluster" = "talos/README.md" },

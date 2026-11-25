@@ -1,4 +1,4 @@
-# Host firewall: the ansible/omni-host ufw rules in nftables. Loaded by
+# Host firewall: the Compose host's ufw rules in nftables. Loaded by
 # nftables.service from /etc/sysconfig/nftables.conf. Omni and Dex use host
 # networking, so their ports are governed by this input chain directly.
 #

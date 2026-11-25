@@ -10,10 +10,12 @@ and the host itself, and allow the connections declared in `compose.yaml`.
 
 DNS is split-horizon.
 
-**Provisioning:** `ansible/omni-host` builds and converges the host: SSH
-hardening, a LAN-only firewall, Docker, lego, the renewal and backup timers, and
-this Compose stack. It is the supported way to apply changes here; the steps
-below are what it automates, and what to do by hand when it can't (the GPG key).
+**Hosts:** the replacement host is Fedora CoreOS, built from
+[`coreos/`](coreos/README.md); new hosts and the migration start there.
+Production (10.1.10.88) still runs this Compose stack on Ubuntu until it is
+cut over. The Ansible playbook that built and converged it has been removed,
+so the host is maintained by hand with the steps below. The renewal and
+backup timers it installed keep running.
 
 ## Ports
 
@@ -77,7 +79,7 @@ chmod 640 certs/server-key.pem
 --reuse-key` (lego v5 has no `renew` subcommand) and, via
 `/usr/local/bin/omni-cert-deploy.sh`, re-installs the cert into `certs/` and
 `docker compose restart`s. The Cloudflare token lives in `.lego-cf.env` (mode
-600). The playbook installs all three.
+600). All three are installed on the current host.
 
 ### 3. Secrets in .env
 
@@ -115,10 +117,17 @@ omnictl get machines        # empty until machines join (see ../talos/README.md)
 
 Omni and Dex versions are pinned in `compose.yaml`. Flux image automation
 commits patch releases there; minor versions are a deliberate edit. Apply
-either by running the [playbook](../ansible/omni-host/README.md), never with a
-hand `git pull` on the host. It backs up first, because Omni migrates its
-databases on start and a downgrade can't undo that, then waits for Omni and
-Dex to report healthy. Read the release notes for removed flags: Omni refuses
+either on the host, backing up first, because Omni migrates its databases on
+start and a downgrade can't undo that:
+
+```bash
+sudo systemctl start omni-backup           # encrypted archive in backups/
+cd ~/homelab && git pull && cd omni-server
+docker compose up -d --pull missing
+curl -fsS https://omni.int.harville.dev/healthz && curl -fsS https://omni-dex.int.harville.dev:5556/healthz
+```
+
+Read the release notes for removed flags: Omni refuses
 to start with one. Upgrade `omnictl` alongside Omni; an older client is
 refused once the API version moves. Talos and Kubernetes follow Omni, in that
 order: see [Upgrades](https://github.com/isaiah-harville/homelab/blob/main/docs/operations/upgrades.md).
@@ -196,8 +205,9 @@ moment, tars them, encrypts the archive to the repo's age recipient
 age -d -i <age identity> backups/omni-<stamp>.tar.gz.age | tar -xz -C omni-server
 ```
 
-then run the playbook and start the same Omni version the backup came from
-before upgrading. The archives sit on the Omni host itself, so copy them
+then `docker compose up -d` with the same Omni version the backup came from,
+and upgrade only after that. (A CoreOS host restores the same archive with
+`omni-restore`.) The archives sit on the Omni host itself, so copy them
 somewhere else as well.
 
 ## Layout
