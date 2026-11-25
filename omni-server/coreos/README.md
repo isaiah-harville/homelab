@@ -35,7 +35,6 @@ files/units/          omni, dex, lego, tools-image, backup, sync units + timers
 files/bin/            omni-backup, omni-restore, omni-sync, omni-health, ...
 files/etc/            dex.yaml, nftables, Zincati, sshd, /etc/hosts, tmpfiles
 pxe/                  network boot: iPXE build, embedded script, menu, Omni presets
-test/                 QEMU harness used for validation
 build/                rendered output: contains secrets, gitignored
 ```
 
@@ -277,13 +276,21 @@ then upgrade.
 ## Validation
 
 Done in QEMU on an Apple Silicon Mac (aarch64 FCOS and Talos, HVF,
-swtpm vTPM) with the harness in `test/` (`test/README.md`). Nothing
-touched the production host or cluster.
+swtpm vTPM). Nothing touched the production host or cluster. The QEMU
+harness has since been removed from the repo; it is in git history as
+`omni-server/coreos/test/` (commit 819c1aa) if a change to storage,
+encryption or Ignition needs testing again before a production reinstall.
 
-Each step ran against the real `omni.bu`, with the test-only differences
-listed in `test/README.md`. "Marker" means an Omni user created before the
-step, and a joined Talos VM whose SideroLink `Link` had to come back as
-`connected: true`.
+Each step ran against the real `omni.bu`, with test-only differences:
+- a `.test` domain with a throwaway CA and pre-seeded certificate;
+- the machine API over plain `grpc://`, since Talos in maintenance mode
+  can't trust a private CA;
+- an initial service account for `omnictl`;
+- Zincati held until its own step;
+- throwaway age-encrypted secrets.
+
+"Marker" means an Omni user created before the step, and a joined Talos VM
+whose SideroLink `Link` had to come back as `connected: true`.
 
 | Step | Result |
 |------|--------|

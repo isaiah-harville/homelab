@@ -15,7 +15,7 @@ fail() {
 }
 
 echo "== shellcheck"
-scripts=(render.sh check.sh set-dex-password.sh pxe/*.sh test/*.sh files/bin/*)
+scripts=(render.sh check.sh set-dex-password.sh pxe/*.sh files/bin/*)
 # SC1091: omni-lib.sh is sourced from its installed path. SC2016: literal
 # ${VARS} handed to envsubst and sops on purpose.
 shellcheck -x -e SC1091,SC2016 --severity=warning "${scripts[@]}" || fail "shellcheck"
@@ -53,12 +53,6 @@ templates+=(omni.bu)
 # Comment lines may mention ${VARS} in prose; only real substitutions count.
 for var in $(grep -hvE '^[[:space:]]*#' "${templates[@]}" | grep -oE '\$\{[A-Z_][A-Z0-9_]*\}' | tr -d '${}' | sort -u); do
   grep -qw "$var" <<< "$defined" || fail "\${$var} is used in a template but not set in host.env"
-done
-for var in $(sed -nE 's/^([A-Z_][A-Z0-9_]*)=.*/\1/p' test/host.env); do
-  grep -qw "$var" <<< "$defined" || fail "test/host.env sets $var, which host.env lacks"
-done
-for var in $(sed -nE 's/^([A-Z_][A-Z0-9_]*)=.*/\1/p' host.env); do
-  grep -q "^$var=" test/host.env || fail "host.env sets $var, which test/host.env lacks"
 done
 
 echo "== pinned images exist"
