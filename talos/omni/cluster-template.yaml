@@ -2,9 +2,9 @@
 kind: Cluster
 name: homelab
 kubernetes:
-  version: v1.36.3
+  version: v1.37.2
 talos:
-  version: v1.13.5
+  version: v1.14.7
 features:
   # etcd backups to the seaweedfs "backups" bucket (EtcdBackupS3Configs
   # resource, applied separately with omnictl). Requires the omni container
