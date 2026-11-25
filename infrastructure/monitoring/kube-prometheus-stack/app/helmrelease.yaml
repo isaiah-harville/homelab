@@ -169,6 +169,10 @@ spec:
           url: http://loki.monitoring.svc:3100
           jsonData:
             maxLines: 2000
+      # disableDeletion: false lets Grafana delete a dashboard once its file
+      # is gone, so removing one here (or deleting its downloaded JSON from
+      # the volume) actually removes it. With true, Grafana kept it in its
+      # database forever. editable: false still blocks changes in the UI.
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
@@ -177,7 +181,7 @@ spec:
               orgId: 1
               folder: Kubernetes
               type: file
-              disableDeletion: true
+              disableDeletion: false
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/kubernetes
@@ -185,7 +189,7 @@ spec:
               orgId: 1
               folder: Networking
               type: file
-              disableDeletion: true
+              disableDeletion: false
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/networking
@@ -193,7 +197,7 @@ spec:
               orgId: 1
               folder: Homelab
               type: file
-              disableDeletion: true
+              disableDeletion: false
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/homelab
