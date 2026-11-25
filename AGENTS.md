@@ -39,7 +39,7 @@ configuration.
 2. **Talos image** (`talos/image/schematic.yaml`) is an Image Factory schematic
    pinning the system extensions Longhorn needs (`iscsi-tools`, `util-linux-tools`).
 3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
-   (3 laptops control-plane/etcd, thinkcentre-01 worker) and pins the
+   (3 laptops control-plane/etcd; thinkcentre-01 and an i5-9500T box as workers) and pins the
    Talos + k8s versions. Machine-config **patches** live in `talos/omni/patches/`:
    - `controlplane-vip.yaml` — floating API VIP **10.1.10.9**.
    - `kubernetes-oidc.yaml` — trust Authentik ID tokens and map its groups with
