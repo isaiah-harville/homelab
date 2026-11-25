@@ -6,3 +6,8 @@ resources:
   - services.yaml
   - pvcs.yaml
   - ingresses.yaml
+  - kindle-recipients.sops.yaml
+configMapGenerator:
+  - name: books-scripts
+    files:
+      - cwa_config.py=scripts/cwa_config.py

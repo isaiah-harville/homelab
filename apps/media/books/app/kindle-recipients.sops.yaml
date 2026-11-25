@@ -1,0 +1,25 @@
+# Kindle (or any eReader) address per Shelfmark user. The key must match the
+# user's Shelfmark username; the value is one address or a list of addresses.
+# Edit with: sops apps/media/books/app/kindle-recipients.sops.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+    name: books-kindle-recipients
+type: Opaque
+stringData:
+    recipients.json: ENC[AES256_GCM,data:UxW7x319O1Hjh7wv++HES4ezYl9PgjvOqbBQF4NjglqhVvEq4RXjsZrR7yHnag==,iv:vabuILeNK6yvm0VebZOTskESxkHnuN02i0OKMSK/JEo=,tag:h51KM2JupiGR89JoTEP1Sw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBXdC9lWFU3THk1TmR0aEZr
+            UEpwT1BNM2kvY1dibnRCVUcwRUpoS0lZTEJVCllGbWI1NHRHd3FuTVBsS1V6aHl4
+            QWdSR0RuZ0FvWDdUTUY4bkgxNUYxNUEKLS0tIEIxcDI3WGNoNitOenFuakVEWVVL
+            bStDRWpUOUk3NitJWldmVWxFUWg0bkUKgcyVMOsuIpSTXzRfyKdvvDYJRfpE1DYe
+            g8xEJFGUhYtbsaLgjYZbC5rUr//rkM2shv4/lFPOFREsskgITolkWA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age10ukgkhw204tv9u00mf57jfmxwkfhrp0f6k3vjak3caztelhgh5us9a5jj4
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-11-25T20:16:28Z"
+    mac: ENC[AES256_GCM,data:CLaHHSSbd+0hHQIf/ETT1dje5u9gZMkfLq3N5IBdnbFlJqDzFYwoEAIJs/zFEpkqPe0PyAT484VfisgCx469YHDw5VZPgnDmHPPA8T4FYVfxFcZZOFcrDengV0yWX/29GKCYNAubqps9Lo9nU41+jFIaJGPbO20e4rzYvdLEtMw=,iv:L90IneBPJYsj7BU927XI0Jl+ovogOy6jkpMJuQ7O3p8=,tag:F+6EzdhhLvtg1YmNB1CiXw==,type:str]
+    version: 3.13.3

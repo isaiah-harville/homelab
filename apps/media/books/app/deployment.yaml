@@ -20,6 +20,58 @@ spec:
           type: RuntimeDefault
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # Writes CWA's mail server and per-user Kindle addresses into app.db
+        # from Git and SOPS secrets before CWA starts (CWA has no env support
+        # for them). See scripts/cwa_config.py and docs/apps/books.md.
+        - name: cwa-config
+          image: ghcr.io/crocodilestick/calibre-web-automated:v4.0.8 # {"$imagepolicy": "flux-system:calibre-web-automated"}
+          imagePullPolicy: IfNotPresent
+          command: ["/lsiopy/bin/python3", "/scripts/cwa_config.py"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: SMTP_HOST
+              value: smtp.mx.cloudflare.net
+            - name: SMTP_PORT
+              value: "465"
+            - name: SMTP_SECURITY
+              value: ssl
+            - name: SMTP_USERNAME
+              value: api_token
+            - name: SMTP_FROM
+              value: books@harville.dev
+            # Cloudflare rejects messages over 5 MiB including base64 overhead
+            # (~4/3), so cap attachments at 3.5 MiB for a clear error in CWA.
+            - name: SMTP_MAX_ATTACHMENT_BYTES
+              value: "3670016"
+            - name: SMTP_PASSWORD_FILE
+              value: /run/secrets/books-smtp/cloudflare-smtp-token
+            - name: KINDLE_RECIPIENTS_FILE
+              value: /run/secrets/kindle/recipients.json
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: cwa-config
+              mountPath: /config
+            - name: smtp-credentials
+              mountPath: /run/secrets/books-smtp
+              readOnly: true
+            - name: kindle-recipients
+              mountPath: /run/secrets/kindle
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
       containers:
         - name: calibre-web-automated
           image: ghcr.io/crocodilestick/calibre-web-automated:v4.0.8 # {"$imagepolicy": "flux-system:calibre-web-automated"}
@@ -121,8 +173,10 @@ spec:
               value: "false"
             - name: BOOKS_OUTPUT_MODE
               value: folder
+            # One folder per Shelfmark user. CWA auto-sends a book from
+            # /cwa-book-ingest/<user>/ only to the CWA user of that name.
             - name: INGEST_DIR
-              value: /books
+              value: /books/{User}
             - name: CALIBRE_WEB_URL
               value: https://calibre.int.harville.dev
             - name: PROWLARR_ENABLED
@@ -238,3 +292,9 @@ spec:
         - name: media-pool
           persistentVolumeClaim:
             claimName: media-pool
+        - name: kindle-recipients
+          secret:
+            secretName: books-kindle-recipients
+        - name: scripts
+          configMap:
+            name: books-scripts
