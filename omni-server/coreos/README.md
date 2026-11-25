@@ -201,8 +201,9 @@ the host until `omni-sync` runs:
   To apply now: `sudo systemctl start omni-sync`, or `sudo omni-sync
   --dry-run` to see what would change.
 - It reads `versions.yaml` from `VERSIONS_URL` (main on GitHub) and pulls
-  the new images first. A tag-only ref, which is what Flux's setters write,
-  gets resolved to a digest and pinned. It takes a `pre-upgrade` backup,
+  the new images first. Flux writes `tag@digest` (the ImagePolicies set
+  `digestReflectionPolicy`); a tag-only ref, if one appears, gets resolved
+  to a digest and pinned. It takes a `pre-upgrade` backup,
   rewrites `/etc/omni/images.env` (keeping `images.env.prev`) and restarts
   the changed services. Then it waits for `https://<omni>/healthz` and
   `https://<dex>:5556/healthz`.
@@ -351,6 +352,12 @@ Things that didn't work at first, and are now handled in the config:
 - **The production host is a laptop run with its lid closed.** CoreOS's
   logind would suspend it on boot. Found on the real host, not in the VMs:
   the lid handling there was a hand edit the playbook never recorded.
+- **Certificate issuance needs public DNS for its checks.** On the real
+  host, lego created its Cloudflare challenge record but waited for it
+  through the LAN's split-horizon DNS, which answers `int.harville.dev`
+  itself, and timed out. `--dns.resolvers 1.1.1.1:53` fixes it (tested
+  against Let's Encrypt staging on the host). The VM tests used a local CA,
+  so they couldn't catch this.
 - **FCOS has no firewalld** (the task asked for it). The rules are plain
   nftables, loaded by FCOS's `nftables.service`, without layering a
   package.
@@ -405,6 +412,3 @@ Open points before production:
 - `pxe/boot.ipxe` has no URLs yet: run `pxe/presets.sh` against the
   production Omni and commit the result. Then set UniFi's Network Boot and
   each machine's firmware as described under Network boot.
-- Flux's setters write tag-only refs; `omni-sync` pins the digest at apply
-  time. To have Flux write digests into git instead, add
-  `digestReflectionPolicy: Always` to the `omni` and `dex` ImagePolicies.

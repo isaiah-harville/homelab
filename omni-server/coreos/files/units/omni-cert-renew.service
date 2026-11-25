@@ -13,6 +13,9 @@ RequiresMountsFor=/var/lib/omni
 Type=oneshot
 EnvironmentFile=/etc/omni/images.env
 # lego.env: CLOUDFLARE_DNS_API_TOKEN (plus any LEGO_* overrides).
+# --dns.resolvers: check the challenge record through public DNS. The LAN's
+# split-horizon DNS answers int.harville.dev itself and never sees the TXT
+# record lego creates at Cloudflare, so the default check times out.
 ExecStart=/usr/bin/docker run --rm --name omni-cert-renew --log-driver journald \
   --network host \
   --env-file /etc/omni/lego.env \
@@ -22,6 +25,7 @@ ExecStart=/usr/bin/docker run --rm --name omni-cert-renew --log-driver journald 
   --email ${ACME_EMAIL} \
   --server ${ACME_SERVER} \
   --dns cloudflare \
+  --dns.resolvers 1.1.1.1:53 \
   --domains *.${OMNI_DOMAIN} \
   --path /.lego \
   --renew-days 30 \
