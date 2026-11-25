@@ -44,6 +44,12 @@ spec:
       # already rebuilt elsewhere; delete those leftovers (after the default
       # grace period) instead of letting them fill the disk.
       orphanResourceAutoDeletion: replica-data;instance
+      # Single-replica volumes (the CloudNativePG ones; Postgres replicates
+      # itself) would otherwise block every node drain forever: the default
+      # block-if-contains-last-replica refuses to drain a node holding a
+      # volume's only copy, which stalled the Talos 1.14 rollout. This policy
+      # copies those replicas to another node first, then lets the drain go.
+      nodeDrainPolicy: block-for-eviction-if-contains-last-replica
     persistence:
       defaultClassReplicaCount: 3
     metrics:
