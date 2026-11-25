@@ -112,7 +112,9 @@ flux get kustomizations -A
 ## Day-2
 
 Talos + k8s upgrades are driven from Omni (rolling, one node at a time), which
-owns node lifecycle and health. To add a node: boot it off the image, add its
+owns node lifecycle and health. Bump `talos_version` and `k8s_version` in
+separate changes (Omni rejects both at once), after Omni itself; the order and
+checks are in [Upgrades](https://github.com/isaiah-harville/homelab/blob/main/docs/operations/upgrades.md). To add a node: boot it off the image, add its
 UUID to the template, update `terraform/omni/locals.tf`, and apply through the
 chosen control path.
 

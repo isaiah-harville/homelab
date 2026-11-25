@@ -18,6 +18,7 @@ host configuration). Omni applies the lifecycle operations, while
 
 ```
 omni-server/         Self-hosted Omni (Compose stack + runbook) — the management plane
+ansible/omni-host/   Playbook that builds/converges the Omni host (outside Flux's reach)
 talos/               Talos image schematic + Omni cluster template + machine-config patches
 terraform/omni/      Terraform for the Omni cluster (GitOps for the cluster template)
 clusters/homelab/    Flux composition (Kustomizations, cluster-specific secrets, patches)
@@ -35,7 +36,11 @@ configuration.
    the cluster (must survive a node wipe), retains its independent Dex static
    break-glass login, and terminates the SideroLink WireGuard tunnel machines
    join through. The in-cluster Authentik deployment does not manage Omni/Dex.
-   See `omni-server/README.md`.
+   `ansible/omni-host` manages the host (SSH, firewall, Docker, lego, backups,
+   the Compose stack); change the host through it, never by hand. The Dex client
+   secret and admin password hash live only in the host's gitignored
+   `omni-server/.env`, so `dex.yaml` holds no secrets.
+   See `omni-server/README.md` and `ansible/omni-host/README.md`.
 2. **Talos image** (`talos/image/schematic.yaml`) is an Image Factory schematic
    pinning the system extensions Longhorn needs (`iscsi-tools`, `util-linux-tools`).
 3. **Cluster template** (`talos/omni/cluster-template.yaml`) defines the topology
@@ -55,7 +60,9 @@ configuration.
    Full bring-up runbook: `talos/README.md`. When topology changes, update both
    `talos/omni/cluster-template.yaml` and `terraform/omni/locals.tf`.
 4. **Upgrades / node health / reboots** are driven from Omni (rolling, one node at
-   a time).
+   a time). Order matters: Omni first (its release caps the Talos minor), then
+   `talos_version`, then `k8s_version`, each in its own change (Omni rejects
+   Talos and Kubernetes together). See `docs/operations/upgrades.md`.
 
 The kubeconfig comes from Omni (`omnictl kubeconfig --cluster homelab`), and Flux
 is bootstrapped onto the cluster from this repo.
@@ -80,7 +87,9 @@ the `terraform` ServiceAccount (`terraform-rbac.yaml`) + `KUBE_IN_CLUSTER_CONFIG
 Omni is the real source of truth, so lost state is re-`import`ed, never
 catastrophic.
 
-The provider is **alpha**. ARC and its SOPS secrets are enabled in
+The provider is **pre-release** (`0.1.0-beta.0`); reference machine sets by
+`.id`, not `.name` (see `docs/decisions/omni-resource-identity.md`), and treat
+any planned replacement of an Omni resource as a stop sign. ARC and its SOPS secrets are enabled in
 `clusters/homelab/infra/kustomization.yaml`, the live cluster has been imported,
 and `terraform plan` is clean — so CI may apply. Full setup and recovery steps are
 in `terraform/omni/README.md`. Keep `cluster-template.yaml` as the manual fallback

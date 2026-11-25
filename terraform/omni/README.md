@@ -7,7 +7,7 @@ running `omnictl cluster template sync` by hand, a **self-hosted GitHub Actions
 runner** (in-cluster, ARC) runs `terraform plan` on PRs and `terraform apply` on
 merge to `main`.
 
-> The provider is **alpha** (`0.1.0-alpha.3`). `talos/omni/cluster-template.yaml`
+> The provider is **pre-release** (`0.1.0-beta.0`). `talos/omni/cluster-template.yaml`
 > stays as the proven fallback — and Terraform **reads the same patch files**
 > under `talos/omni/patches/`, so patch content has a single source of truth.
 > Keep the two cluster definitions aligned.
@@ -129,6 +129,17 @@ serializes CI runs. Don't run a local apply while CI is applying.
 Change machine assignments, versions, or patches → open a PR → review the `plan` → merge → CI
 applies. Keep `cluster-template.yaml` in step until the provider is stable enough
 to retire it.
+
+- **Change one version at a time.** Omni rejects an update that moves
+  `talos_version` and `k8s_version` together, and the apply fails. Bump Talos,
+  wait for every node, then bump Kubernetes; Omni itself goes first. See
+  [Upgrades](../../docs/operations/upgrades.md).
+- **Treat any planned replacement as a stop sign.** Replacing an
+  `omni_machine_set_node` removes that machine from its machine set. Reference
+  machine sets by `omni_machine_set.<name>.id`, not `.name`: from `0.1.0-beta.0`
+  `.name` holds only the short name (`control-planes`), so `.name` plans a
+  replacement of every node. See
+  [Omni resource identity](../../docs/decisions/omni-resource-identity.md).
 
 ### If state is lost
 
