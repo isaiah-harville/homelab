@@ -113,6 +113,27 @@ spec:
             memory: 256Mi
       deploymentStrategy:
         type: Recreate
+      # Downloaded dashboards live on the persistent volume, so dropping one
+      # from `dashboards` below leaves its JSON behind and Grafana keeps
+      # loading it. This runs after the download and removes the retired
+      # ones. Add a path here whenever a grafana.com dashboard is removed.
+      extraInitContainers:
+        - name: prune-retired-dashboards
+          image: "{{ .Values.downloadDashboardsImage.registry }}/{{ .Values.downloadDashboardsImage.repository }}:{{ .Values.downloadDashboardsImage.tag }}"
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              rm -rfv
+              /var/lib/grafana/dashboards/networking
+              /var/lib/grafana/dashboards/storage
+              /var/lib/grafana/dashboards/kubernetes/nodes.json
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/grafana
       env:
         GF_AUTH_ANONYMOUS_ENABLED: "true"
         GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
@@ -144,6 +165,15 @@ spec:
         size: 10Gi
         accessModes:
           - ReadWriteOnce
+      # Logs from Loki (../../loki), shipped by Alloy (../../alloy).
+      additionalDataSources:
+        - name: Loki
+          uid: loki
+          type: loki
+          access: proxy
+          url: http://loki.monitoring.svc:3100
+          jsonData:
+            maxLines: 2000
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
@@ -156,22 +186,6 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/kubernetes
-            - name: storage
-              orgId: 1
-              folder: Storage
-              type: file
-              disableDeletion: true
-              editable: false
-              options:
-                path: /var/lib/grafana/dashboards/storage
-            - name: networking
-              orgId: 1
-              folder: Networking
-              type: file
-              disableDeletion: true
-              editable: false
-              options:
-                path: /var/lib/grafana/dashboards/networking
             - name: homelab
               orgId: 1
               folder: Homelab
@@ -180,9 +194,14 @@ spec:
               editable: false
               options:
                 path: /var/lib/grafana/dashboards/homelab
-      # Node / storage / services health, generated JSON in ./dashboards.
+      # The Homelab folder (generated JSON in ./dashboards) is the starting
+      # point: nodes, storage, services, networking, inference and logs. It
+      # replaced the grafana.com Traefik, Longhorn and Kubernetes "Nodes"
+      # dashboards, which covered the same ground less usefully.
       dashboardsConfigMaps:
         homelab: grafana-dashboards-homelab
+      # Kubernetes drill-downs the Homelab set doesn't repeat: per-namespace
+      # and per-pod resource use.
       dashboards:
         kubernetes:
           global:
@@ -193,23 +212,9 @@ spec:
             gnetId: 15758
             revision: 46
             datasource: Prometheus
-          nodes:
-            gnetId: 15759
-            revision: 40
-            datasource: Prometheus
           pods:
             gnetId: 15760
             revision: 39
-            datasource: Prometheus
-        storage:
-          longhorn:
-            gnetId: 16888
-            revision: 14
-            datasource: Prometheus
-        networking:
-          traefik:
-            gnetId: 17346
-            revision: 9
             datasource: Prometheus
       service:
         type: ClusterIP

@@ -1,0 +1,132 @@
+---
+# Ships logs to Loki: every container's stdout/stderr and the cluster's
+# Kubernetes Events. It reads both through the Kubernetes API rather than
+# from /var/log/pods on each node, so it runs as one ordinary Deployment with
+# no hostPath mounts or privileges.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+  namespace: monitoring
+spec:
+  interval: 30m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: alloy
+      version: ">=1.16.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  values:
+    global:
+      podSecurityContext:
+        seccompProfile:
+          type: RuntimeDefault
+    controller:
+      type: deployment
+      replicas: 1
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+    alloy:
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      configMap:
+        content: |
+          discovery.kubernetes "pods" {
+            role = "pod"
+          }
+
+          // Only running containers, labelled the way the dashboards query.
+          discovery.relabel "pods" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_phase"]
+              regex         = "Pending|Succeeded|Failed|Unknown"
+              action        = "drop"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label  = "namespace"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "pod"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_name"]
+              target_label  = "container"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_node_name"]
+              target_label  = "node"
+            }
+            rule {
+              source_labels = [
+                "__meta_kubernetes_pod_label_app_kubernetes_io_name",
+                "__meta_kubernetes_pod_label_app",
+                "__meta_kubernetes_pod_container_name",
+              ]
+              separator     = ";"
+              regex         = "^;*([^;]+).*$"
+              target_label  = "app"
+            }
+          }
+
+          loki.source.kubernetes "pods" {
+            targets    = discovery.relabel.pods.output
+            forward_to = [loki.process.pods.receiver]
+          }
+
+          // A "level" label for the error panels, from logfmt/JSON level
+          // fields or the usual words, without parsing every line format.
+          loki.process "pods" {
+            stage.regex {
+              expression = "(?i)(?:level|lvl|severity)[\"=: ]+\"?(?P<level>trace|debug|info|warn|warning|error|err|fatal|panic|critical)"
+            }
+            stage.replace {
+              source     = "level"
+              expression = "(?i)^(warning)$"
+              replace    = "warn"
+            }
+            stage.labels {
+              values = { level = "" }
+            }
+            stage.label_drop {
+              values = ["filename"]
+            }
+            forward_to = [loki.write.default.receiver]
+          }
+
+          loki.source.kubernetes_events "events" {
+            job_name   = "kubernetes-events"
+            log_format = "logfmt"
+            forward_to = [loki.write.default.receiver]
+          }
+
+          loki.write "default" {
+            endpoint {
+              url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+            }
+          }

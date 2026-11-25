@@ -1,0 +1,101 @@
+---
+# Log storage for the cluster. Before this, a pod's logs lived only as long
+# as the pod and a node's only as long as its uptime, so the daily reboots on
+# talos-6t5-q1d left nothing behind to explain them. Alloy (../alloy) ships
+# every pod's logs and the cluster's Events here; Grafana queries it as the
+# "Loki" data source.
+#
+# Single binary on one Longhorn volume: Longhorn already keeps three replicas,
+# so Loki's own replication stays at 1 (see AGENTS.md, Storage).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: monitoring
+spec:
+  interval: 30m
+  timeout: 15m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 1
+      remediateLastFailure: true
+      strategy: rollback
+  chart:
+    spec:
+      chart: loki
+      # Stateful: minor versions have changed schema and storage defaults,
+      # so take them deliberately.
+      version: ">=7.7.0 <7.8.0"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  values:
+    deploymentMode: SingleBinary
+    loki:
+      auth_enabled: false
+      commonConfig:
+        replication_factor: 1
+      storage:
+        type: filesystem
+      schemaConfig:
+        configs:
+          - from: "2026-11-01"
+            store: tsdb
+            object_store: filesystem
+            schema: v13
+            index:
+              prefix: loki_index_
+              period: 24h
+      # Two weeks: long enough to look back across a week of node reboots,
+      # small enough to fit the volume below with room to spare.
+      limits_config:
+        retention_period: 336h
+        ingestion_rate_mb: 8
+        ingestion_burst_size_mb: 16
+        max_query_lookback: 336h
+      compactor:
+        retention_enabled: true
+        delete_request_store: filesystem
+      pattern_ingester:
+        enabled: false
+      ui:
+        enabled: false
+    singleBinary:
+      replicas: 1
+      persistence:
+        enabled: true
+        size: 30Gi
+        storageClass: longhorn
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1536Mi
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+    backend:
+      replicas: 0
+    gateway:
+      enabled: false
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+    lokiCanary:
+      enabled: false
+    test:
+      enabled: false
+    monitoring:
+      serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
