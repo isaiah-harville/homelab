@@ -1,7 +1,7 @@
 # Generated reference
 
-Reference pages in this section are generated from the repository's YAML during
-every MkDocs build. Do not edit the generated pages directly; change the
+Reference pages in this section are generated from the repository's YAML by
+`scripts/generate_reference.py`, which runs before every documentation build. Do not edit the generated pages directly; change the
 manifests or `scripts/generate_reference.py`.
 
 The generator currently documents:

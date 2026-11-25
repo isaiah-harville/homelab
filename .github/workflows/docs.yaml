@@ -10,7 +10,7 @@ name: Documentation
       - clusters/**/*.yaml
       - docs/**
       - infrastructure/**/*.yaml
-      - mkdocs.yml
+      - zensical.toml
       - pyproject.toml
       - scripts/generate_reference.py
       - uv.lock
@@ -24,7 +24,7 @@ name: Documentation
       - clusters/**/*.yaml
       - docs/**
       - infrastructure/**/*.yaml
-      - mkdocs.yml
+      - zensical.toml
       - pyproject.toml
       - scripts/generate_reference.py
       - uv.lock
@@ -54,8 +54,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      - name: Generate reference pages
+        run: uv run --locked python scripts/generate_reference.py
+
       - name: Build documentation
-        run: uv run --locked mkdocs build --strict
+        run: uv run --locked zensical build --strict
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'

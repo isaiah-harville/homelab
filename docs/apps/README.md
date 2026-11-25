@@ -1,4 +1,4 @@
-{% include-markdown "../../apps/README.md" rewrite-relative-urls=false %}
+{% include-markdown "../../apps/README.md" %}
 
 ## App runbooks
 
