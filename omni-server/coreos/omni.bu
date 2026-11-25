@@ -103,6 +103,11 @@ storage:
       mode: 0600
       contents:
         local: secrets/lego.env
+    # Omni service account for pxe-menu (empty until set-service-account.sh).
+    - path: /etc/omni/omnictl.env
+      mode: 0600
+      contents:
+        local: secrets/omnictl.env
     - path: /etc/omni/dex.yaml
       mode: 0644
       contents:
@@ -114,8 +119,8 @@ storage:
         local: files/etc/images.env
 
     # --- Network boot ----------------------------------------------------
-    # pxe-setup builds ipxe.efi from these into /var/lib/omni/tftp, and
-    # seeds the menu there; omni-sync keeps the menu current.
+    # pxe-setup builds ipxe.efi from these into /var/lib/omni/tftp and
+    # seeds the menu template there; pxe-menu fills it in from Omni.
     - path: /usr/local/lib/omni/pxe/build-ipxe.sh
       mode: 0755
       contents:
@@ -132,6 +137,10 @@ storage:
       mode: 0755
       contents:
         local: files/bin/pxe-setup
+    - path: /usr/local/bin/pxe-menu
+      mode: 0755
+      contents:
+        local: files/bin/pxe-menu
 
     # --- Scripts ------------------------------------------------------------
     - path: /usr/local/lib/omni/omni-lib.sh
@@ -216,6 +225,11 @@ systemd:
       contents_local: files/units/omni-tools-build.service
     - name: pxe-setup.service
       contents_local: files/units/pxe-setup.service
+    - name: pxe-menu.service
+      contents_local: files/units/pxe-menu.service
+    - name: pxe-menu.timer
+      enabled: true
+      contents_local: files/units/pxe-menu.timer
     - name: pxe-tftp.service
       enabled: true
       contents_local: files/units/pxe-tftp.service
