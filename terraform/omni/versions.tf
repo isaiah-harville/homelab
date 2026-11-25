@@ -4,7 +4,7 @@ terraform {
   required_providers {
     omni = {
       source  = "siderolabs/omni"
-      version = "0.1.0-alpha.3"
+      version = "0.1.0-beta.0"
     }
   }
 

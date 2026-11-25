@@ -22,7 +22,7 @@ resource "omni_machine_set_node" "control_plane" {
   for_each = toset(local.control_plane_nodes)
 
   cluster     = omni_cluster.homelab.name
-  machine_set = omni_machine_set.control_plane.name
+  machine_set = omni_machine_set.control_plane.id
   machine_id  = each.value
 }
 
@@ -44,6 +44,6 @@ resource "omni_machine_set_node" "workers" {
   for_each = toset(local.worker_nodes)
 
   cluster     = omni_cluster.homelab.name
-  machine_set = omni_machine_set.workers.name
+  machine_set = omni_machine_set.workers.id
   machine_id  = each.value
 }
