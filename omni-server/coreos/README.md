@@ -351,6 +351,12 @@ Things that didn't work at first, and are now handled in the config:
 - **The production host is a laptop run with its lid closed.** CoreOS's
   logind would suspend it on boot. Found on the real host, not in the VMs:
   the lid handling there was a hand edit the playbook never recorded.
+- **Certificate issuance needs public DNS for its checks.** On the real
+  host, lego created its Cloudflare challenge record but waited for it
+  through the LAN's split-horizon DNS, which answers `int.harville.dev`
+  itself, and timed out. `--dns.resolvers 1.1.1.1:53` fixes it (tested
+  against Let's Encrypt staging on the host). The VM tests used a local CA,
+  so they couldn't catch this.
 - **FCOS has no firewalld** (the task asked for it). The rules are plain
   nftables, loaded by FCOS's `nftables.service`, without layering a
   package.
