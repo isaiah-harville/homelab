@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Generate the network-boot menu from this host's own Omni (pxe-menu.timer:
+# at boot and daily). Creates the installation-media presets, fills their
+# Image Factory PXE URLs into the template and installs the menu in the TFTP
+# root. The presets track Omni's default Talos version, so the network image
+# stays current with no manual step; machines that join the cluster get the
+# cluster's Talos version installed anyway.
+#
+# The menu never leaves this host: its URLs name schematics anyone can read
+# at factory.talos.dev, and Omni's schematics embed its join token.
+set -euo pipefail
+. /usr/local/lib/omni/omni-lib.sh
+load_env "$OMNI_ETC/images.env"
+
+if [[ ! -s $OMNI_ETC/omnictl.env ]]; then
+  log "no service account key in $OMNI_ETC/omnictl.env; leaving the menu as it is"
+  exit 0
+fi
+load_env "$OMNI_ETC/omnictl.env"
+export OMNI_ENDPOINT="https://$OMNI_HOST/" OMNI_SERVICE_ACCOUNT_KEY
+omni_health 60
+
+# omnictl matching the running Omni, from Sidero's release, checksum-verified.
+version=$(sed -nE 's/.*:(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/p' <<< "$OMNI_IMAGE")
+case $(uname -m) in
+  x86_64) arch=amd64 ;;
+  aarch64) arch=arm64 ;;
+  *) log "unsupported architecture $(uname -m)"; exit 1 ;;
+esac
+omnictl=$OMNI_STATE/bin/omnictl-$version
+if [[ ! -x $omnictl ]]; then
+  install -d -m 0755 "$OMNI_STATE/bin"
+  release=https://github.com/siderolabs/omni/releases/download/$version
+  sum=$(curl -fsSL --retry 3 "$release/sha256sum.txt" | awk -v f="omnictl-linux-$arch" '$2 == f {print $1}')
+  [[ -n $sum ]] || { log "no checksum for omnictl-linux-$arch $version"; exit 1; }
+  curl -fsSL --retry 3 -o "$omnictl.tmp" "$release/omnictl-linux-$arch"
+  echo "$sum  $omnictl.tmp" | sha256sum --check --quiet
+  chmod 0755 "$omnictl.tmp"
+  mv "$omnictl.tmp" "$omnictl"
+fi
+
+# (Re)create one preset and print its PXE URL with the arch left to iPXE.
+# Presets are this script's own; no --talos-version, so each run picks up
+# Omni's current default.
+url_for() {
+  local name=$1 ext args=()
+  shift
+  for ext in "$@"; do args+=(--extensions "$ext"); done
+  if "$omnictl" media preset list | awk 'NR > 1 {print $1}' | grep -qx "$name"; then
+    "$omnictl" media preset delete "$name" > /dev/null
+  fi
+  "$omnictl" media preset create "$name" --arch amd64 "${args[@]}" > /dev/null
+  "$omnictl" media download "$name" --format pxe 2> /dev/null |
+    grep -Eo 'https://[^[:space:]]+/metal-[a-z0-9]+' | tail -n1 |
+    sed -E 's|/metal-[a-z0-9]+$|/metal-${arch}|'
+}
+
+# shellcheck disable=SC2086 # space-separated lists from host.env
+talos=$(url_for homelab-talos $PXE_EXTENSIONS)
+# shellcheck disable=SC2086
+nvidia=$(url_for homelab-talos-nvidia $PXE_EXTENSIONS $PXE_GPU_EXTENSIONS)
+[[ $talos == https://* && $nvidia == https://* ]] || { log "omnictl returned no PXE URL"; exit 1; }
+
+menu=$OMNI_STATE/tftp/boot.ipxe
+sed -E -e "s|^set talos-url .*|set talos-url $talos|" -e "s|^set nvidia-url .*|set nvidia-url $nvidia|" \
+  /usr/local/lib/omni/pxe/boot.ipxe > "$menu.tmp"
+chmod 0644 "$menu.tmp"
+if cmp -s "$menu.tmp" "$menu"; then
+  rm -f "$menu.tmp"
+else
+  mv "$menu.tmp" "$menu"
+  log "installed a new network-boot menu ($(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' <<< "$talos"))"
+fi

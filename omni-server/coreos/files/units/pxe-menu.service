@@ -1,0 +1,9 @@
+[Unit]
+Description=Build the network-boot menu from Omni's installation-media presets
+Wants=network-online.target omni.service pxe-setup.service
+After=network-online.target omni.service pxe-setup.service
+RequiresMountsFor=/var/lib/omni
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pxe-menu

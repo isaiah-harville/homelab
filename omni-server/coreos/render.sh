@@ -72,12 +72,19 @@ printf 'OMNI_AUTH_OIDC_CLIENT_SECRET=%s\n' "$client_secret" > "$OUT/secrets/omni
 printf 'DEX_OMNI_CLIENT_SECRET=%s\nDEX_ADMIN_PASSWORD_HASH=%s\n' \
   "$client_secret" "$(secret dex_admin_password_hash)" > "$OUT/secrets/dex.env"
 printf 'CLOUDFLARE_DNS_API_TOKEN=%s\n' "$(secret cloudflare_dns_api_token)" > "$OUT/secrets/lego.env"
+# Omni service account for pxe-menu (pxe/set-service-account.sh). Optional:
+# without it the host serves the menu template, which falls back to the disk.
+if pxe_key=$(secret omni_pxe_service_account_key 2> /dev/null); then
+  printf 'OMNI_SERVICE_ACCOUNT_KEY=%s\n' "$pxe_key" > "$OUT/secrets/omnictl.env"
+else
+  : > "$OUT/secrets/omnictl.env"
+fi
 # LUKS key for the omni-data partition; changing it orphans the existing data.
 printf '%s' "$(secret omni_data_luks_key)" > "$OUT/secrets/omni-data.key"
 
 # Network boot: the host builds ipxe.efi itself (too big for the ISO's
 # embedded Ignition), so only its inputs go in, plus the menu template that
-# seeds a host with no menu yet (pxe/presets.sh fills in the real one).
+# pxe-menu fills in on the host.
 mkdir -p "$OUT/pxe"
 cp pxe/build-ipxe.sh pxe/embed.ipxe "$OUT/pxe/"
 cp pxe/boot.ipxe.tmpl "$OUT/pxe/boot.ipxe"

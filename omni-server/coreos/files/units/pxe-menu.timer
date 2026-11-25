@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the network-boot menu at boot and daily
+
+[Timer]
+OnBootSec=5min
+OnCalendar=*-*-* 06:15
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

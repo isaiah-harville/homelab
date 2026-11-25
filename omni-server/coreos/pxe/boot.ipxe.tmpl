@@ -1,9 +1,9 @@
 #!ipxe
 # Network boot menu template, served over TFTP by the Omni host and chained
-# from the script embedded in ipxe.efi. pxe/presets.sh fills in the two URLs
-# from Omni's installation-media presets and installs the result on the host;
-# the filled-in menu stays out of git because the URLs reveal Omni's join
-# token. Talos boots into maintenance mode and joins Omni.
+# from the script embedded in ipxe.efi. On the host, pxe-menu fills in the
+# two URLs from Omni's installation-media presets; the filled-in menu never
+# comes back to git because the URLs reveal Omni's join token. Talos boots
+# into maintenance mode and joins Omni.
 #
 # A failing command ends an iPXE script, and `iseq` fails when the strings
 # differ: every test needs a trailing `||`.
@@ -39,7 +39,7 @@ shell
 goto menu
 
 :unconfigured
-echo No Talos URL yet: run omni-server/coreos/pxe/presets.sh.
+echo No Talos URL yet: pxe-menu has not run (see journalctl -u pxe-menu).
 prompt --timeout 30000 Press a key for the menu || goto local
 goto menu
 
