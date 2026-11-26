@@ -16,4 +16,5 @@ resources:
   - pigeon-relay.yaml
   - pigeon-website.yaml
   - omni-host.yaml
+  - openvitae.yaml
   - automation.yaml
