@@ -1,0 +1,56 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: opendiagnostics-serve
+  namespace: flux-system
+spec:
+  image: ghcr.io/isaiah-harville/opendiagnostics-serve
+  interval: 5m
+  # The package is private on GHCR; this is the same pull secret the pods use.
+  secretRef:
+    name: ghcr-pull-secret
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: opendiagnostics-serve
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: opendiagnostics-serve
+  # CI tags each build of main <UTC yyyymmddHHMMSS>-<short sha>; the newest wins.
+  filterTags:
+    pattern: '^(?P<ts>[0-9]{14})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: opendiagnostics-web
+  namespace: flux-system
+spec:
+  image: ghcr.io/isaiah-harville/opendiagnostics-web
+  interval: 5m
+  # The package is private on GHCR; this is the same pull secret the pods use.
+  secretRef:
+    name: ghcr-pull-secret
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: opendiagnostics-web
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: opendiagnostics-web
+  # CI tags each build of main <UTC yyyymmddHHMMSS>-<short sha>; the newest wins.
+  filterTags:
+    pattern: '^(?P<ts>[0-9]{14})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc

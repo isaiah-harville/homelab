@@ -18,6 +18,13 @@ spec:
   sourceRef:
     kind: GitRepository
     name: opendiagnostics
+  # Pinned by Flux image automation (infrastructure/flux-system/image-automation/app/
+  # opendiagnostics.yaml) to the newest build of the app repo's main.
+  images:
+    - name: ghcr.io/isaiah-harville/opendiagnostics-serve
+      newTag: main # {"$imagepolicy": "flux-system:opendiagnostics-serve:tag"}
+    - name: ghcr.io/isaiah-harville/opendiagnostics-web
+      newTag: main # {"$imagepolicy": "flux-system:opendiagnostics-web:tag"}
   dependsOn:
     - name: infra
     - name: certificates
