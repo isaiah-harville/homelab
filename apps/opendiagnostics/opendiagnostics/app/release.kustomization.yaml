@@ -1,0 +1,23 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # The demo's own manifests (inference API and frontend), from its repo. The
+  # `opendiagnostics` Kustomization that applies this file also owns the GitRepository
+  # and the Ingress.
+  name: opendiagnostics-upstream
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./deploy/k8s
+  prune: true
+  targetNamespace: opendiagnostics
+  wait: true
+  # The inference API loads every model on CPU before it reports ready.
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: opendiagnostics
+  dependsOn:
+    - name: infra
+    - name: certificates

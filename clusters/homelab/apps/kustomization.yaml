@@ -34,3 +34,4 @@ resources:
   - ../../../apps/searxng
   - ../../../apps/seaweedfs
   - ../../../apps/swing-thoughts
+  - ../../../apps/opendiagnostics
