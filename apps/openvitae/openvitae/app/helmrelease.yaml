@@ -50,11 +50,11 @@ spec:
   values:
     api:
       image:
-        tag: 1.2.0
+        tag: 1.3.0
         pullPolicy: Always
     frontend:
       image:
-        tag: 1.2.0
+        tag: 1.3.0
         pullPolicy: Always
       extraEnv:
         BODY_SIZE_LIMIT: 16M
