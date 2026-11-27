@@ -1,6 +1,8 @@
 ---
-# Each prediction costs about a second of CPU, so requests are rate limited per client
-# and each client may have only a few in flight at once.
+# Each prediction (a form POST) costs about a second of CPU, so predictions are rate
+# limited per client and each client may have only a few in flight at once. Pages and
+# images are cheap and a model page loads eight thumbnails at once, so other requests get
+# only the looser opendiagnostics-browse limit.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -27,6 +29,20 @@ spec:
       ipStrategy:
         depth: 1
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-browse
+  namespace: opendiagnostics
+spec:
+  rateLimit:
+    average: 600
+    period: 1m
+    burst: 120
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
 # Uploads are at most 10 MB; the app rejects anything larger too.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -43,7 +59,7 @@ metadata:
   name: opendiagnostics
   namespace: opendiagnostics
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: opendiagnostics-opendiagnostics-limits@kubernetescrd,opendiagnostics-opendiagnostics-in-flight@kubernetescrd,opendiagnostics-opendiagnostics-upload-size@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: opendiagnostics-opendiagnostics-browse@kubernetescrd,opendiagnostics-opendiagnostics-upload-size@kubernetescrd
     gethomepage.dev/enabled: "true"
     gethomepage.dev/group: Public
     gethomepage.dev/name: OpenDiagnostics demo
@@ -67,3 +83,27 @@ spec:
                   name: http
     - host: diagnostics.harville.ai
       http: *site
+---
+# Predictions are form POSTs. An IngressRoute because an Ingress cannot match on method;
+# its longer rule wins over the Ingress for the same hosts. Neither Traefik sets a CRD
+# ingress class, so both serve it; the public DNS names resolve only to traefik-public.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: opendiagnostics-predict
+  namespace: opendiagnostics
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: >-
+        (Host(`diagnostics.harville.dev`) || Host(`diagnostics.harville.ai`))
+        && Method(`POST`)
+      middlewares:
+        - name: opendiagnostics-limits
+        - name: opendiagnostics-in-flight
+        - name: opendiagnostics-upload-size
+      services:
+        - name: opendiagnostics-web
+          port: http
+  tls: {}
