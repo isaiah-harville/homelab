@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - gitrepository.yaml
   - ingress.yaml
-  - weights-ingress.yaml
   - release.kustomization.yaml
