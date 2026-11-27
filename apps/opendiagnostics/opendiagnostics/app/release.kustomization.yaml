@@ -22,9 +22,9 @@ spec:
   # opendiagnostics.yaml) to the newest build of the app repo's main.
   images:
     - name: ghcr.io/isaiah-harville/opendiagnostics-serve
-      newTag: 20261127153917-26008fe # {"$imagepolicy": "flux-system:opendiagnostics-serve:tag"}
+      newTag: 20261127154822-85abc19 # {"$imagepolicy": "flux-system:opendiagnostics-serve:tag"}
     - name: ghcr.io/isaiah-harville/opendiagnostics-web
-      newTag: 20261127153950-26008fe # {"$imagepolicy": "flux-system:opendiagnostics-web:tag"}
+      newTag: 20261127154845-85abc19 # {"$imagepolicy": "flux-system:opendiagnostics-web:tag"}
   dependsOn:
     - name: infra
     - name: certificates
