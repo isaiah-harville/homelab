@@ -53,10 +53,10 @@ metadata:
 spec:
   ingressClassName: traefik-public
   tls:
-    - hosts: [diagnostics.harville.dev]
+    - hosts: [diagnostics.harville.dev, diagnostics.harville.ai]
   rules:
     - host: diagnostics.harville.dev
-      http:
+      http: &site
         paths:
           - path: /
             pathType: Prefix
@@ -65,3 +65,5 @@ spec:
                 name: opendiagnostics-web
                 port:
                   name: http
+    - host: diagnostics.harville.ai
+      http: *site
