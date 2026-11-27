@@ -7,6 +7,7 @@ resources:
   - seaweedfs-s3-config.sops.yaml
   - helmrelease.yaml
   - ingress.yaml
+  - opendiagnostics-weights.yaml
   - backup-prune-cronjob.yaml
   - offsite-sync-cronjob.yaml
   - networkpolicy.yaml
