@@ -348,6 +348,9 @@ that list**, or its requests time out. There is no cluster-wide default-deny.
 - **metrics-server** — Kubernetes resource metrics for `kubectl top` and consumers.
 - **actions-runner-controller** — the `homelab` GitHub Actions runner scale set.
 - **seaweedfs** — S3 object storage, `s3.int.harville.dev`, buckets `general`/`backups`.
+  `opendiagnostics-weights` is publicly readable (anonymous `Read`, no `List`) at
+  `diagnostics.harville.dev/opendiagnostics-weights/`, GET and HEAD only; only that path is
+  routed publicly.
 - **vllm-router** — OpenAI-compatible inference at `vllm.int.harville.dev`
   (no API key required), consumed by Primer. See "GPU / vLLM" below.
 - **primer** — cited answers over private document libraries, public at

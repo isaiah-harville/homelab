@@ -112,6 +112,7 @@ spec:
         - name: openvitae
         - name: inquizitive
         - name: primer-sources
+        - name: opendiagnostics-weights
       resources:
         requests:
           cpu: 50m
