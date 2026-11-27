@@ -17,4 +17,5 @@ resources:
   - pigeon-website.yaml
   - omni-host.yaml
   - openvitae.yaml
+  - opendiagnostics.yaml
   - automation.yaml

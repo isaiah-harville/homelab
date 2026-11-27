@@ -50,6 +50,10 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: cnpg-system
+        # The OpenDiagnostics demo downloads model checkpoints from its public bucket.
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opendiagnostics
       ports:
         - protocol: TCP
           port: 8333

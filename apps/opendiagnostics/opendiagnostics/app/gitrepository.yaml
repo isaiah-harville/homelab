@@ -1,0 +1,15 @@
+---
+# The repository is public, so Flux clones it over HTTPS without a deploy key.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: opendiagnostics
+  namespace: flux-system
+spec:
+  interval: 5m
+  ref:
+    branch: main
+  url: https://github.com/isaiah-harville/opendiagnostics.git
+  ignore: |
+    /*
+    !/deploy/k8s/
