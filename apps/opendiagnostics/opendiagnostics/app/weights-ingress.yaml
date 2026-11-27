@@ -1,0 +1,54 @@
+---
+# Public, read-only downloads of the published model weights. Only the
+# opendiagnostics-weights bucket path is routed, so the rest of SeaweedFS stays
+# internal. The anonymous S3 identity may read that bucket and nothing else;
+# stripping Authorization keeps every internet request anonymous, so even a
+# leaked publisher key cannot write through this route.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-weights-anonymous
+  namespace: opendiagnostics
+spec:
+  headers:
+    customRequestHeaders:
+      Authorization: ""
+---
+# A checkpoint is about 200 MB, so a client gets a few downloads a minute.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-weights-limits
+  namespace: opendiagnostics
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 12
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opendiagnostics-weights
+  # Beside the service it routes to: an Ingress only reaches its own namespace.
+  namespace: seaweedfs
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: opendiagnostics-opendiagnostics-weights-anonymous@kubernetescrd,opendiagnostics-opendiagnostics-weights-limits@kubernetescrd
+spec:
+  ingressClassName: traefik-public
+  tls:
+    - hosts: [diagnostics.harville.dev]
+  rules:
+    - host: diagnostics.harville.dev
+      http:
+        paths:
+          - path: /opendiagnostics-weights/
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweedfs-s3
+                port:
+                  number: 8333
