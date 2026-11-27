@@ -13,8 +13,9 @@ spec:
   prune: true
   targetNamespace: opendiagnostics
   wait: true
-  # The inference API loads every model on CPU before it reports ready.
-  timeout: 10m
+  # The inference API downloads every published checkpoint (about 2.3 GB on the first start)
+  # and loads the models on CPU before it reports ready; its startup probe allows 30 minutes.
+  timeout: 30m
   sourceRef:
     kind: GitRepository
     name: opendiagnostics
