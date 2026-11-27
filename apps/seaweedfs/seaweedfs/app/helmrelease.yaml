@@ -113,12 +113,14 @@ spec:
         - name: inquizitive
         - name: primer-sources
         - name: opendiagnostics-weights
+      # Multipart uploads of ~200 MB checkpoints pushed the gateway past 256Mi and it
+      # restarted mid-upload, failing every in-flight request with a 502.
       resources:
         requests:
           cpu: 50m
-          memory: 128Mi
-        limits:
           memory: 256Mi
+        limits:
+          memory: 1Gi
     admin:
       enabled: true
       replicas: 1
