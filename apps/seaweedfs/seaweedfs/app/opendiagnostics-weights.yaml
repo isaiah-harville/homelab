@@ -1,0 +1,63 @@
+---
+# Public downloads of the OpenDiagnostics model weights. Only GET and HEAD on the
+# opendiagnostics-weights bucket path are routed; any other method falls through
+# to the demo site and never reaches SeaweedFS, so nothing can be written here,
+# not even with a presigned URL. The anonymous S3 identity may read that bucket
+# and nothing else. An IngressRoute because an Ingress cannot match on method.
+# Neither Traefik sets a CRD ingress class, so both serve it; the public DNS
+# name resolves only to traefik-public.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: opendiagnostics-weights
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: >-
+        Host(`diagnostics.harville.dev`) && PathPrefix(`/opendiagnostics-weights/`)
+        && (Method(`GET`) || Method(`HEAD`))
+      middlewares:
+        - name: opendiagnostics-weights-anonymous
+        - name: opendiagnostics-weights-limits
+        - name: opendiagnostics-weights-in-flight
+      services:
+        - name: seaweedfs-s3
+          port: 8333
+  tls: {}
+---
+# Every request reaches S3 unsigned, so only the anonymous identity applies.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-weights-anonymous
+spec:
+  headers:
+    customRequestHeaders:
+      Authorization: ""
+---
+# 10 requests a minute per client (burst 12); a checkpoint is about 200 MB.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-weights-limits
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 12
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
+---
+# At most two downloads at once per client.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: opendiagnostics-weights-in-flight
+spec:
+  inFlightReq:
+    amount: 2
+    sourceCriterion:
+      ipStrategy:
+        depth: 1
