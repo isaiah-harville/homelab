@@ -24,7 +24,7 @@ spec:
     - name: ghcr.io/isaiah-harville/opendiagnostics-serve
       newTag: 20261128032747-bed41d9 # {"$imagepolicy": "flux-system:opendiagnostics-serve:tag"}
     - name: ghcr.io/isaiah-harville/opendiagnostics-web
-      newTag: 20261128043945-8c4b76d # {"$imagepolicy": "flux-system:opendiagnostics-web:tag"}
+      newTag: 20261128072535-9ed3394 # {"$imagepolicy": "flux-system:opendiagnostics-web:tag"}
   dependsOn:
     - name: infra
     - name: certificates
